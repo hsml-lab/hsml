@@ -5,6 +5,7 @@ use clap::{Command, arg, command, value_parser};
 pub mod exec_check;
 pub mod exec_compile;
 pub mod exec_format;
+pub mod exec_lsp;
 pub mod exec_parse;
 
 pub fn cli() -> Command {
@@ -29,4 +30,5 @@ pub fn cli() -> Command {
         )
         .subcommand(Command::new("fmt").about("Format given .hsml file or directory"))
         .subcommand(Command::new("check").about("Check given .hsml file or directory"))
+        .subcommand(Command::new("lsp").about("Running Language Server Protocol"))
 }
