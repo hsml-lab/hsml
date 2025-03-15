@@ -30,4 +30,6 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 clap = { version = "4.5.31", features = ["cargo"] }
 nom = "8.0.0"
+tokio = { version = "1.44.1", features = ["full"] }
+tower-lsp = "0.20.0"
 wasm-bindgen = "0.2.100"
