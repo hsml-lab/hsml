@@ -120,33 +120,24 @@ pub fn tag_node<'a>(input: &'a str, context: &mut HsmlProcessContext) -> IResult
 
             if !indentation.is_empty() {
                 // check that the indentation is consistent and does not include tabs and spaces at the same time
-                // if it does, throw an error
+                // if it does, collect an error for diagnostics
 
                 if indentation.contains('\t') && indentation.contains(' ') {
-                    // TODO @Shinigami92 2023-05-18: This error could be more specific
-                    return Err(nom::Err::Error(Error::new(input, ErrorKind::Tag)));
-                }
-
-                // if we never hit an indentation yet, set it
-                // this only happens once
-                if context.indent_string.is_none() {
-                    // println!("set indent string = \"{}\"", indentation);
-                    context.indent_string = Some(indentation.to_string());
+                    // TODO @Shinigami92 2025-03-16: This should collect an error or diagnostics
                 }
 
                 // persist the indentation level so we can restore it later
-                let indentation_level = context.indent_level;
-
-                context.indent_level += 1;
+                let nested_tag_level = context.nested_tag_level;
+                let indent_string = context.indent_string.clone();
 
                 // check that we are at the correct indentation level, otherwise break out of the loop
-                let indent_string_len = context.indent_string.as_ref().unwrap().len();
-                let indent_size = indent_string_len * context.indent_level;
-                // dbg!(indent_size, indentation.len());
-                if indent_size != indentation.len() {
+                if indentation.len() <= context.indent_string.len() {
                     // dbg!("break out of loop");
                     break;
                 }
+
+                context.nested_tag_level += 1;
+                context.indent_string = indentation.to_string();
 
                 // we are at the correct indentation level, so we can continue parsing the child tag nodes
 
@@ -169,8 +160,9 @@ pub fn tag_node<'a>(input: &'a str, context: &mut HsmlProcessContext) -> IResult
                     }
                 }
 
-                // restore the indentation level
-                context.indent_level = indentation_level;
+                // restore the nested_tag_level level
+                context.nested_tag_level = nested_tag_level;
+                context.indent_string = indent_string;
 
                 continue;
             }
@@ -207,8 +199,8 @@ mod tests {
     #[test]
     fn it_should_return_tag_node_with_piped_text() {
         let context = &mut HsmlProcessContext {
-            indent_level: 3,
-            indent_string: Some(String::from("  ")),
+            nested_tag_level: 3,
+            indent_string: String::from("      "),
         };
 
         let (input, tag) = tag_node(
