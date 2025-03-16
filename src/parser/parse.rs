@@ -15,9 +15,19 @@ pub fn parse(input: &str) -> IResult<&str, RootNode> {
 
     loop {
         // eat leading and trailing newlines and whitespace if there are any
-        if let Ok((rest, _)) =
+        if let Ok((rest, taken)) =
             take_till::<_, &str, nom::error::Error<&str>>(|c: char| !c.is_whitespace())(input)
         {
+            // take the leading spaces and tabs after the last newline as indentation
+            context.indent_string = taken
+                .chars()
+                .rev()
+                .take_while(|c| c.is_whitespace() && *c != '\n')
+                .collect::<String>()
+                .chars()
+                .rev()
+                .collect();
+
             input = rest;
 
             if input.is_empty() {

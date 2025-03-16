@@ -15,17 +15,9 @@ pub fn process_text_block<'a>(
     // eat one \r\n or \n
     let (rest, _) = alt((tag("\r\n"), tag("\n"))).parse(rest)?;
 
-    let indent_string: &str = if let Some(indent_string) = &context.indent_string {
-        indent_string
-    } else {
-        "  "
-    };
-
-    let indent_string: &str = &indent_string.repeat(context.indent_level + 1);
-
     let mut text_block_index = 0;
 
-    // loop over each line until we find a line that does not fulfill the indentation
+    // loop over each line until we find a line that does not starts with the current indent string
     for (index, c) in rest.chars().enumerate() {
         if c == '\n' {
             // if next char is also a \n, then continue
@@ -38,7 +30,15 @@ pub fn process_text_block<'a>(
             let line = &rest[index + 1..];
 
             // otherwise check the indentation and if it does not fulfill the indentation, then break
-            if !line.starts_with(indent_string) {
+            // TODO @Shinigami92 2025-03-16: right now this does not support mixed indentations on tag level indentation, but only withing the text block
+            if !line.starts_with(&context.indent_string) {
+                break;
+            }
+
+            let line = &line[context.indent_string.len()..];
+
+            // break out if the first character is not a space or tab
+            if !line.starts_with(' ') && !line.starts_with('\t') {
                 break;
             }
         } else {
@@ -69,15 +69,15 @@ mod tests {
     #[test]
     fn it_should_process_text_block() {
         let mut context = HsmlProcessContext {
-            indent_string: Some(String::from("  ")),
-            indent_level: 1,
+            nested_tag_level: 1,
+            indent_string: String::from("  "),
         };
 
         let input = r#".
-    this is just some text
+   this is just some text
     it can be multiline
 
-    and also contain blank lines
+    	and also contain blank lines
 span other text
 "#;
 
@@ -85,10 +85,10 @@ span other text
 
         assert_eq!(
             text_block,
-            r#"    this is just some text
+            r#"   this is just some text
     it can be multiline
 
-    and also contain blank lines"#
+    	and also contain blank lines"#
         );
         assert_eq!(
             rest,

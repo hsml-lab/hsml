@@ -15,17 +15,12 @@ pub fn text_block_node<'a>(
 ) -> IResult<&'a str, TextNode> {
     let (input, text) = process_text_block(input, context)?;
 
-    let indent_string = context
-        .indent_string
-        .as_ref()
-        .unwrap()
-        .repeat(context.indent_level + 1);
-
-    let newline_indent_replacement: &str = &format!("\n{}", &indent_string);
-
+    // On every line, replace all leading spaces and tabs with an empty string
     let text = text
-        .trim_start_matches(&indent_string)
-        .replace(newline_indent_replacement, "\n");
+        .lines()
+        .map(|line| line.trim_start())
+        .collect::<Vec<&str>>()
+        .join("\n");
 
     Ok((input, TextNode { text }))
 }
@@ -51,8 +46,8 @@ mod tests {
     #[test]
     fn it_should_return_text_block_node() {
         let context = &mut HsmlProcessContext {
-            indent_string: Some(String::from("  ")),
-            indent_level: 3,
+            nested_tag_level: 3,
+            indent_string: String::from("      "),
         };
 
         let (input, text_block) = text_block_node(
@@ -77,5 +72,34 @@ and the build size is tiny.""#
         );
 
         assert_eq!(input, "\n    figcaption.font-medium");
+    }
+
+    #[test]
+    fn it_should_stop_before_next_tag_node() {
+        let context = &mut HsmlProcessContext {
+            nested_tag_level: 1,
+            indent_string: String::from("  "),
+        };
+
+        let (input, text_block) = text_block_node(
+            r#".
+    Sarah Dayan
+  .text-[#af05c9].dark:text-slate-500.
+    Staff Engineer, Algolia"#,
+            context,
+        )
+        .unwrap();
+
+        assert_eq!(
+            text_block,
+            TextNode {
+                text: String::from(r#"Sarah Dayan"#),
+            }
+        );
+
+        assert_eq!(
+            input,
+            "\n  .text-[#af05c9].dark:text-slate-500.\n    Staff Engineer, Algolia"
+        );
     }
 }
