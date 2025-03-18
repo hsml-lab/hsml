@@ -28,6 +28,6 @@ exclude = [
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-clap = { version = "4.5.31", features = ["cargo"] }
+clap = { version = "4.5.32", features = ["cargo"] }
 nom = "8.0.0"
 wasm-bindgen = "0.2.100"
