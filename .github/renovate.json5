@@ -1,12 +1,25 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:base", "schedule:nonOfficeHours", "group:allNonMajor"],
-  "timezone": "Europe/Berlin",
-  "labels": ["dependencies"],
+  "extends": [
+    "config:best-practices",
+    "schedule:earlyMondays",
+    "group:allNonMajor",
+    ":prHourlyLimitNone"
+  ],
+  "labels": [
+    "c: dependencies"
+  ],
+  "lockFileMaintenance": {
+    "enabled": true
+  },
   "reviewersFromCodeOwners": true,
   "rangeStrategy": "bump",
   "vulnerabilityAlerts": {
-    "labels": ["security"],
-    "assigneesFromCodeOwners": true
+    "labels": [
+      "c: security"
+    ],
+    "assignees": [
+      "@Shinigami92"
+    ]
   }
 }
