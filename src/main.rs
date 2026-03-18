@@ -17,7 +17,7 @@ fn main() -> Result<(), &'static str> {
         Some(("fmt", sub_matches)) => exec_format(sub_matches),
         Some(("check", sub_matches)) => exec_check(sub_matches),
         Some(("lsp", sub_matches)) => {
-            let rt = Runtime::new().unwrap();
+            let rt = Runtime::new().map_err(|_| "Failed to initialize Tokio runtime")?;
             rt.block_on(exec_lsp(sub_matches));
             Ok(())
         }
