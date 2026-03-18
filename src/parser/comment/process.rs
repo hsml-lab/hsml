@@ -4,7 +4,7 @@ use nom::{
     error::{Error, ErrorKind},
 };
 
-pub fn process_dev_comment(input: &str) -> IResult<&str, &str> {
+pub(super) fn process_dev_comment(input: &str) -> IResult<&str, &str> {
     let (input, _) = tag("//")(input)?;
 
     // check next char is not a `!`
@@ -20,7 +20,7 @@ pub fn process_dev_comment(input: &str) -> IResult<&str, &str> {
     Ok((input, comment))
 }
 
-pub fn process_native_comment(input: &str) -> IResult<&str, &str> {
+pub(super) fn process_native_comment(input: &str) -> IResult<&str, &str> {
     let (input, _) = tag("//!")(input)?;
 
     // read until end of line

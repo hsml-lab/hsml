@@ -4,7 +4,7 @@ use nom::{
     error::{Error, ErrorKind},
 };
 
-pub fn process_class(input: &str) -> IResult<&str, &str> {
+pub(super) fn process_class(input: &str) -> IResult<&str, &str> {
     let (input, _) = tag(".")(input)?;
 
     let mut remaining = input;

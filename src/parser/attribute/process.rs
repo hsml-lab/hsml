@@ -10,7 +10,7 @@ fn is_valid_attribute_key_start(c: char) -> bool {
     c.is_alphabetic() || c == ':' || c == '#' || c == '@' || c == '[' || c == '('
 }
 
-pub(crate) fn process_attribute_key(input: &str) -> IResult<&str, &str> {
+pub(super) fn process_attribute_key(input: &str) -> IResult<&str, &str> {
     let first_char = input.chars().next().expect("input is empty");
 
     if first_char.is_numeric() {
@@ -142,7 +142,7 @@ pub(crate) fn process_attribute_key(input: &str) -> IResult<&str, &str> {
     Ok((remaining, attribute_key))
 }
 
-pub(crate) fn process_attribute_value<'a>(
+pub(super) fn process_attribute_value<'a>(
     input: &'a str,
     _context: &mut HsmlProcessContext,
 ) -> IResult<&'a str, &'a str> {
@@ -205,7 +205,7 @@ pub(crate) fn process_attribute_value<'a>(
 
 // If the attribute is a boolean attribute, then return the attribute and the remaining input
 
-pub fn process_attribute<'a>(
+pub(super) fn process_attribute<'a>(
     input: &'a str,
     context: &mut HsmlProcessContext,
 ) -> IResult<&'a str, &'a str> {

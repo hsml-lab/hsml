@@ -6,7 +6,7 @@ use nom::{
 
 use crate::parser::HsmlProcessContext;
 
-pub fn process_text_block<'a>(
+pub(super) fn process_text_block<'a>(
     input: &'a str,
     context: &mut HsmlProcessContext,
 ) -> IResult<&'a str, &'a str> {
@@ -69,7 +69,7 @@ pub fn process_text_block<'a>(
     Ok((rest, text_block))
 }
 
-pub fn process_text(input: &str) -> IResult<&str, &str> {
+pub(super) fn process_text(input: &str) -> IResult<&str, &str> {
     let (input, _) = tag(" ")(input)?;
     take_until1("\n")(input)
 }
