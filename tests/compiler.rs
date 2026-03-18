@@ -1,4 +1,5 @@
 use hsml::{
+    compile_content_core,
     compiler::{HsmlCompileOptions, compile},
     parser::{
         HsmlNode, RootNode, id::node::IdNode, parse::parse, tag::node::TagNode,
@@ -165,6 +166,40 @@ fn it_should_compile_parsed_elk_status_content_component() {
   }"><StatusBody v-if="(!isFiltered && isSensitiveNonSpoiler) || hideAllMedia" :status="status" :newer="newer" :with-action="!isDetails" :class="isDetails ? 'text-xl' : ''"/><StatusSpoiler :enabled="hasSpoilerOrSensitiveMedia || isFiltered" :filter="isFiltered" :sensitive-non-spoiler="isSensitiveNonSpoiler || hideAllMedia" :is-d-m="isDM"><template v-if="spoilerTextPresent" #spoiler><p>{{ status.spoilerText }}</p></template><template v-else-if="filterPhrase" #spoiler><p>{{ `${$t('status.filter_hidden_phrase')}: ${filterPhrase}` }}</p></template><StatusBody v-if="!(isSensitiveNonSpoiler || hideAllMedia)" :status="status" :newer="newer" :with-action="!isDetails" :class="isDetails ? 'text-xl' : ''"/><StatusTranslation :status="status"/><StatusPoll v-if="status.poll" :status="status"/><StatusMedia v-if="status.mediaAttachments?.length" :status="status" :is-preview="isPreview"/><StatusPreviewCard v-if="status.card" :card="status.card" :small-picture-only="status.mediaAttachments?.length > 0"/><StatusCard v-if="status.reblog" :status="status.reblog" border="~ rounded" :actions="false"/><div v-if="isDM"/></StatusSpoiler></div>"#
     );
     assert_eq!(rest, "");
+}
+
+// Tests for compile_content error handling (mirrors lib.rs WASM logic)
+
+#[test]
+fn compile_content_should_return_html_for_valid_input() {
+    let result = compile_content_core("h1 Hello World\n");
+    assert_eq!(result, Ok(String::from("<h1>Hello World</h1>")));
+}
+
+#[test]
+fn compile_content_should_return_html_for_valid_nested_input() {
+    let result = compile_content_core("div\n  p Hello\n");
+    assert_eq!(result, Ok(String::from("<div><p>Hello</p></div>")));
+}
+
+#[test]
+fn compile_content_should_return_empty_html_for_empty_input() {
+    let result = compile_content_core("");
+    assert_eq!(result, Ok(String::from("")));
+}
+
+#[test]
+fn compile_content_should_return_error_for_invalid_input() {
+    let result = compile_content_core("123invalid");
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("HSML parse error"));
+}
+
+#[test]
+fn compile_content_should_return_error_for_special_characters() {
+    let result = compile_content_core("@@@");
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("HSML parse error"));
 }
 
 #[test]
