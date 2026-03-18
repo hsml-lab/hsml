@@ -16,10 +16,19 @@ pub fn text_block_node<'a>(
     let (input, text) = process_text_block(input, context)?;
 
     // On every line, replace all leading spaces and tabs with an empty string
+    let block_indent = text
+        .lines()
+        .find(|line| !line.trim().is_empty())
+        .map(|line| {
+            line.chars()
+                .take_while(|c| *c == ' ' || *c == '\t')
+                .collect::<String>()
+        })
+        .unwrap_or_default();
     let text = text
         .lines()
-        .map(|line| line.trim_start())
-        .collect::<Vec<&str>>()
+        .map(|line| line.strip_prefix(&block_indent).unwrap_or(line))
+        .collect::<Vec<_>>()
         .join("\n");
 
     Ok((input, TextNode { text }))
@@ -101,5 +110,48 @@ and the build size is tiny.""#
             input,
             "\n  .text-[#af05c9].dark:text-slate-500.\n    Staff Engineer, Algolia"
         );
+    }
+
+    #[test]
+    fn it_should_return_text_block_node_with_multibyte_chars() {
+        let context = &mut HsmlProcessContext {
+            nested_tag_level: 1,
+            indent_string: String::from("  "),
+        };
+
+        let (input, text_block) = text_block_node(
+            ".\n    héllo wörld 🌍\n    più línés café\nspan next",
+            context,
+        )
+        .unwrap();
+
+        assert_eq!(
+            text_block,
+            TextNode {
+                text: String::from("héllo wörld 🌍\npiù línés café"),
+            }
+        );
+
+        assert_eq!(input, "\nspan next");
+    }
+
+    #[test]
+    fn it_should_return_text_block_node_with_cjk_and_blank_lines() {
+        let context = &mut HsmlProcessContext {
+            nested_tag_level: 1,
+            indent_string: String::from("  "),
+        };
+
+        let (input, text_block) =
+            text_block_node(".\n    こんにちは\n\n    世界テスト\nspan next", context).unwrap();
+
+        assert_eq!(
+            text_block,
+            TextNode {
+                text: String::from("こんにちは\n\n世界テスト"),
+            }
+        );
+
+        assert_eq!(input, "\nspan next");
     }
 }

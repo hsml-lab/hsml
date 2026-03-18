@@ -123,7 +123,7 @@ pub fn tag_node<'a>(input: &'a str, context: &mut HsmlProcessContext) -> IResult
                 // if it does, collect an error for diagnostics
 
                 if indentation.contains('\t') && indentation.contains(' ') {
-                    // TODO @Shinigami92 2025-03-16: This should collect an error or diagnostics
+                    return Err(nom::Err::Failure(Error::new(input, ErrorKind::Tag)));
                 }
 
                 // persist the indentation level so we can restore it later
@@ -131,7 +131,9 @@ pub fn tag_node<'a>(input: &'a str, context: &mut HsmlProcessContext) -> IResult
                 let indent_string = context.indent_string.clone();
 
                 // check that we are at the correct indentation level, otherwise break out of the loop
-                if indentation.len() <= context.indent_string.len() {
+                if !indentation.starts_with(&context.indent_string)
+                    || indentation.len() <= context.indent_string.len()
+                {
                     // dbg!("break out of loop");
                     break;
                 }
@@ -239,5 +241,47 @@ and the build size is tiny.""#
         );
 
         assert_eq!(input, "\n    figcaption.font-medium");
+    }
+
+    #[test]
+    fn it_should_error_on_mixed_tabs_and_spaces_indentation() {
+        let context = &mut HsmlProcessContext {
+            nested_tag_level: 0,
+            indent_string: String::new(),
+        };
+
+        // Child indented with mixed tabs and spaces
+        let input = "div\n \tchild";
+
+        let result = tag_node(input, context);
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn it_should_break_when_indentation_does_not_start_with_parent_indent() {
+        let context = &mut HsmlProcessContext {
+            nested_tag_level: 1,
+            indent_string: String::from("    "),
+        };
+
+        // Parent uses 4-space indent, but child uses 2-space indent
+        let input = "div\n  span";
+
+        let (rest, tag) = tag_node(input, context).unwrap();
+
+        assert_eq!(
+            tag,
+            TagNode {
+                tag: String::from("div"),
+                id: None,
+                classes: None,
+                attributes: None,
+                text: None,
+                children: None,
+            }
+        );
+
+        assert_eq!(rest, "\n  span");
     }
 }
