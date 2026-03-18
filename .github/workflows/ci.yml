@@ -44,6 +44,29 @@ jobs:
       - name: Check formatting
         run: cargo fmt --all -- --check
 
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@94a7388bec5d4c8dd93e3ebf09e0ff448f3f6f4d # v2
+        with:
+          tool: cargo-llvm-cov
+
+      - name: Generate coverage
+        run: cargo llvm-cov --codecov --output-path codecov.json
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5
+        with:
+          files: codecov.json
+          fail_ci_if_error: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
   clippy:
     name: Clippy
     permissions: write-all
