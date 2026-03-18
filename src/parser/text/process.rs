@@ -18,16 +18,16 @@ pub(super) fn process_text_block<'a>(
     let mut text_block_end = 0;
 
     // Validate first line as well (the loop below only validates lines after a '\n').
-    if let Some(first_line) = rest.lines().next() {
-        if !first_line.is_empty() {
-            if !first_line.starts_with(&context.indent_string) {
-                return Ok((rest, &rest[..0]));
-            }
+    if let Some(first_line) = rest.lines().next()
+        && !first_line.is_empty()
+    {
+        if !first_line.starts_with(&context.indent_string) {
+            return Ok((rest, &rest[..0]));
+        }
 
-            let after_indent = &first_line[context.indent_string.len()..];
-            if !after_indent.starts_with(' ') && !after_indent.starts_with('\t') {
-                return Ok((rest, &rest[..0]));
-            }
+        let after_indent = &first_line[context.indent_string.len()..];
+        if !after_indent.starts_with(' ') && !after_indent.starts_with('\t') {
+            return Ok((rest, &rest[..0]));
         }
     }
 
