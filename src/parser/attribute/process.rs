@@ -369,16 +369,16 @@ mod tests {
     #[test]
     fn it_should_process_attribute_with_multiline_value() {
         let input = r#"class="{
-        'is-active': isActive,
-        'is-disabled': isDisabled,
+       'is-active': isActive,
+         'is-disabled': isDisabled,
     }"
-    :key="item.id""#;
+     :key="item.id""#;
 
         let (rest, attribute) = process_attribute(
             input,
             &mut HsmlProcessContext {
-                indent_level: 1,
-                indent_string: Some(String::from("    ")),
+                nested_tag_level: 1,
+                indent_string: String::from("    "),
             },
         )
         .unwrap();
@@ -386,14 +386,14 @@ mod tests {
         assert_eq!(
             attribute,
             r#"class="{
-        'is-active': isActive,
-        'is-disabled': isDisabled,
+       'is-active': isActive,
+         'is-disabled': isDisabled,
     }""#
         );
         assert_eq!(
             rest,
             r#"
-    :key="item.id""#
+     :key="item.id""#
         );
     }
 
