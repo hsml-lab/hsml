@@ -3,6 +3,7 @@
 [![NPM package](https://img.shields.io/npm/v/hsml.svg)](https://www.npmjs.com/package/hsml)
 [![Downloads](https://img.shields.io/npm/dt/hsml.svg)](https://www.npmjs.com/package/hsml)
 [![Build Status](https://github.com/hsml-lab/hsml/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/hsml-lab/hsml/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/hsml-lab/hsml/branch/main/graph/badge.svg)](https://codecov.io/gh/hsml-lab/hsml)
 [![License: MIT](https://img.shields.io/github/license/hsml-lab/hsml.svg)](https://github.com/hsml-lab/hsml/blob/main/LICENSE)
 [![Donate: PayPal](https://img.shields.io/badge/Donate-PayPal-blue.svg)](https://www.paypal.com/donate?hosted_button_id=L7GY729FBKTZY)
 
