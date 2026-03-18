@@ -28,8 +28,11 @@ exclude = [
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-clap = { version = "4.6.0", features = ["cargo"] }
 nom = "8.0.0"
+wasm-bindgen = "0.2.114"
+
+# CLI and LSP dependencies are excluded from wasm builds, which only need the parser and compiler
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+clap = { version = "4.6.0", features = ["cargo"] }
 tokio = { version = "1.50.0", features = ["rt-multi-thread", "io-std"] }
 tower-lsp = "0.20.0"
-wasm-bindgen = "0.2.114"
