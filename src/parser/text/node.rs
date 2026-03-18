@@ -15,7 +15,7 @@ pub fn text_block_node<'a>(
 ) -> IResult<&'a str, TextNode> {
     let (input, text) = process_text_block(input, context)?;
 
-    // On every line, replace all leading spaces and tabs with an empty string
+    // Strip the first non-empty line's indentation prefix from each line
     let block_indent = text
         .lines()
         .find(|line| !line.trim().is_empty())
@@ -129,6 +129,49 @@ and the build size is tiny.""#
             text_block,
             TextNode {
                 text: String::from("héllo wörld 🌍\npiù línés café"),
+            }
+        );
+
+        assert_eq!(input, "\nspan next");
+    }
+
+    #[test]
+    fn it_should_return_empty_text_block_when_first_line_not_indented_enough() {
+        let context = &mut HsmlProcessContext {
+            nested_tag_level: 1,
+            indent_string: String::from("  "),
+        };
+
+        // First line "span.foo" doesn't have indent_string + extra space/tab,
+        // so the text block should be empty.
+        let (input, text_block) = text_block_node(".\n  span.foo\n  span.bar", context).unwrap();
+
+        assert_eq!(
+            text_block,
+            TextNode {
+                text: String::from(""),
+            }
+        );
+
+        assert_eq!(input, "  span.foo\n  span.bar");
+    }
+
+    #[test]
+    fn it_should_strip_indent_from_first_nonempty_line() {
+        let context = &mut HsmlProcessContext {
+            nested_tag_level: 1,
+            indent_string: String::from("  "),
+        };
+
+        // The indentation prefix of the first non-empty line ("    " = 4 spaces)
+        // should be stripped from all lines.
+        let (input, text_block) =
+            text_block_node(".\n    line one\n    line two\nspan next", context).unwrap();
+
+        assert_eq!(
+            text_block,
+            TextNode {
+                text: String::from("line one\nline two"),
             }
         );
 
