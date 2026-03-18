@@ -30,5 +30,5 @@ pub fn cli() -> Command {
         )
         .subcommand(Command::new("fmt").about("Format given .hsml file or directory"))
         .subcommand(Command::new("check").about("Check given .hsml file or directory"))
-        .subcommand(Command::new("lsp").about("Running Language Server Protocol"))
+        .subcommand(Command::new("lsp").about("Run Language Server Protocol"))
 }
