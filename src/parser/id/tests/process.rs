@@ -32,6 +32,46 @@ fn it_should_process_id_with_start_attribute() {
     assert_eq!(rest, "(hidden) Text");
 }
 
+#[test]
+fn it_should_process_id_with_hyphen() {
+    let input = "#my-id Text";
+
+    let (rest, id) = process_id(input).unwrap();
+
+    assert_eq!(id, "my-id");
+    assert_eq!(rest, " Text");
+}
+
+#[test]
+fn it_should_process_id_with_underscore() {
+    let input = "#my_id.text-red";
+
+    let (rest, id) = process_id(input).unwrap();
+
+    assert_eq!(id, "my_id");
+    assert_eq!(rest, ".text-red");
+}
+
+#[test]
+fn it_should_process_id_with_mixed_separators() {
+    let input = "#my-complex_id-2(hidden)";
+
+    let (rest, id) = process_id(input).unwrap();
+
+    assert_eq!(id, "my-complex_id-2");
+    assert_eq!(rest, "(hidden)");
+}
+
+#[test]
+fn it_should_process_id_with_unicode() {
+    let input = "#caf\u{00e9}.text-red";
+
+    let (rest, id) = process_id(input).unwrap();
+
+    assert_eq!(id, "caf\u{00e9}");
+    assert_eq!(rest, ".text-red");
+}
+
 // Negative tests
 
 #[test]
