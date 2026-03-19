@@ -99,9 +99,8 @@ pub fn tag_node<'a>(input: &'a str, context: &mut HsmlProcessContext) -> IResult
             text_node = Some(node);
             input = rest;
 
-            // TODO @Shinigami92 2023-05-22: Theoretically here could also follow a comment
-
-            // there could be child tag nodes, but this will be handled in the next loop iteration by the line ending check
+            // Inline comments after text are intentionally not supported because
+            // text content can contain sequences like "//" (e.g. URLs: https://example.com).
 
             break;
         }

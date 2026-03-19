@@ -170,3 +170,13 @@ fn test_process_text() {
     assert_eq!(text, "hello world");
     assert_eq!(rest, "\n");
 }
+
+#[test]
+fn it_should_process_text_containing_double_slashes() {
+    let input = " Visit https://example.com for more info\n";
+
+    let (rest, text) = process_text(input).unwrap();
+
+    assert_eq!(text, "Visit https://example.com for more info");
+    assert_eq!(rest, "\n");
+}
