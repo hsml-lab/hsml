@@ -83,6 +83,7 @@ fn compile_hsml_files_in_dir(dir: &PathBuf) -> Result<(), String> {
                 errors.push(e);
             }
         } else if path.is_file()
+            && path.extension().is_some_and(|ext| ext == "hsml")
             && let Err(e) = compile_file(&path, None)
         {
             errors.push(e);
