@@ -7,10 +7,7 @@ use wasm_bindgen::prelude::*;
 pub fn compile_content_core(source: &str) -> Result<String, String> {
     let (_, ast) = parser::parse::parse(source).map_err(|e| format!("HSML parse error: {e}"))?;
 
-    Ok(compiler::compile(
-        &ast,
-        &compiler::HsmlCompileOptions::default(),
-    ))
+    compiler::compile(&ast, &compiler::HsmlCompileOptions::default())
 }
 
 #[wasm_bindgen(js_name = "compileContent")]

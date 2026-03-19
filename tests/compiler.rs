@@ -2,8 +2,8 @@ use hsml::{
     compile_content_core,
     compiler::{HsmlCompileOptions, compile},
     parser::{
-        HsmlNode, RootNode, id::node::IdNode, parse::parse, tag::node::TagNode,
-        text::node::TextNode,
+        HsmlNode, RootNode, class::node::ClassNode, id::node::IdNode, parse::parse,
+        tag::node::TagNode, text::node::TextNode,
     },
 };
 
@@ -11,7 +11,7 @@ use hsml::{
 fn it_should_compile_empty_ast() {
     let ast = RootNode { nodes: vec![] };
 
-    let html_content = compile(&ast, &HsmlCompileOptions::default());
+    let html_content = compile(&ast, &HsmlCompileOptions::default()).unwrap();
 
     assert_eq!(html_content, "");
 }
@@ -31,7 +31,7 @@ fn it_should_compile_simple_tag() {
         })],
     };
 
-    let html_content = compile(&ast, &HsmlCompileOptions::default());
+    let html_content = compile(&ast, &HsmlCompileOptions::default()).unwrap();
 
     assert_eq!(html_content, "<h1>Hello World</h1>");
 }
@@ -53,7 +53,7 @@ fn it_should_compile_content_with_id() {
         })],
     };
 
-    let html_content = compile(&ast, &HsmlCompileOptions::default());
+    let html_content = compile(&ast, &HsmlCompileOptions::default()).unwrap();
 
     assert_eq!(html_content, r#"<h1 id="title">Hello World</h1>"#);
 }
@@ -71,7 +71,7 @@ fn it_should_compile_parsed_content() {
 
     let (rest, ast) = parse(input).unwrap();
 
-    let html_content = compile(&ast, &HsmlCompileOptions::default());
+    let html_content = compile(&ast, &HsmlCompileOptions::default()).unwrap();
 
     assert_eq!(
         html_content,
@@ -107,7 +107,7 @@ figure.md:flex.bg-slate-100.rounded-xl.p-8.md:p-0.dark:bg-slate-800/10
 
     let (rest, ast) = parse(input).unwrap();
 
-    let html_content = compile(&ast, &HsmlCompileOptions::default());
+    let html_content = compile(&ast, &HsmlCompileOptions::default()).unwrap();
 
     assert_eq!(
         html_content,
@@ -156,7 +156,7 @@ fn it_should_compile_parsed_elk_status_content_component() {
 
     let (rest, ast) = parse(input).unwrap();
 
-    let html_content = compile(&ast, &HsmlCompileOptions::default());
+    let html_content = compile(&ast, &HsmlCompileOptions::default()).unwrap();
 
     assert_eq!(
         html_content,
@@ -203,6 +203,68 @@ fn compile_content_should_return_error_for_special_characters() {
 }
 
 #[test]
+fn it_should_error_on_unsupported_root_node_type() {
+    let ast = RootNode {
+        nodes: vec![HsmlNode::Text(TextNode {
+            text: String::from("stray text"),
+        })],
+    };
+
+    let result = compile(&ast, &HsmlCompileOptions::default());
+
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("Unsupported root node type"));
+}
+
+#[test]
+fn it_should_error_on_unsupported_child_node_type() {
+    let ast = RootNode {
+        nodes: vec![HsmlNode::Tag(TagNode {
+            tag: String::from("div"),
+            id: None,
+            classes: None,
+            attributes: None,
+            text: Some(TextNode {
+                text: String::from("hello"),
+            }),
+            children: Some(vec![HsmlNode::Id(IdNode {
+                id: String::from("stray"),
+            })]),
+        })],
+    };
+
+    let result = compile(&ast, &HsmlCompileOptions::default());
+
+    assert!(result.is_err());
+    let err = result.unwrap_err();
+    assert!(err.contains("Unsupported child node type"));
+    assert!(err.contains("<div>"));
+}
+
+#[test]
+fn it_should_error_on_unsupported_attribute_node_type() {
+    let ast = RootNode {
+        nodes: vec![HsmlNode::Tag(TagNode {
+            tag: String::from("span"),
+            id: None,
+            classes: None,
+            attributes: Some(vec![HsmlNode::Class(ClassNode {
+                name: String::from("stray"),
+            })]),
+            text: None,
+            children: None,
+        })],
+    };
+
+    let result = compile(&ast, &HsmlCompileOptions::default());
+
+    assert!(result.is_err());
+    let err = result.unwrap_err();
+    assert!(err.contains("Unsupported node type in attributes"));
+    assert!(err.contains("<span>"));
+}
+
+#[test]
 fn it_should_compile_parsed_elk_main_content_component() {
     let input = r#"div(ref="container" :class="containerClass")
   .sticky.top-0.z10.backdrop-blur.native:lg:w-[calc(100vw-5rem)].native:xl:w-[calc(135%+(100vw-1200px)/2)](
@@ -239,7 +301,7 @@ fn it_should_compile_parsed_elk_main_content_component() {
 
     let (rest, ast) = parse(input).unwrap();
 
-    let html_content = compile(&ast, &HsmlCompileOptions::default());
+    let html_content = compile(&ast, &HsmlCompileOptions::default()).unwrap();
 
     assert_eq!(
         html_content,
