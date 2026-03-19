@@ -11,7 +11,8 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
     let path = matches.get_one::<PathBuf>("path");
     let out = matches.get_one::<PathBuf>("output");
 
-    let fallback_path = env::current_dir().expect("Unable to get current directory");
+    let fallback_path =
+        env::current_dir().map_err(|e| format!("Unable to get current directory: {e}"))?;
     let path = path.unwrap_or(&fallback_path);
 
     if path.is_dir() {
@@ -41,24 +42,23 @@ fn compile_file(file: &PathBuf, out_file: Option<&PathBuf>) -> Result<(), String
 
     println!("Compiling file {}...", file.display());
 
-    // check that file exists and read it
-    let content = fs::read_to_string(file).expect("Unable to read file");
+    // read the file
+    let content = fs::read_to_string(file)
+        .map_err(|e| format!("Unable to read file {}: {e}", file.display()))?;
 
     let fallback_out_file = file.with_extension("html");
     let out_file = out_file.unwrap_or(&fallback_out_file);
 
     // parse the file
-    let hsml_ast = if let Ok((_, hsml_ast)) = parse(&content) {
-        hsml_ast
-    } else {
-        return Err("Unable to parse file".to_string());
-    };
+    let (_, hsml_ast) =
+        parse(&content).map_err(|e| format!("Unable to parse file {}: {e:?}", file.display()))?;
 
     // compile the AST
     let html_content = compile(&hsml_ast, &HsmlCompileOptions::default())
         .map_err(|e| format!("Unable to compile file {}: {e}", file.display()))?;
 
-    fs::write(out_file, html_content).expect("Unable to write file");
+    fs::write(out_file, html_content)
+        .map_err(|e| format!("Unable to write file {}: {e}", out_file.display()))?;
 
     println!(
         "Compiled HTML written to {} successfully",
@@ -69,18 +69,29 @@ fn compile_file(file: &PathBuf, out_file: Option<&PathBuf>) -> Result<(), String
 }
 
 fn compile_hsml_files_in_dir(dir: &PathBuf) -> Result<(), String> {
-    // compile all hsml files in the directory and call this function recursively on all subdirectories
-    // if there is an error, ignore it and continue
-    for entry in fs::read_dir(dir).expect("Unable to read directory") {
-        let entry = entry.expect("Unable to read directory entry");
+    let mut errors: Vec<String> = Vec::new();
+
+    for entry in
+        fs::read_dir(dir).map_err(|e| format!("Unable to read directory {}: {e}", dir.display()))?
+    {
+        let entry = entry
+            .map_err(|e| format!("Unable to read directory entry in {}: {e}", dir.display()))?;
         let path = entry.path();
 
         if path.is_dir() {
-            compile_hsml_files_in_dir(&path).ok();
-        } else if path.is_file() {
-            compile_file(&path, None).ok();
+            if let Err(e) = compile_hsml_files_in_dir(&path) {
+                errors.push(e);
+            }
+        } else if path.is_file()
+            && let Err(e) = compile_file(&path, None)
+        {
+            errors.push(e);
         }
     }
 
-    Ok(())
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        Err(errors.join("\n"))
+    }
 }
