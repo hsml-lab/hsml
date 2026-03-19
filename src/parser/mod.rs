@@ -2,12 +2,13 @@ use nom::{IResult, character::complete::line_ending};
 
 use self::{
     attribute::node::AttributeNode, class::node::ClassNode, comment::node::CommentNode,
-    id::node::IdNode, tag::node::TagNode, text::node::TextNode,
+    doctype::node::DoctypeNode, id::node::IdNode, tag::node::TagNode, text::node::TextNode,
 };
 
 pub mod attribute;
 pub mod class;
 pub mod comment;
+pub mod doctype;
 pub mod id;
 pub mod parse;
 pub mod tag;
@@ -23,6 +24,7 @@ pub enum HsmlNode {
     Root(RootNode),
     Tag(TagNode),
     Comment(CommentNode),
+    Doctype(DoctypeNode),
     Id(IdNode),
     Class(ClassNode),
     Attribute(AttributeNode),
