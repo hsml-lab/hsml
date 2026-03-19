@@ -189,6 +189,15 @@ fn compile_content_should_return_empty_html_for_empty_input() {
 }
 
 #[test]
+fn it_should_compile_text_containing_double_slashes() {
+    let result = compile_content_core("a Visit https://example.com\n");
+    assert_eq!(
+        result,
+        Ok(String::from(r#"<a>Visit https://example.com</a>"#))
+    );
+}
+
+#[test]
 fn compile_content_should_return_error_for_invalid_input() {
     let result = compile_content_core("123invalid");
     assert!(result.is_err());
