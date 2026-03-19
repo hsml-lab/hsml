@@ -1,6 +1,6 @@
 use crate::parser::{
     HsmlNode, RootNode, attribute::node::AttributeNode, comment::node::CommentNode,
-    tag::node::TagNode,
+    doctype::node::DoctypeNode, tag::node::TagNode,
 };
 
 #[derive(Default)]
@@ -108,8 +108,13 @@ fn compile_comment_node(comment_node: &CommentNode, _options: &HsmlCompileOption
     html_content
 }
 
+fn compile_doctype_node(doctype_node: &DoctypeNode) -> String {
+    format!("<!DOCTYPE {}>", doctype_node.doctype)
+}
+
 fn compile_node(node: &HsmlNode, options: &HsmlCompileOptions) -> Result<String, String> {
     match node {
+        HsmlNode::Doctype(doctype_node) => Ok(compile_doctype_node(doctype_node)),
         HsmlNode::Tag(tag_node) => compile_tag_node(tag_node, options),
         HsmlNode::Comment(comment_node) if !comment_node.is_dev => {
             Ok(compile_comment_node(comment_node, options))

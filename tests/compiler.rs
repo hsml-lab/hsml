@@ -2,8 +2,8 @@ use hsml::{
     compile_content_core,
     compiler::{HsmlCompileOptions, compile},
     parser::{
-        HsmlNode, RootNode, class::node::ClassNode, id::node::IdNode, parse::parse,
-        tag::node::TagNode, text::node::TextNode,
+        HsmlNode, RootNode, class::node::ClassNode, doctype::node::DoctypeNode, id::node::IdNode,
+        parse::parse, tag::node::TagNode, text::node::TextNode,
     },
 };
 
@@ -262,6 +262,31 @@ fn it_should_error_on_unsupported_attribute_node_type() {
     let err = result.unwrap_err();
     assert!(err.contains("Unsupported node type in attributes"));
     assert!(err.contains("<span>"));
+}
+
+#[test]
+fn it_should_compile_doctype_node() {
+    let ast = RootNode {
+        nodes: vec![HsmlNode::Doctype(DoctypeNode {
+            doctype: String::from("html"),
+        })],
+    };
+
+    let html_content = compile(&ast, &HsmlCompileOptions::default()).unwrap();
+
+    assert_eq!(html_content, "<!DOCTYPE html>");
+}
+
+#[test]
+fn it_should_compile_doctype_with_tags() {
+    let input = "doctype html\nhtml\n  head\n  body\n";
+
+    let result = compile_content_core(input);
+
+    assert_eq!(
+        result,
+        Ok(String::from("<!DOCTYPE html><html><head/><body/></html>"))
+    );
 }
 
 #[test]

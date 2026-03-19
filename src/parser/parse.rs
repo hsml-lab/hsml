@@ -3,6 +3,7 @@ use nom::{IResult, bytes::complete::take_till};
 use super::{
     HsmlNode, HsmlProcessContext, RootNode,
     comment::node::{comment_dev_node, comment_native_node},
+    doctype::node::doctype_node,
     tag::node::tag_node,
 };
 
@@ -35,6 +36,12 @@ pub fn parse(input: &str) -> IResult<&str, RootNode> {
             }
         }
 
+        if let Ok((rest, node)) = doctype_node(input) {
+            nodes.push(HsmlNode::Doctype(node));
+            input = rest;
+            continue;
+        }
+
         if let Ok((rest, node)) = comment_native_node(input) {
             nodes.push(HsmlNode::Comment(node));
             input = rest;
@@ -57,8 +64,6 @@ pub fn parse(input: &str) -> IResult<&str, RootNode> {
                 return Err(e);
             }
         }
-
-        // TODO @Shinigami92 2023-05-18: Add support for doctype node
     }
 
     Ok((input, RootNode { nodes }))
