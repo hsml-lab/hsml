@@ -62,6 +62,16 @@ fn it_should_process_id_with_mixed_separators() {
     assert_eq!(rest, "(hidden)");
 }
 
+#[test]
+fn it_should_process_id_with_unicode() {
+    let input = "#caf\u{00e9}.text-red";
+
+    let (rest, id) = process_id(input).unwrap();
+
+    assert_eq!(id, "caf\u{00e9}");
+    assert_eq!(rest, ".text-red");
+}
+
 // Negative tests
 
 #[test]
