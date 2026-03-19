@@ -6,7 +6,7 @@ use hsml::{
     parser::parse::parse,
 };
 
-pub fn exec_compile(matches: &ArgMatches) -> Result<(), &str> {
+pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
     println!("Compiling...");
     let path = matches.get_one::<PathBuf>("path");
     let out = matches.get_one::<PathBuf>("output");
@@ -19,25 +19,25 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), &str> {
     } else if path.is_file() {
         compile_file(path, out)
     } else {
-        Err("Path must be a file or directory")
+        Err("Path must be a file or directory".to_string())
     }
 }
 
-fn compile_file(file: &PathBuf, out_file: Option<&PathBuf>) -> Result<(), &'static str> {
+fn compile_file(file: &PathBuf, out_file: Option<&PathBuf>) -> Result<(), String> {
     // check that file exists
     if !file.exists() {
-        return Err("File does not exist");
+        return Err("File does not exist".to_string());
     }
 
     // check that file is a file
     if !file.is_file() {
-        return Err("Given file must be a file");
+        return Err("Given file must be a file".to_string());
     }
 
     // check that file ends with .hsml
     file.extension()
         .filter(|&ext| ext == "hsml")
-        .ok_or("File must have .hsml extension")?;
+        .ok_or("File must have .hsml extension".to_string())?;
 
     println!("Compiling file {}...", file.display());
 
@@ -51,12 +51,12 @@ fn compile_file(file: &PathBuf, out_file: Option<&PathBuf>) -> Result<(), &'stat
     let hsml_ast = if let Ok((_, hsml_ast)) = parse(&content) {
         hsml_ast
     } else {
-        return Err("Unable to parse file");
+        return Err("Unable to parse file".to_string());
     };
 
     // compile the AST
-    let html_content =
-        compile(&hsml_ast, &HsmlCompileOptions::default()).map_err(|_| "Unable to compile file")?;
+    let html_content = compile(&hsml_ast, &HsmlCompileOptions::default())
+        .map_err(|e| format!("Unable to compile file {}: {e}", file.display()))?;
 
     fs::write(out_file, html_content).expect("Unable to write file");
 
@@ -68,7 +68,7 @@ fn compile_file(file: &PathBuf, out_file: Option<&PathBuf>) -> Result<(), &'stat
     Ok(())
 }
 
-fn compile_hsml_files_in_dir(dir: &PathBuf) -> Result<(), &'static str> {
+fn compile_hsml_files_in_dir(dir: &PathBuf) -> Result<(), String> {
     // compile all hsml files in the directory and call this function recursively on all subdirectories
     // if there is an error, ignore it and continue
     for entry in fs::read_dir(dir).expect("Unable to read directory") {
