@@ -6,7 +6,7 @@ use crate::parser::{
 #[derive(Default)]
 pub struct HsmlCompileOptions {}
 
-fn compile_tag_node(tag_node: &TagNode, _options: &HsmlCompileOptions) -> String {
+fn compile_tag_node(tag_node: &TagNode, _options: &HsmlCompileOptions) -> Result<String, String> {
     let mut html_content = String::new();
 
     html_content.push('<');
@@ -33,28 +33,35 @@ fn compile_tag_node(tag_node: &TagNode, _options: &HsmlCompileOptions) -> String
     }
 
     if let Some(attributes) = &tag_node.attributes {
-        attributes.iter().for_each(|node| match node {
-            HsmlNode::Attribute(AttributeNode { key, value }) => {
-                html_content.push(' ');
-                html_content.push_str(key);
+        for node in attributes {
+            match node {
+                HsmlNode::Attribute(AttributeNode { key, value }) => {
+                    html_content.push(' ');
+                    html_content.push_str(key);
 
-                if let Some(value) = value {
-                    html_content.push_str(r#"=""#);
-                    html_content.push_str(value);
-                    html_content.push('\"');
+                    if let Some(value) = value {
+                        html_content.push_str(r#"=""#);
+                        html_content.push_str(value);
+                        html_content.push('\"');
+                    }
+                }
+                HsmlNode::Comment(node) if node.is_dev => {
+                    // do nothing
+                }
+                other => {
+                    return Err(format!(
+                        "Unsupported node type in attributes of <{}>: {other:?}",
+                        tag_node.tag
+                    ));
                 }
             }
-            HsmlNode::Comment(node) if node.is_dev => {
-                // do nothing
-            }
-            _ => panic!("Unsupported node type"),
-        });
+        }
     }
 
     let should_auto_close = tag_node.children.is_none() && tag_node.text.is_none();
     if should_auto_close {
         html_content.push_str("/>");
-        return html_content;
+        return Ok(html_content);
     } else {
         html_content.push('>');
     }
@@ -67,14 +74,19 @@ fn compile_tag_node(tag_node: &TagNode, _options: &HsmlCompileOptions) -> String
         for child_node in child_nodes {
             match child_node {
                 HsmlNode::Tag(tag_node) => {
-                    html_content.push_str(&compile_tag_node(tag_node, _options))
+                    html_content.push_str(&compile_tag_node(tag_node, _options)?)
                 }
                 HsmlNode::Comment(comment_node) => {
                     if !comment_node.is_dev {
                         html_content.push_str(&compile_comment_node(comment_node, _options))
                     }
                 }
-                _ => panic!("Unsupported node type"),
+                other => {
+                    return Err(format!(
+                        "Unsupported child node type in <{}>: {other:?}",
+                        tag_node.tag
+                    ));
+                }
             }
         }
     }
@@ -83,7 +95,7 @@ fn compile_tag_node(tag_node: &TagNode, _options: &HsmlCompileOptions) -> String
     html_content.push_str(&tag_node.tag);
     html_content.push('>');
 
-    html_content
+    Ok(html_content)
 }
 
 fn compile_comment_node(comment_node: &CommentNode, _options: &HsmlCompileOptions) -> String {
@@ -96,23 +108,23 @@ fn compile_comment_node(comment_node: &CommentNode, _options: &HsmlCompileOption
     html_content
 }
 
-fn compile_node(node: &HsmlNode, options: &HsmlCompileOptions) -> String {
+fn compile_node(node: &HsmlNode, options: &HsmlCompileOptions) -> Result<String, String> {
     match node {
         HsmlNode::Tag(tag_node) => compile_tag_node(tag_node, options),
         HsmlNode::Comment(comment_node) if !comment_node.is_dev => {
-            compile_comment_node(comment_node, options)
+            Ok(compile_comment_node(comment_node, options))
         }
-        HsmlNode::Comment(_) => String::from(""),
-        _ => panic!("Unsupported node type"),
+        HsmlNode::Comment(_) => Ok(String::from("")),
+        other => Err(format!("Unsupported root node type: {other:?}")),
     }
 }
 
-pub fn compile(hsml_ast: &RootNode, options: &HsmlCompileOptions) -> String {
+pub fn compile(hsml_ast: &RootNode, options: &HsmlCompileOptions) -> Result<String, String> {
     let mut html_content = String::new();
 
     for node in &hsml_ast.nodes {
-        html_content.push_str(&compile_node(node, options));
+        html_content.push_str(&compile_node(node, options)?);
     }
 
-    html_content
+    Ok(html_content)
 }

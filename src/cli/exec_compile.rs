@@ -55,7 +55,8 @@ fn compile_file(file: &PathBuf, out_file: Option<&PathBuf>) -> Result<(), &'stat
     };
 
     // compile the AST
-    let html_content = compile(&hsml_ast, &HsmlCompileOptions::default());
+    let html_content =
+        compile(&hsml_ast, &HsmlCompileOptions::default()).map_err(|_| "Unable to compile file")?;
 
     fs::write(out_file, html_content).expect("Unable to write file");
 
