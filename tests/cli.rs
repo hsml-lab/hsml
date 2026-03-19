@@ -163,20 +163,17 @@ fn compile_directory_reports_errors_from_invalid_files() {
 }
 
 #[test]
-fn compile_directory_reports_non_hsml_extension_errors() {
+fn compile_directory_skips_non_hsml_files() {
     let dir = TempDir::new().unwrap();
 
     fs::write(dir.path().join("a.hsml"), "h1 A\n").unwrap();
     fs::write(dir.path().join("readme.txt"), "not hsml").unwrap();
 
-    // non-hsml files produce extension errors that get aggregated
     cmd()
         .args(["compile", dir.path().to_str().unwrap()])
         .assert()
-        .failure()
-        .stderr(predicates::str::contains("File must have .hsml extension"));
+        .success();
 
-    // but the valid hsml file should still have been compiled
     assert!(dir.path().join("a.html").exists());
     assert!(!dir.path().join("readme.html").exists());
 }
