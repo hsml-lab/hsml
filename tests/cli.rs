@@ -53,8 +53,12 @@ fn compile_single_file_with_custom_output() {
 
 #[test]
 fn compile_nonexistent_path_fails() {
+    let dir = TempDir::new().unwrap();
+    let missing = dir.path().join("definitely_missing.hsml");
+
     cmd()
-        .args(["compile", "/tmp/nonexistent_hsml_file.hsml"])
+        .arg("compile")
+        .arg(&missing)
         .assert()
         .failure()
         .stderr(predicates::str::contains(
@@ -159,7 +163,7 @@ fn compile_directory_reports_errors_from_invalid_files() {
 }
 
 #[test]
-fn compile_directory_skips_non_hsml_files() {
+fn compile_directory_reports_non_hsml_extension_errors() {
     let dir = TempDir::new().unwrap();
 
     fs::write(dir.path().join("a.hsml"), "h1 A\n").unwrap();
