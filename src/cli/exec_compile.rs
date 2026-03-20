@@ -50,8 +50,17 @@ fn compile_file(file: &PathBuf, out_file: Option<&PathBuf>) -> Result<(), String
     let out_file = out_file.unwrap_or(&fallback_out_file);
 
     // parse the file
-    let (_, hsml_ast) = parse(Span::new(&content))
+    let (rest, hsml_ast) = parse(Span::new(&content))
         .map_err(|e| format!("Unable to parse file {}: {e:?}", file.display()))?;
+
+    if !rest.fragment().is_empty() {
+        return Err(format!(
+            "Unable to parse file {}: unconsumed input at line {}, column {}",
+            file.display(),
+            rest.location_line(),
+            rest.get_column()
+        ));
+    }
 
     // compile the AST
     let html_content = compile(&hsml_ast, &HsmlCompileOptions::default())
