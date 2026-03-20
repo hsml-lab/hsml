@@ -4,14 +4,14 @@ use nom::{
     error::{Error, ErrorKind},
 };
 
-use crate::parser::HsmlProcessContext;
+use crate::parser::{HsmlProcessContext, Span, advance, take_prefix};
 
 fn is_valid_attribute_key_start(c: char) -> bool {
     c.is_alphabetic() || c == ':' || c == '#' || c == '@' || c == '[' || c == '('
 }
 
-pub(super) fn process_attribute_key(input: &str) -> IResult<&str, &str> {
-    let first_char = input.chars().next().expect("input is empty");
+pub(super) fn process_attribute_key(input: Span<'_>) -> IResult<Span<'_>, Span<'_>> {
+    let first_char = input.fragment().chars().next().expect("input is empty");
 
     if first_char.is_numeric() {
         return Err(nom::Err::Error(Error::new(input, ErrorKind::AlphaNumeric)));
@@ -28,7 +28,7 @@ pub(super) fn process_attribute_key(input: &str) -> IResult<&str, &str> {
     loop {
         // get first char and check if it is a `(`
         // if so, find the closing brace, because otherwise the closing brace is the end of the attributes
-        let first_char = remaining.get(..1);
+        let first_char = remaining.fragment().get(..1);
 
         match first_char {
             Some(")") => {
@@ -47,7 +47,7 @@ pub(super) fn process_attribute_key(input: &str) -> IResult<&str, &str> {
                 // we hit a whitespace, so we are done
                 break;
             }
-            Some("\r") if remaining.get(1..2) == Some("\n") => {
+            Some("\r") if remaining.fragment().get(1..2) == Some("\n") => {
                 // we hit a newline, so we are done
                 break;
             }
@@ -63,7 +63,7 @@ pub(super) fn process_attribute_key(input: &str) -> IResult<&str, &str> {
                 let mut closing_bracket_index = 0;
                 let mut is_escaped = false;
 
-                for (index, c) in remaining.chars().enumerate() {
+                for (index, c) in remaining.fragment().chars().enumerate() {
                     if index == 0 {
                         // skip first char, because it is the opening bracket
                         continue;
@@ -87,7 +87,7 @@ pub(super) fn process_attribute_key(input: &str) -> IResult<&str, &str> {
                 }
 
                 attribute_key_index += closing_bracket_index;
-                remaining = input.get(attribute_key_index..).unwrap();
+                remaining = advance(input, attribute_key_index);
 
                 continue;
             }
@@ -98,7 +98,7 @@ pub(super) fn process_attribute_key(input: &str) -> IResult<&str, &str> {
                 let mut closing_brace_index = 0;
                 let mut is_escaped = false;
 
-                for (index, c) in remaining.chars().enumerate() {
+                for (index, c) in remaining.fragment().chars().enumerate() {
                     if index == 0 {
                         // skip first char, because it is the opening brace
                         continue;
@@ -122,13 +122,13 @@ pub(super) fn process_attribute_key(input: &str) -> IResult<&str, &str> {
                 }
 
                 attribute_key_index += closing_brace_index;
-                remaining = input.get(attribute_key_index + 1..).unwrap();
+                remaining = advance(input, attribute_key_index + 1);
 
                 continue;
             }
             Some(_) => {
                 attribute_key_index += 1;
-                remaining = remaining.get(1..).unwrap();
+                remaining = advance(remaining, 1);
                 continue;
             }
             None => {
@@ -137,17 +137,17 @@ pub(super) fn process_attribute_key(input: &str) -> IResult<&str, &str> {
         }
     }
 
-    let attribute_key = input.get(..attribute_key_index).unwrap();
+    let attribute_key = take_prefix(input, attribute_key_index);
 
     Ok((remaining, attribute_key))
 }
 
 pub(super) fn process_attribute_value<'a>(
-    input: &'a str,
+    input: Span<'a>,
     _context: &mut HsmlProcessContext,
-) -> IResult<&'a str, &'a str> {
+) -> IResult<Span<'a>, Span<'a>> {
     // get first char
-    let first_char = input.chars().next().unwrap();
+    let first_char = input.fragment().chars().next().unwrap();
 
     // if first char is a quote, then we need to find the closing quote and return the value in between (together with the surrounding quotes)
     if first_char == '"' || first_char == '\'' {
@@ -156,7 +156,7 @@ pub(super) fn process_attribute_value<'a>(
         let mut closing_quote_index = 0;
         let mut is_escaped = false;
 
-        for (index, c) in input.chars().enumerate() {
+        for (index, c) in input.fragment().chars().enumerate() {
             if index == 0 {
                 // skip first char, because it is the opening quote
                 continue;
@@ -179,14 +179,12 @@ pub(super) fn process_attribute_value<'a>(
             return Err(nom::Err::Error(Error::new(input, ErrorKind::Tag)));
         }
 
-        let attribute_value = input.get(1..closing_quote_index).unwrap();
+        // value between quotes (excluding the quotes themselves)
+        let attribute_value = take_prefix(advance(input, 1), closing_quote_index - 1);
 
-        // dbg!(attribute_value);
+        let remaining = advance(input, closing_quote_index + 1);
 
-        return Ok((
-            input.get(closing_quote_index + 1..).unwrap_or(""),
-            attribute_value,
-        ));
+        return Ok((remaining, attribute_value));
     }
 
     // otherwise it was not a valid attribute value
@@ -206,19 +204,18 @@ pub(super) fn process_attribute_value<'a>(
 // If the attribute is a boolean attribute, then return the attribute and the remaining input
 
 pub(super) fn process_attribute<'a>(
-    input: &'a str,
+    input: Span<'a>,
     context: &mut HsmlProcessContext,
-) -> IResult<&'a str, &'a str> {
+) -> IResult<Span<'a>, Span<'a>> {
     let (remaining, attribute_key) = process_attribute_key(input)?;
 
     // check if remaining starts with an equal sign
-    if let Ok((remaining_after_equal_sign, _)) = tag::<&str, &str, Error<&str>>("=")(remaining) {
+    if let Ok((remaining_after_equal_sign, _)) = tag::<&str, Span, Error<Span>>("=")(remaining) {
         let (remaining_after_attribute_value, _attribute_value) =
             process_attribute_value(remaining_after_equal_sign, context)?;
 
-        let attribute = input
-            .get(..input.len() - remaining_after_attribute_value.len())
-            .unwrap();
+        let consumed = input.fragment().len() - remaining_after_attribute_value.fragment().len();
+        let attribute = take_prefix(input, consumed);
 
         return Ok((remaining_after_attribute_value, attribute));
     }

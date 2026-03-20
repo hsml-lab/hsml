@@ -5,7 +5,8 @@ use wasm_bindgen::prelude::*;
 
 /// Core compile logic shared by WASM and native callers.
 pub fn compile_content_core(source: &str) -> Result<String, String> {
-    let (_, ast) = parser::parse::parse(source).map_err(|e| format!("HSML parse error: {e}"))?;
+    let span = parser::Span::new(source);
+    let (_, ast) = parser::parse::parse(span).map_err(|e| format!("HSML parse error: {e}"))?;
 
     compiler::compile(&ast, &compiler::HsmlCompileOptions::default())
 }

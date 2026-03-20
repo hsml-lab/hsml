@@ -1,5 +1,5 @@
 use crate::parser::{
-    HsmlProcessContext,
+    HsmlProcessContext, Span,
     class::node::ClassNode,
     tag::node::{TagNode, tag_node},
     text::node::TextNode,
@@ -12,12 +12,14 @@ fn it_should_return_tag_node_with_piped_text() {
         indent_string: String::from("      "),
     };
 
-    let (input, tag) = tag_node(
-        r#"p.text-lg.font-medium.
+    let (rest, tag) = tag_node(
+        Span::new(
+            r#"p.text-lg.font-medium.
         "Tailwind CSS is the only framework that I've seen scale
         on large teams. It's easy to customize, adapts to any design,
         and the build size is tiny."
     figcaption.font-medium"#,
+        ),
         context,
     )
     .unwrap();
@@ -47,7 +49,7 @@ and the build size is tiny.""#
         }
     );
 
-    assert_eq!(input, "\n    figcaption.font-medium");
+    assert_eq!(*rest.fragment(), "\n    figcaption.font-medium");
 }
 
 #[test]
@@ -58,7 +60,7 @@ fn it_should_error_on_mixed_tabs_and_spaces_indentation() {
     };
 
     // Child indented with mixed tabs and spaces
-    let input = "div\n \tchild";
+    let input = Span::new("div\n \tchild");
 
     let result = tag_node(input, context);
 
@@ -73,7 +75,7 @@ fn it_should_break_when_indentation_does_not_start_with_parent_indent() {
     };
 
     // Parent uses 4-space indent, but child uses 2-space indent
-    let input = "div\n  span";
+    let input = Span::new("div\n  span");
 
     let (rest, tag) = tag_node(input, context).unwrap();
 
@@ -89,5 +91,5 @@ fn it_should_break_when_indentation_does_not_start_with_parent_indent() {
         }
     );
 
-    assert_eq!(rest, "\n  span");
+    assert_eq!(*rest.fragment(), "\n  span");
 }

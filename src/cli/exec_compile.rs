@@ -3,7 +3,7 @@ use std::{env, fs, path::PathBuf};
 use clap::ArgMatches;
 use hsml::{
     compiler::{HsmlCompileOptions, compile},
-    parser::parse::parse,
+    parser::{Span, parse::parse},
 };
 
 pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
@@ -50,8 +50,8 @@ fn compile_file(file: &PathBuf, out_file: Option<&PathBuf>) -> Result<(), String
     let out_file = out_file.unwrap_or(&fallback_out_file);
 
     // parse the file
-    let (_, hsml_ast) =
-        parse(&content).map_err(|e| format!("Unable to parse file {}: {e:?}", file.display()))?;
+    let (_, hsml_ast) = parse(Span::new(&content))
+        .map_err(|e| format!("Unable to parse file {}: {e:?}", file.display()))?;
 
     // compile the AST
     let html_content = compile(&hsml_ast, &HsmlCompileOptions::default())

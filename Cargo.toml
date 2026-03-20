@@ -29,6 +29,7 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 nom = "8.0.0"
+nom_locate = "5.0.0"
 wasm-bindgen = "0.2.114"
 
 # CLI and LSP dependencies are excluded from wasm builds, which only need the parser and compiler

@@ -1,5 +1,5 @@
 use crate::parser::{
-    HsmlNode, HsmlProcessContext,
+    HsmlNode, HsmlProcessContext, Span,
     attribute::node::{AttributeNode, attribute_node, attribute_nodes},
     comment::node::CommentNode,
 };
@@ -8,7 +8,7 @@ use crate::parser::{
 fn it_should_return_attribute_node() {
     let mut context = HsmlProcessContext::default();
 
-    let (input, attribute) = attribute_node(r#"key="value""#, &mut context).unwrap();
+    let (rest, attribute) = attribute_node(Span::new(r#"key="value""#), &mut context).unwrap();
 
     assert_eq!(
         attribute,
@@ -18,19 +18,21 @@ fn it_should_return_attribute_node() {
         }
     );
 
-    assert_eq!(input, "");
+    assert_eq!(*rest.fragment(), "");
 }
 
 #[test]
 fn it_should_return_attribute_node_with_multiline() {
     let mut context = HsmlProcessContext::default();
 
-    let (input, attribute) = attribute_node(
-        r#"class="{
+    let (rest, attribute) = attribute_node(
+        Span::new(
+            r#"class="{
         'is-active': isActive,
         'is-disabled': isDisabled,
     }"
     :key="item.id""#,
+        ),
         &mut context,
     )
     .unwrap();
@@ -49,7 +51,7 @@ fn it_should_return_attribute_node_with_multiline() {
     );
 
     assert_eq!(
-        input,
+        *rest.fragment(),
         r#"
     :key="item.id""#
     );
@@ -59,8 +61,8 @@ fn it_should_return_attribute_node_with_multiline() {
 fn it_should_return_attribute_nodes() {
     let mut context = HsmlProcessContext::default();
 
-    let (input, attribute_nodes) =
-        attribute_nodes(r#"(key="value", :key2="value2")"#, &mut context).unwrap();
+    let (rest, attribute_nodes) =
+        attribute_nodes(Span::new(r#"(key="value", :key2="value2")"#), &mut context).unwrap();
 
     assert_eq!(
         attribute_nodes,
@@ -76,19 +78,21 @@ fn it_should_return_attribute_nodes() {
         ]
     );
 
-    assert_eq!(input, "");
+    assert_eq!(*rest.fragment(), "");
 }
 
 #[test]
 fn it_should_return_attribute_nodes_with_wrapped() {
     let mut context = HsmlProcessContext::default();
 
-    let (input, attribute_nodes) = attribute_nodes(
-        r#"(
+    let (rest, attribute_nodes) = attribute_nodes(
+        Span::new(
+            r#"(
     key="value"
     :key2="value2"
 )
 "#,
+        ),
         &mut context,
     )
     .unwrap();
@@ -107,21 +111,23 @@ fn it_should_return_attribute_nodes_with_wrapped() {
         ]
     );
 
-    assert_eq!(input, "\n");
+    assert_eq!(*rest.fragment(), "\n");
 }
 
 #[test]
 fn it_should_return_attribute_nodes_with_dev_comments() {
     let mut context = HsmlProcessContext::default();
 
-    let (input, attribute_nodes) = attribute_nodes(
-        r#"(
+    let (rest, attribute_nodes) = attribute_nodes(
+        Span::new(
+            r#"(
     // comment 1
     key="value"
     // comment 2
     :key2="value2"
 )
 "#,
+        ),
         &mut context,
     )
     .unwrap();
@@ -148,19 +154,21 @@ fn it_should_return_attribute_nodes_with_dev_comments() {
         ]
     );
 
-    assert_eq!(input, "\n");
+    assert_eq!(*rest.fragment(), "\n");
 }
 
 #[test]
 fn it_should_return_attribute_nodes_with_multiline() {
     let mut context = HsmlProcessContext::default();
 
-    let (input, attributes) = attribute_nodes(
-        r#"(class="{
+    let (rest, attributes) = attribute_nodes(
+        Span::new(
+            r#"(class="{
         'is-active': isActive,
         'is-disabled': isDisabled,
     }"
     :key="item.id")"#,
+        ),
         &mut context,
     )
     .unwrap();
@@ -184,5 +192,5 @@ fn it_should_return_attribute_nodes_with_multiline() {
         ]
     );
 
-    assert_eq!(input, "");
+    assert_eq!(*rest.fragment(), "");
 }

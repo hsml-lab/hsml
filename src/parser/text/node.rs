@@ -1,6 +1,6 @@
 use nom::IResult;
 
-use crate::parser::HsmlProcessContext;
+use crate::parser::{HsmlProcessContext, Span};
 
 use super::process::{process_text, process_text_block};
 
@@ -10,13 +10,15 @@ pub struct TextNode {
 }
 
 pub fn text_block_node<'a>(
-    input: &'a str,
+    input: Span<'a>,
     context: &mut HsmlProcessContext,
-) -> IResult<&'a str, TextNode> {
+) -> IResult<Span<'a>, TextNode> {
     let (input, text) = process_text_block(input, context)?;
 
+    let text_str = *text.fragment();
+
     // Strip the first non-empty line's indentation prefix from each line
-    let block_indent = text
+    let block_indent = text_str
         .lines()
         .find(|line| !line.trim().is_empty())
         .map(|line| {
@@ -25,7 +27,7 @@ pub fn text_block_node<'a>(
                 .collect::<String>()
         })
         .unwrap_or_default();
-    let text = text
+    let text = text_str
         .lines()
         .map(|line| line.strip_prefix(&block_indent).unwrap_or(line))
         .collect::<Vec<_>>()
@@ -34,7 +36,7 @@ pub fn text_block_node<'a>(
     Ok((input, TextNode { text }))
 }
 
-pub fn text_node(input: &str) -> IResult<&str, TextNode> {
+pub fn text_node(input: Span<'_>) -> IResult<Span<'_>, TextNode> {
     let (input, text) = process_text(input)?;
 
     Ok((

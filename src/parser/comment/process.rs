@@ -4,7 +4,9 @@ use nom::{
     error::{Error, ErrorKind},
 };
 
-pub(super) fn process_dev_comment(input: &str) -> IResult<&str, &str> {
+use crate::parser::Span;
+
+pub(super) fn process_dev_comment(input: Span<'_>) -> IResult<Span<'_>, Span<'_>> {
     let (input, _) = tag("//")(input)?;
 
     // check next char is not a `!`
@@ -18,7 +20,7 @@ pub(super) fn process_dev_comment(input: &str) -> IResult<&str, &str> {
     Ok((input, comment))
 }
 
-pub(super) fn process_native_comment(input: &str) -> IResult<&str, &str> {
+pub(super) fn process_native_comment(input: Span<'_>) -> IResult<Span<'_>, Span<'_>> {
     let (input, _) = tag("//!")(input)?;
 
     // read until end of line

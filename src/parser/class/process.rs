@@ -4,7 +4,9 @@ use nom::{
     error::{Error, ErrorKind},
 };
 
-pub(super) fn process_class(input: &str) -> IResult<&str, &str> {
+use crate::parser::{Span, advance, take_prefix};
+
+pub(super) fn process_class(input: Span<'_>) -> IResult<Span<'_>, Span<'_>> {
     let (input, _) = tag(".")(input)?;
 
     let mut remaining = input;
@@ -14,7 +16,7 @@ pub(super) fn process_class(input: &str) -> IResult<&str, &str> {
     loop {
         // get first char and check if it is a `[`
         // if so, it is an arbitrary tailwind value
-        let first_char = remaining.get(..1);
+        let first_char = remaining.fragment().get(..1);
 
         match first_char {
             Some("#") => {
@@ -37,7 +39,7 @@ pub(super) fn process_class(input: &str) -> IResult<&str, &str> {
                 // we hit a tab, so we are done
                 break;
             }
-            Some("\r") if remaining.get(1..2) == Some("\n") => {
+            Some("\r") if remaining.fragment().get(1..2) == Some("\n") => {
                 // we hit a newline, so we are done
                 break;
             }
@@ -54,7 +56,7 @@ pub(super) fn process_class(input: &str) -> IResult<&str, &str> {
                 let mut closing_bracket_index = 0;
                 let mut is_escaped = false;
 
-                for (index, c) in remaining.chars().enumerate() {
+                for (index, c) in remaining.fragment().chars().enumerate() {
                     if index == 0 {
                         // skip first char, because it is the opening bracket
                         continue;
@@ -78,14 +80,14 @@ pub(super) fn process_class(input: &str) -> IResult<&str, &str> {
                 }
 
                 class_index += closing_bracket_index;
-                remaining = input.get(class_index..).unwrap();
+                remaining = advance(input, class_index);
 
                 continue;
             }
             Some(_) => {
                 // we hit a char, so we need to append it to the class
                 class_index += 1;
-                remaining = remaining.get(1..).unwrap();
+                remaining = advance(remaining, 1);
                 continue;
             }
             None => {
@@ -94,7 +96,7 @@ pub(super) fn process_class(input: &str) -> IResult<&str, &str> {
         }
     }
 
-    let class = input.get(..class_index).unwrap();
+    let class = take_prefix(input, class_index);
 
     Ok((remaining, class))
 }

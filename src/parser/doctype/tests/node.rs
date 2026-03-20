@@ -1,8 +1,9 @@
+use crate::parser::Span;
 use crate::parser::doctype::node::{DoctypeNode, doctype_node};
 
 #[test]
 fn it_should_return_doctype_node() {
-    let input = "doctype html\n";
+    let input = Span::new("doctype html\n");
 
     let (rest, node) = doctype_node(input).unwrap();
 
@@ -12,5 +13,5 @@ fn it_should_return_doctype_node() {
             doctype: String::from("html"),
         }
     );
-    assert_eq!(rest, "\n");
+    assert_eq!(*rest.fragment(), "\n");
 }

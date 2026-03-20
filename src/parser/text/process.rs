@@ -4,12 +4,12 @@ use nom::{
     bytes::complete::{tag, take_until1},
 };
 
-use crate::parser::HsmlProcessContext;
+use crate::parser::{HsmlProcessContext, Span, advance, take_prefix};
 
 pub(super) fn process_text_block<'a>(
-    input: &'a str,
+    input: Span<'a>,
     context: &mut HsmlProcessContext,
-) -> IResult<&'a str, &'a str> {
+) -> IResult<Span<'a>, Span<'a>> {
     let (rest, _) = tag(".")(input)?;
 
     // eat one \r\n or \n
@@ -17,32 +17,34 @@ pub(super) fn process_text_block<'a>(
 
     let mut text_block_end = 0;
 
+    let rest_str = *rest.fragment();
+
     // Validate first line as well (the loop below only validates lines after a '\n').
-    if let Some(first_line) = rest.lines().next()
+    if let Some(first_line) = rest_str.lines().next()
         && !first_line.is_empty()
     {
         if !first_line.starts_with(&context.indent_string) {
-            return Ok((rest, &rest[..0]));
+            return Ok((rest, take_prefix(rest, 0)));
         }
 
         let after_indent = &first_line[context.indent_string.len()..];
         if !after_indent.starts_with(' ') && !after_indent.starts_with('\t') {
-            return Ok((rest, &rest[..0]));
+            return Ok((rest, take_prefix(rest, 0)));
         }
     }
 
     // loop over each line until we find a line that does not starts with the current indent string
-    for (index, c) in rest.char_indices() {
+    for (index, c) in rest_str.char_indices() {
         if c == '\n' {
             // if next char is also a \n, then continue
             let line_start = index + 1;
-            let next_char = rest[line_start..].chars().next();
+            let next_char = rest_str[line_start..].chars().next();
             if next_char == Some('\n') {
                 text_block_end = line_start + 1;
                 continue;
             }
 
-            let line = &rest[line_start..];
+            let line = &rest_str[line_start..];
 
             // otherwise check the indentation and if it does not fulfill the indentation, then break
             // TODO @Shinigami92 2025-03-16: right now this does not support mixed indentations on tag level indentation, but only withing the text block
@@ -62,14 +64,13 @@ pub(super) fn process_text_block<'a>(
         }
     }
 
-    let text_block = &rest[..text_block_end];
-
-    let rest = &rest[text_block_end..];
+    let text_block = take_prefix(rest, text_block_end);
+    let rest = advance(rest, text_block_end);
 
     Ok((rest, text_block))
 }
 
-pub(super) fn process_text(input: &str) -> IResult<&str, &str> {
+pub(super) fn process_text(input: Span<'_>) -> IResult<Span<'_>, Span<'_>> {
     let (input, _) = tag(" ")(input)?;
     take_until1("\n")(input)
 }

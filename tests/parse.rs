@@ -1,7 +1,7 @@
-use nom::error::{Error, ErrorKind};
+use nom::error::ErrorKind;
 
 use hsml::parser::{
-    HsmlNode, RootNode, attribute::node::AttributeNode, class::node::ClassNode,
+    HsmlNode, RootNode, Span, attribute::node::AttributeNode, class::node::ClassNode,
     comment::node::CommentNode, parse::parse, tag::node::TagNode, text::node::TextNode,
 };
 
@@ -16,7 +16,7 @@ fn it_should_parse() {
   .card__body {{ fullName }}
 "#;
 
-    let (input, root_node) = parse(input).unwrap();
+    let (rest, root_node) = parse(Span::new(input)).unwrap();
 
     assert_eq!(
         root_node,
@@ -115,7 +115,7 @@ fn it_should_parse() {
         }
     );
 
-    assert_eq!(input, "");
+    assert_eq!(*rest.fragment(), "");
 }
 
 #[test]
@@ -136,7 +136,7 @@ div
     )
 "#;
 
-    let (input, root_node) = parse(input).unwrap();
+    let (rest, root_node) = parse(Span::new(input)).unwrap();
 
     assert_eq!(
         root_node,
@@ -214,7 +214,7 @@ div
         }
     );
 
-    assert_eq!(input, "");
+    assert_eq!(*rest.fragment(), "");
 }
 
 #[test]
@@ -227,7 +227,7 @@ fn it_should_parse_wrapped_attributes() {
 )
 "#;
 
-    let (input, root_node) = parse(input).unwrap();
+    let (rest, root_node) = parse(Span::new(input)).unwrap();
 
     assert_eq!(
         root_node,
@@ -267,7 +267,7 @@ fn it_should_parse_wrapped_attributes() {
         }
     );
 
-    assert_eq!(input, "");
+    assert_eq!(*rest.fragment(), "");
 }
 
 // Negative tests
@@ -276,11 +276,12 @@ fn it_should_parse_wrapped_attributes() {
 fn it_should_not_parse_tag_with_multiple_ids() {
     let input = r#"div#id1#id2"#;
 
-    assert_eq!(
-        Err(nom::Err::Failure(Error {
-            input: "#id2",
-            code: ErrorKind::Tag
-        })),
-        parse(input)
-    );
+    let result = parse(Span::new(input));
+    assert!(result.is_err());
+    if let Err(nom::Err::Failure(err)) = result {
+        assert_eq!(*err.input.fragment(), "#id2");
+        assert_eq!(err.code, ErrorKind::Tag);
+    } else {
+        panic!("Expected Failure error");
+    }
 }

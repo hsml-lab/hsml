@@ -5,7 +5,7 @@ use nom::{
 };
 
 use crate::parser::{
-    HsmlNode, HsmlProcessContext, attribute,
+    HsmlNode, HsmlProcessContext, Span, attribute,
     class::node::{ClassNode, class_node},
     comment::node::{comment_dev_node, comment_native_node},
     id::{self, node::IdNode},
@@ -23,14 +23,18 @@ pub struct TagNode {
     pub children: Option<Vec<HsmlNode>>,
 }
 
-pub fn tag_node<'a>(input: &'a str, context: &mut HsmlProcessContext) -> IResult<&'a str, TagNode> {
+pub fn tag_node<'a>(
+    input: Span<'a>,
+    context: &mut HsmlProcessContext,
+) -> IResult<Span<'a>, TagNode> {
     // tag node starts with a tag name or a dot/hash
     // if it starts with a dot/hash, the tag name is div
 
     let (mut input, tag_name) = if input.starts_with('.') || input.starts_with('#') {
         (input, "div")
     } else {
-        process_tag(input)?
+        let (rest, name) = process_tag(input)?;
+        (rest, *name.fragment())
     };
 
     // if the next char is a dot, we have a id node
@@ -44,8 +48,8 @@ pub fn tag_node<'a>(input: &'a str, context: &mut HsmlProcessContext) -> IResult
     let mut child_nodes: Vec<HsmlNode> = vec![];
 
     loop {
-        let first_char = input.get(..1);
-        let first_two_chars = input.get(..2);
+        let first_char = input.fragment().get(..1);
+        let first_two_chars = input.fragment().get(..2);
 
         if first_char == Some("#") {
             // we hit an id node
@@ -117,11 +121,13 @@ pub fn tag_node<'a>(input: &'a str, context: &mut HsmlProcessContext) -> IResult
 
             let (remaining, indentation) = take_till(|c: char| !c.is_whitespace())(rest)?;
 
-            if !indentation.is_empty() {
+            let indentation_str = *indentation.fragment();
+
+            if !indentation_str.is_empty() {
                 // check that the indentation is consistent and does not include tabs and spaces at the same time
                 // if it does, collect an error for diagnostics
 
-                if indentation.contains('\t') && indentation.contains(' ') {
+                if indentation_str.contains('\t') && indentation_str.contains(' ') {
                     return Err(nom::Err::Failure(Error::new(input, ErrorKind::Tag)));
                 }
 
@@ -130,15 +136,15 @@ pub fn tag_node<'a>(input: &'a str, context: &mut HsmlProcessContext) -> IResult
                 let indent_string = context.indent_string.clone();
 
                 // check that we are at the correct indentation level, otherwise break out of the loop
-                if !indentation.starts_with(&context.indent_string)
-                    || indentation.len() <= context.indent_string.len()
+                if !indentation_str.starts_with(&context.indent_string)
+                    || indentation_str.len() <= context.indent_string.len()
                 {
                     // dbg!("break out of loop");
                     break;
                 }
 
                 context.nested_tag_level += 1;
-                context.indent_string = indentation.to_string();
+                context.indent_string = indentation_str.to_string();
 
                 // we are at the correct indentation level, so we can continue parsing the child tag nodes
 
