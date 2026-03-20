@@ -28,35 +28,35 @@ pub(super) fn process_attribute_key(input: Span<'_>) -> IResult<Span<'_>, Span<'
     loop {
         // get first char and check if it is a `(`
         // if so, find the closing brace, because otherwise the closing brace is the end of the attributes
-        let first_char = remaining.fragment().get(..1);
+        let first_char = remaining.fragment().chars().next();
 
         match first_char {
-            Some(")") => {
+            Some(')') => {
                 // we hit the end of the attributes, so we are done
                 break;
             }
-            Some(",") => {
+            Some(',') => {
                 // we hit a comma, so we are done
                 break;
             }
-            Some("=") => {
+            Some('=') => {
                 // we hit an equal sign, so we are done
                 break;
             }
-            Some(" ") => {
+            Some(' ') => {
                 // we hit a whitespace, so we are done
                 break;
             }
-            Some("\r") if remaining.fragment().get(1..2) == Some("\n") => {
+            Some('\r') if remaining.fragment().as_bytes().get(1) == Some(&b'\n') => {
                 // we hit a newline, so we are done
                 break;
             }
-            Some("\r") => {}
-            Some("\n") => {
+            Some('\r') => {}
+            Some('\n') => {
                 // we hit a newline, so we are done
                 break;
             }
-            Some("[") => {
+            Some('[') => {
                 // find the closing bracket
                 let closing_bracket = ']';
 
@@ -91,7 +91,7 @@ pub(super) fn process_attribute_key(input: Span<'_>) -> IResult<Span<'_>, Span<'
 
                 continue;
             }
-            Some("(") => {
+            Some('(') => {
                 // find the closing brace
                 let closing_brace = ')';
 

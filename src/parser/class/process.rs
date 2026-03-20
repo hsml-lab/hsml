@@ -16,39 +16,39 @@ pub(super) fn process_class(input: Span<'_>) -> IResult<Span<'_>, Span<'_>> {
     loop {
         // get first char and check if it is a `[`
         // if so, it is an arbitrary tailwind value
-        let first_char = remaining.fragment().get(..1);
+        let first_char = remaining.fragment().chars().next();
 
         match first_char {
-            Some("#") => {
+            Some('#') => {
                 // we hit a id, so we are done
                 break;
             }
-            Some(".") => {
+            Some('.') => {
                 // we hit a new class, so we are done
                 break;
             }
-            Some("(") => {
+            Some('(') => {
                 // we hit the start of attributes, so we are done
                 break;
             }
-            Some(" ") => {
+            Some(' ') => {
                 // we hit a whitespace, so we are done
                 break;
             }
-            Some("\t") => {
+            Some('\t') => {
                 // we hit a tab, so we are done
                 break;
             }
-            Some("\r") if remaining.fragment().get(1..2) == Some("\n") => {
+            Some('\r') if remaining.fragment().as_bytes().get(1) == Some(&b'\n') => {
                 // we hit a newline, so we are done
                 break;
             }
-            Some("\r") => {}
-            Some("\n") => {
+            Some('\r') => {}
+            Some('\n') => {
                 // we hit a newline, so we are done
                 break;
             }
-            Some("[") => {
+            Some('[') => {
                 // Parse arbitrary tailwind values (https://tailwindcss.com/docs/adding-custom-styles#using-arbitrary-values)
 
                 let closing_bracket = ']';
