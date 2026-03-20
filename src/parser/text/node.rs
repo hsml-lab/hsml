@@ -1,6 +1,4 @@
-use nom::IResult;
-
-use crate::parser::{HsmlProcessContext, Span};
+use crate::parser::{HsmlProcessContext, HsmlResult, Span};
 
 use super::process::{process_text, process_text_block};
 
@@ -12,7 +10,7 @@ pub struct TextNode {
 pub fn text_block_node<'a>(
     input: Span<'a>,
     context: &mut HsmlProcessContext,
-) -> IResult<Span<'a>, TextNode> {
+) -> HsmlResult<'a, TextNode> {
     let (input, text) = process_text_block(input, context)?;
 
     let text_str = *text.fragment();
@@ -36,7 +34,7 @@ pub fn text_block_node<'a>(
     Ok((input, TextNode { text }))
 }
 
-pub fn text_node(input: Span<'_>) -> IResult<Span<'_>, TextNode> {
+pub fn text_node(input: Span<'_>) -> HsmlResult<'_, TextNode> {
     let (input, text) = process_text(input)?;
 
     Ok((

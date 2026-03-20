@@ -31,8 +31,8 @@ fn it_should_not_process_doctype_without_keyword() {
 
     assert!(result.is_err());
     if let Err(nom::Err::Error(err)) = result {
-        assert_eq!(*err.input.fragment(), "html");
-        assert_eq!(err.code, ErrorKind::Tag);
+        assert_eq!(*err.span.fragment(), "html");
+        assert_eq!(err.kind, ErrorKind::Tag);
     } else {
         panic!("Expected Error");
     }
@@ -44,8 +44,8 @@ fn it_should_not_process_unsupported_doctype() {
 
     assert!(result.is_err());
     if let Err(nom::Err::Error(err)) = result {
-        assert_eq!(*err.input.fragment(), "xml");
-        assert_eq!(err.code, ErrorKind::Tag);
+        assert_eq!(*err.span.fragment(), "xml");
+        assert_eq!(err.kind, ErrorKind::Tag);
     } else {
         panic!("Expected Error");
     }

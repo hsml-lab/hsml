@@ -1,13 +1,13 @@
 use nom::{
-    IResult,
     bytes::complete::{take_till, take_till1},
-    error::{Error, ErrorKind},
+    error::ErrorKind,
 };
 
 use crate::parser::{
-    HsmlNode, HsmlProcessContext, Span, attribute,
+    HsmlNode, HsmlProcessContext, HsmlResult, Span, attribute,
     class::node::{ClassNode, class_node},
     comment::node::{comment_dev_node, comment_native_node},
+    error::HsmlError,
     id::{self, node::IdNode},
     tag::process::process_tag,
     text::{self, node::TextNode},
@@ -23,10 +23,7 @@ pub struct TagNode {
     pub children: Option<Vec<HsmlNode>>,
 }
 
-pub fn tag_node<'a>(
-    input: Span<'a>,
-    context: &mut HsmlProcessContext,
-) -> IResult<Span<'a>, TagNode> {
+pub fn tag_node<'a>(input: Span<'a>, context: &mut HsmlProcessContext) -> HsmlResult<'a, TagNode> {
     // tag node starts with a tag name or a dot/hash
     // if it starts with a dot/hash, the tag name is div
 
@@ -56,9 +53,10 @@ pub fn tag_node<'a>(
 
             // if there was already an id node, throw an error
             if id_node.is_some() {
-                // TODO @Shinigami92 2023-05-25: This error could be more specific
-                // Duplicate attribute "id" is not allowed.
-                return Err(nom::Err::Failure(Error::new(input, ErrorKind::Tag)));
+                return Err(nom::Err::Failure(
+                    HsmlError::new(input, "Duplicate attribute \"id\" is not allowed")
+                        .with_code("E001"),
+                ));
             }
 
             let (rest, node) = id::node::id_node(input)?;
@@ -128,7 +126,10 @@ pub fn tag_node<'a>(
                 // if it does, collect an error for diagnostics
 
                 if indentation_str.contains('\t') && indentation_str.contains(' ') {
-                    return Err(nom::Err::Failure(Error::new(input, ErrorKind::Tag)));
+                    return Err(nom::Err::Failure(HsmlError::from_kind(
+                        input,
+                        ErrorKind::Tag,
+                    )));
                 }
 
                 // persist the indentation level so we can restore it later
@@ -163,7 +164,7 @@ pub fn tag_node<'a>(
                         child_nodes.push(HsmlNode::Tag(node));
                         input = rest;
                     } else {
-                        return Err(nom::Err::Error(Error::new(input, ErrorKind::Tag)));
+                        return Err(nom::Err::Error(HsmlError::from_kind(input, ErrorKind::Tag)));
                     }
                 }
 

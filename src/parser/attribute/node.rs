@@ -1,9 +1,8 @@
-use nom::{
-    IResult,
-    bytes::complete::{tag, take_till},
-};
+use nom::bytes::complete::{tag, take_till};
 
-use crate::parser::{HsmlNode, HsmlProcessContext, Span, comment::node::comment_dev_node};
+use crate::parser::{
+    HsmlNode, HsmlProcessContext, HsmlResult, Span, comment::node::comment_dev_node,
+};
 
 use super::process::process_attribute;
 
@@ -16,7 +15,7 @@ pub struct AttributeNode {
 pub fn attribute_node<'a>(
     input: Span<'a>,
     context: &mut HsmlProcessContext,
-) -> IResult<Span<'a>, AttributeNode> {
+) -> HsmlResult<'a, AttributeNode> {
     let (input, attribute) = process_attribute(input, context)?;
 
     let attribute_str = *attribute.fragment();
@@ -41,7 +40,7 @@ pub fn attribute_node<'a>(
 pub fn attribute_nodes<'a>(
     input: Span<'a>,
     context: &mut HsmlProcessContext,
-) -> IResult<Span<'a>, Vec<HsmlNode>> {
+) -> HsmlResult<'a, Vec<HsmlNode>> {
     let (mut input, _) = tag("(")(input)?;
 
     let mut nodes: Vec<HsmlNode> = vec![];

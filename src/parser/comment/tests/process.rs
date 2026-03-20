@@ -31,8 +31,8 @@ fn it_should_not_process_dev_comment() {
 
     assert!(result.is_err());
     if let Err(nom::Err::Error(err)) = result {
-        assert_eq!(*err.input.fragment(), "! This is not a dev comment\n");
-        assert_eq!(err.code, ErrorKind::Tag);
+        assert_eq!(*err.span.fragment(), "! This is not a dev comment\n");
+        assert_eq!(err.kind, ErrorKind::Tag);
     } else {
         panic!("Expected Error");
     }
@@ -44,8 +44,8 @@ fn it_should_not_process_native_comment() {
 
     assert!(result.is_err());
     if let Err(nom::Err::Error(err)) = result {
-        assert_eq!(*err.input.fragment(), "// This is not a native comment\n");
-        assert_eq!(err.code, ErrorKind::Tag);
+        assert_eq!(*err.span.fragment(), "// This is not a native comment\n");
+        assert_eq!(err.kind, ErrorKind::Tag);
     } else {
         panic!("Expected Error");
     }

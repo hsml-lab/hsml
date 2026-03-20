@@ -279,8 +279,13 @@ fn it_should_not_parse_tag_with_multiple_ids() {
     let result = parse(Span::new(input));
     assert!(result.is_err());
     if let Err(nom::Err::Failure(err)) = result {
-        assert_eq!(*err.input.fragment(), "#id2");
-        assert_eq!(err.code, ErrorKind::Tag);
+        assert_eq!(*err.span.fragment(), "#id2");
+        assert_eq!(err.kind, ErrorKind::Fail);
+        assert_eq!(
+            err.message.as_deref(),
+            Some("Duplicate attribute \"id\" is not allowed")
+        );
+        assert_eq!(err.code, Some("E001"));
     } else {
         panic!("Expected Failure error");
     }

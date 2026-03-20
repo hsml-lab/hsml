@@ -1,6 +1,4 @@
-use nom::IResult;
-
-use crate::parser::Span;
+use crate::parser::{HsmlResult, Span};
 
 use super::process::{process_dev_comment, process_native_comment};
 
@@ -10,7 +8,7 @@ pub struct CommentNode {
     pub is_dev: bool,
 }
 
-pub fn comment_dev_node(input: Span<'_>) -> IResult<Span<'_>, CommentNode> {
+pub fn comment_dev_node(input: Span<'_>) -> HsmlResult<'_, CommentNode> {
     let (input, comment) = process_dev_comment(input)?;
 
     Ok((
@@ -22,7 +20,7 @@ pub fn comment_dev_node(input: Span<'_>) -> IResult<Span<'_>, CommentNode> {
     ))
 }
 
-pub fn comment_native_node(input: Span<'_>) -> IResult<Span<'_>, CommentNode> {
+pub fn comment_native_node(input: Span<'_>) -> HsmlResult<'_, CommentNode> {
     let (input, comment) = process_native_comment(input)?;
 
     Ok((

@@ -1,6 +1,4 @@
-use nom::IResult;
-
-use crate::parser::Span;
+use crate::parser::{HsmlResult, Span};
 
 use super::process::process_doctype;
 
@@ -9,7 +7,7 @@ pub struct DoctypeNode {
     pub doctype: String,
 }
 
-pub fn doctype_node(input: Span<'_>) -> IResult<Span<'_>, DoctypeNode> {
+pub fn doctype_node(input: Span<'_>) -> HsmlResult<'_, DoctypeNode> {
     let (input, doctype) = process_doctype(input)?;
 
     Ok((

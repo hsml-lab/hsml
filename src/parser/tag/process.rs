@@ -1,6 +1,6 @@
-use nom::{IResult, Needed, bytes::complete::take_till1};
+use nom::{Needed, bytes::complete::take_till1};
 
-use crate::parser::Span;
+use crate::parser::{HsmlResult, Span};
 
 fn starts_with_ascii_alphabetic(s: &str) -> bool {
     if let Some(c) = s.chars().next() {
@@ -10,7 +10,7 @@ fn starts_with_ascii_alphabetic(s: &str) -> bool {
     }
 }
 
-pub fn process_tag(input: Span<'_>) -> IResult<Span<'_>, Span<'_>> {
+pub fn process_tag(input: Span<'_>) -> HsmlResult<'_, Span<'_>> {
     let (input, tag_name) = take_till1(|c: char| c != '-' && !c.is_ascii_alphanumeric())(input)?;
 
     if starts_with_ascii_alphabetic(&tag_name) {

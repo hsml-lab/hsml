@@ -1,8 +1,8 @@
-use nom::{IResult, bytes::complete::tag};
+use nom::bytes::complete::tag;
 
-use crate::parser::Span;
+use crate::parser::{HsmlResult, Span};
 
-pub(super) fn process_doctype(input: Span<'_>) -> IResult<Span<'_>, Span<'_>> {
+pub(super) fn process_doctype(input: Span<'_>) -> HsmlResult<'_, Span<'_>> {
     let (input, _) = tag("doctype ")(input)?;
 
     let (input, doctype) = tag("html")(input)?;

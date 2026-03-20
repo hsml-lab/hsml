@@ -1,4 +1,4 @@
-use nom::{IResult, Input, character::complete::line_ending};
+use nom::{Input, character::complete::line_ending};
 use nom_locate::LocatedSpan;
 
 pub type Span<'a> = LocatedSpan<&'a str>;
@@ -12,10 +12,14 @@ pub mod attribute;
 pub mod class;
 pub mod comment;
 pub mod doctype;
+pub mod error;
 pub mod id;
 pub mod parse;
 pub mod tag;
 pub mod text;
+
+/// Convenience alias for parser results using the custom HSML error type.
+pub type HsmlResult<'a, T> = nom::IResult<Span<'a>, T, error::HsmlError<'a>>;
 
 #[derive(Debug, PartialEq)]
 pub struct RootNode {
@@ -46,7 +50,7 @@ pub struct HsmlProcessContext {
     pub indent_string: String,
 }
 
-pub fn process_newline(input: Span<'_>) -> IResult<Span<'_>, Span<'_>> {
+pub fn process_newline(input: Span<'_>) -> HsmlResult<'_, Span<'_>> {
     line_ending(input)
 }
 

@@ -101,8 +101,8 @@ fn it_should_not_process_tag_with_special_character() {
 
     assert!(result.is_err());
     if let Err(nom::Err::Error(err)) = result {
-        assert_eq!(*err.input.fragment(), "$span.input");
-        assert_eq!(err.code, ErrorKind::TakeTill1);
+        assert_eq!(*err.span.fragment(), "$span.input");
+        assert_eq!(err.kind, ErrorKind::TakeTill1);
     } else {
         panic!("Expected Error");
     }
@@ -111,8 +111,8 @@ fn it_should_not_process_tag_with_special_character() {
 
     assert!(result.is_err());
     if let Err(nom::Err::Error(err)) = result {
-        assert_eq!(*err.input.fragment(), "]span.input");
-        assert_eq!(err.code, ErrorKind::TakeTill1);
+        assert_eq!(*err.span.fragment(), "]span.input");
+        assert_eq!(err.kind, ErrorKind::TakeTill1);
     } else {
         panic!("Expected Error");
     }
@@ -121,8 +121,8 @@ fn it_should_not_process_tag_with_special_character() {
 
     assert!(result.is_err());
     if let Err(nom::Err::Error(err)) = result {
-        assert_eq!(*err.input.fragment(), ")span.input");
-        assert_eq!(err.code, ErrorKind::TakeTill1);
+        assert_eq!(*err.span.fragment(), ")span.input");
+        assert_eq!(err.kind, ErrorKind::TakeTill1);
     } else {
         panic!("Expected Error");
     }
@@ -134,8 +134,8 @@ fn it_should_not_process_tag_with_whitespace() {
 
     assert!(result.is_err());
     if let Err(nom::Err::Error(err)) = result {
-        assert_eq!(*err.input.fragment(), " span.input");
-        assert_eq!(err.code, ErrorKind::TakeTill1);
+        assert_eq!(*err.span.fragment(), " span.input");
+        assert_eq!(err.kind, ErrorKind::TakeTill1);
     } else {
         panic!("Expected Error");
     }
@@ -147,8 +147,8 @@ fn it_should_not_process_tag_with_dot() {
 
     assert!(result.is_err());
     if let Err(nom::Err::Error(err)) = result {
-        assert_eq!(*err.input.fragment(), ".span.input");
-        assert_eq!(err.code, ErrorKind::TakeTill1);
+        assert_eq!(*err.span.fragment(), ".span.input");
+        assert_eq!(err.kind, ErrorKind::TakeTill1);
     } else {
         panic!("Expected Error");
     }
@@ -160,8 +160,8 @@ fn it_should_not_process_tag_with_hash() {
 
     assert!(result.is_err());
     if let Err(nom::Err::Error(err)) = result {
-        assert_eq!(*err.input.fragment(), "#span.input");
-        assert_eq!(err.code, ErrorKind::TakeTill1);
+        assert_eq!(*err.span.fragment(), "#span.input");
+        assert_eq!(err.kind, ErrorKind::TakeTill1);
     } else {
         panic!("Expected Error");
     }
@@ -173,8 +173,8 @@ fn it_should_not_process_tag_with_line_ending() {
 
     assert!(result.is_err());
     if let Err(nom::Err::Error(err)) = result {
-        assert_eq!(*err.input.fragment(), "\nspan.input");
-        assert_eq!(err.code, ErrorKind::TakeTill1);
+        assert_eq!(*err.span.fragment(), "\nspan.input");
+        assert_eq!(err.kind, ErrorKind::TakeTill1);
     } else {
         panic!("Expected Error");
     }

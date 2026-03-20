@@ -1,26 +1,31 @@
-use nom::{
-    IResult, Needed,
-    bytes::complete::tag,
-    error::{Error, ErrorKind},
-};
+use nom::{Needed, bytes::complete::tag, error::ErrorKind};
 
-use crate::parser::{HsmlProcessContext, Span, advance, take_prefix};
+use crate::parser::{HsmlProcessContext, HsmlResult, Span, advance, error::HsmlError, take_prefix};
 
 fn is_valid_attribute_key_start(c: char) -> bool {
     c.is_alphabetic() || c == ':' || c == '#' || c == '@' || c == '[' || c == '('
 }
 
-pub(super) fn process_attribute_key(input: Span<'_>) -> IResult<Span<'_>, Span<'_>> {
+pub(super) fn process_attribute_key(input: Span<'_>) -> HsmlResult<'_, Span<'_>> {
     let Some(first_char) = input.fragment().chars().next() else {
-        return Err(nom::Err::Error(Error::new(input, ErrorKind::AlphaNumeric)));
+        return Err(nom::Err::Error(HsmlError::from_kind(
+            input,
+            ErrorKind::AlphaNumeric,
+        )));
     };
 
     if first_char.is_numeric() {
-        return Err(nom::Err::Error(Error::new(input, ErrorKind::AlphaNumeric)));
+        return Err(nom::Err::Error(HsmlError::from_kind(
+            input,
+            ErrorKind::AlphaNumeric,
+        )));
     }
 
     if !is_valid_attribute_key_start(first_char) {
-        return Err(nom::Err::Error(Error::new(input, ErrorKind::AlphaNumeric)));
+        return Err(nom::Err::Error(HsmlError::from_kind(
+            input,
+            ErrorKind::AlphaNumeric,
+        )));
     }
 
     let mut remaining = input;
@@ -88,7 +93,10 @@ pub(super) fn process_attribute_key(input: Span<'_>) -> IResult<Span<'_>, Span<'
                 }
 
                 if closing_bracket_index == 0 {
-                    return Err(nom::Err::Error(Error::new(remaining, ErrorKind::Tag)));
+                    return Err(nom::Err::Error(HsmlError::from_kind(
+                        remaining,
+                        ErrorKind::Tag,
+                    )));
                 }
 
                 attribute_key_index += closing_bracket_index;
@@ -123,7 +131,10 @@ pub(super) fn process_attribute_key(input: Span<'_>) -> IResult<Span<'_>, Span<'
                 }
 
                 if closing_brace_index == 0 {
-                    return Err(nom::Err::Error(Error::new(remaining, ErrorKind::Tag)));
+                    return Err(nom::Err::Error(HsmlError::from_kind(
+                        remaining,
+                        ErrorKind::Tag,
+                    )));
                 }
 
                 attribute_key_index += closing_brace_index + 1;
@@ -150,10 +161,10 @@ pub(super) fn process_attribute_key(input: Span<'_>) -> IResult<Span<'_>, Span<'
 pub(super) fn process_attribute_value<'a>(
     input: Span<'a>,
     _context: &mut HsmlProcessContext,
-) -> IResult<Span<'a>, Span<'a>> {
+) -> HsmlResult<'a, Span<'a>> {
     // get first char
     let Some(first_char) = input.fragment().chars().next() else {
-        return Err(nom::Err::Error(Error::new(input, ErrorKind::Tag)));
+        return Err(nom::Err::Error(HsmlError::from_kind(input, ErrorKind::Tag)));
     };
 
     // if first char is a quote, then we need to find the closing quote and return the value in between (together with the surrounding quotes)
@@ -183,7 +194,7 @@ pub(super) fn process_attribute_value<'a>(
         }
 
         if closing_quote_index == 0 {
-            return Err(nom::Err::Error(Error::new(input, ErrorKind::Tag)));
+            return Err(nom::Err::Error(HsmlError::from_kind(input, ErrorKind::Tag)));
         }
 
         // value between quotes (excluding the quotes themselves)
@@ -195,7 +206,7 @@ pub(super) fn process_attribute_value<'a>(
     }
 
     // otherwise it was not a valid attribute value
-    Err(nom::Err::Error(Error::new(input, ErrorKind::Tag)))
+    Err(nom::Err::Error(HsmlError::from_kind(input, ErrorKind::Tag)))
 }
 
 // An attribute key can only contain a-z, A-Z, 0-9, `-`, `_`, `:`, `#`, `@`, `[`, `]`, `(`, `)`, `{`, `}`
@@ -213,11 +224,11 @@ pub(super) fn process_attribute_value<'a>(
 pub(super) fn process_attribute<'a>(
     input: Span<'a>,
     context: &mut HsmlProcessContext,
-) -> IResult<Span<'a>, Span<'a>> {
+) -> HsmlResult<'a, Span<'a>> {
     let (remaining, attribute_key) = process_attribute_key(input)?;
 
     // check if remaining starts with an equal sign
-    if let Ok((remaining_after_equal_sign, _)) = tag::<&str, Span, Error<Span>>("=")(remaining) {
+    if let Ok((remaining_after_equal_sign, _)) = tag::<&str, Span, HsmlError>("=")(remaining) {
         let (remaining_after_attribute_value, _attribute_value) =
             process_attribute_value(remaining_after_equal_sign, context)?;
 
