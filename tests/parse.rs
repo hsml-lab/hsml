@@ -1,8 +1,13 @@
 use nom::error::ErrorKind;
 
 use hsml::parser::{
-    HsmlNode, RootNode, Span, attribute::node::AttributeNode, class::node::ClassNode,
-    comment::node::CommentNode, error::Severity, parse::parse, tag::node::TagNode,
+    HsmlNode, RootNode, Span,
+    attribute::node::AttributeNode,
+    class::node::ClassNode,
+    comment::node::CommentNode,
+    error::{ErrorCode, Severity},
+    parse::parse,
+    tag::node::TagNode,
     text::node::TextNode,
 };
 
@@ -286,7 +291,8 @@ fn it_should_not_parse_tag_with_multiple_ids() {
             err.message.as_deref(),
             Some("Duplicate attribute 'id' is not allowed")
         );
-        assert_eq!(err.code, Some("E001"));
+        assert_eq!(err.error_code, Some(ErrorCode::DuplicateId));
+        assert_eq!(err.code(), Some("E001"));
         assert_eq!(err.severity, Severity::Error);
         assert_eq!(err.line(), 1);
         assert_eq!(err.column(), 8);

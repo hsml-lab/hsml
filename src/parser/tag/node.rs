@@ -7,7 +7,7 @@ use crate::parser::{
     HsmlNode, HsmlProcessContext, HsmlResult, Span, attribute,
     class::node::{ClassNode, class_node},
     comment::node::{comment_dev_node, comment_native_node},
-    error::{DUPLICATE_ID, HsmlError},
+    error::{ErrorCode, HsmlError},
     id::{self, node::IdNode},
     tag::process::process_tag,
     text::{self, node::TextNode},
@@ -53,7 +53,7 @@ pub fn tag_node<'a>(input: Span<'a>, context: &mut HsmlProcessContext) -> HsmlRe
 
             // if there was already an id node, throw an error
             if id_node.is_some() {
-                return Err(HsmlError::fail_def(input, &DUPLICATE_ID));
+                return Err(HsmlError::fail_code(input, ErrorCode::DuplicateId));
             }
 
             let (rest, node) = id::node::id_node(input)?;
