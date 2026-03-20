@@ -16,6 +16,16 @@ fn it_should_process_attribute_key() {
 }
 
 #[test]
+fn it_should_process_attribute_key_with_parentheses() {
+    let input = Span::new(r#"(click)="handler""#);
+
+    let (rest, attribute_key) = process_attribute_key(input).unwrap();
+
+    assert_eq!(*attribute_key.fragment(), "(click)");
+    assert_eq!(*rest.fragment(), r#"="handler""#);
+}
+
+#[test]
 fn it_should_process_attribute_key_with_lone_cr() {
     let input = Span::new("src\rmore");
 
