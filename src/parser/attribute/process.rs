@@ -28,42 +28,42 @@ pub(super) fn process_attribute_key(input: Span<'_>) -> IResult<Span<'_>, Span<'
     loop {
         // get first char and check if it is a `(`
         // if so, find the closing brace, because otherwise the closing brace is the end of the attributes
-        let first_char = remaining.fragment().get(..1);
+        let first_char = remaining.fragment().chars().next();
 
         match first_char {
-            Some(")") => {
+            Some(')') => {
                 // we hit the end of the attributes, so we are done
                 break;
             }
-            Some(",") => {
+            Some(',') => {
                 // we hit a comma, so we are done
                 break;
             }
-            Some("=") => {
+            Some('=') => {
                 // we hit an equal sign, so we are done
                 break;
             }
-            Some(" ") => {
+            Some(' ') => {
                 // we hit a whitespace, so we are done
                 break;
             }
-            Some("\r") if remaining.fragment().get(1..2) == Some("\n") => {
+            Some('\r') if remaining.fragment().as_bytes().get(1) == Some(&b'\n') => {
                 // we hit a newline, so we are done
                 break;
             }
-            Some("\r") => {}
-            Some("\n") => {
+            Some('\r') => {}
+            Some('\n') => {
                 // we hit a newline, so we are done
                 break;
             }
-            Some("[") => {
+            Some('[') => {
                 // find the closing bracket
                 let closing_bracket = ']';
 
                 let mut closing_bracket_index = 0;
                 let mut is_escaped = false;
 
-                for (index, c) in remaining.fragment().chars().enumerate() {
+                for (index, c) in remaining.fragment().char_indices() {
                     if index == 0 {
                         // skip first char, because it is the opening bracket
                         continue;
@@ -91,14 +91,14 @@ pub(super) fn process_attribute_key(input: Span<'_>) -> IResult<Span<'_>, Span<'
 
                 continue;
             }
-            Some("(") => {
+            Some('(') => {
                 // find the closing brace
                 let closing_brace = ')';
 
                 let mut closing_brace_index = 0;
                 let mut is_escaped = false;
 
-                for (index, c) in remaining.fragment().chars().enumerate() {
+                for (index, c) in remaining.fragment().char_indices() {
                     if index == 0 {
                         // skip first char, because it is the opening brace
                         continue;
@@ -127,8 +127,8 @@ pub(super) fn process_attribute_key(input: Span<'_>) -> IResult<Span<'_>, Span<'
                 continue;
             }
             Some(_) => {
-                attribute_key_index += 1;
-                remaining = advance(remaining, 1);
+                attribute_key_index += remaining.fragment().chars().next().unwrap().len_utf8();
+                remaining = advance(input, attribute_key_index);
                 continue;
             }
             None => {
@@ -156,7 +156,7 @@ pub(super) fn process_attribute_value<'a>(
         let mut closing_quote_index = 0;
         let mut is_escaped = false;
 
-        for (index, c) in input.fragment().chars().enumerate() {
+        for (index, c) in input.fragment().char_indices() {
             if index == 0 {
                 // skip first char, because it is the opening quote
                 continue;

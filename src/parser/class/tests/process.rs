@@ -113,6 +113,36 @@ fn it_should_process_class_with_crlf() {
     assert_eq!(*rest.fragment(), "\r\n");
 }
 
+#[test]
+fn it_should_process_class_with_multibyte_chars() {
+    let input = Span::new(".café#id");
+
+    let (rest, class) = process_class(input).unwrap();
+
+    assert_eq!(*class.fragment(), "café");
+    assert_eq!(*rest.fragment(), "#id");
+}
+
+#[test]
+fn it_should_process_class_with_multibyte_arbitrary_value() {
+    let input = Span::new(".bg-[ä]#id");
+
+    let (rest, class) = process_class(input).unwrap();
+
+    assert_eq!(*class.fragment(), "bg-[ä]");
+    assert_eq!(*rest.fragment(), "#id");
+}
+
+#[test]
+fn it_should_process_class_with_char_after_bracket() {
+    let input = Span::new(".a[x]b#name");
+
+    let (rest, class) = process_class(input).unwrap();
+
+    assert_eq!(*class.fragment(), "a[x]b");
+    assert_eq!(*rest.fragment(), "#name");
+}
+
 // Negative tests
 
 #[test]
