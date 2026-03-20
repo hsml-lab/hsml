@@ -75,10 +75,7 @@ pub(super) fn process_class(input: Span<'_>) -> HsmlResult<'_, Span<'_>> {
                 }
 
                 if closing_bracket_index == 0 {
-                    return Err(nom::Err::Error(HsmlError::from_kind(
-                        remaining,
-                        ErrorKind::Tag,
-                    )));
+                    return Err(HsmlError::err(remaining, ErrorKind::Tag));
                 }
 
                 class_index += closing_bracket_index;

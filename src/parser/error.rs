@@ -58,6 +58,21 @@ impl<'a> HsmlError<'a> {
         self
     }
 
+    /// Return a recoverable nom error (`nom::Err::Error`) with a generic ErrorKind.
+    pub fn err(span: Span<'a>, kind: ErrorKind) -> nom::Err<Self> {
+        nom::Err::Error(Self::from_kind(span, kind))
+    }
+
+    /// Return a non-recoverable nom error (`nom::Err::Failure`) with a generic ErrorKind.
+    pub fn fail(span: Span<'a>, kind: ErrorKind) -> nom::Err<Self> {
+        nom::Err::Failure(Self::from_kind(span, kind))
+    }
+
+    /// Return a non-recoverable nom error (`nom::Err::Failure`) with a descriptive message.
+    pub fn fail_msg(span: Span<'a>, message: impl Into<String>) -> nom::Err<Self> {
+        nom::Err::Failure(Self::new(span, message))
+    }
+
     /// Line number (1-based) from nom_locate.
     pub fn line(&self) -> u32 {
         self.span.location_line()
