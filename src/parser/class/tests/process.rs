@@ -154,6 +154,26 @@ fn it_should_process_class_with_double_backslash_before_bracket() {
 }
 
 #[test]
+fn it_should_process_class_with_only_escaped_backslash_in_brackets() {
+    let input = Span::new(r".bg-[\\].text-white Hello");
+
+    let (rest, class) = process_class(input).unwrap();
+
+    assert_eq!(*class.fragment(), r"bg-[\\]");
+    assert_eq!(*rest.fragment(), ".text-white Hello");
+}
+
+#[test]
+fn it_should_process_class_with_windows_path_in_brackets() {
+    let input = Span::new(r".bg-[url('C:\\images\\bg.png')].text-white Hello");
+
+    let (rest, class) = process_class(input).unwrap();
+
+    assert_eq!(*class.fragment(), r"bg-[url('C:\\images\\bg.png')]");
+    assert_eq!(*rest.fragment(), ".text-white Hello");
+}
+
+#[test]
 fn it_should_process_class_with_multibyte_arbitrary_value() {
     let input = Span::new(".bg-[ä]#id");
 
