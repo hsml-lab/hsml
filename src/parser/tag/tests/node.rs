@@ -109,7 +109,9 @@ fn it_should_error_on_invalid_child() {
 
     let result = tag_node(input, context);
 
-    // The child parser error (Incomplete from process_tag) is propagated directly
+    // Incomplete is propagated from process_tag which currently uses
+    // nom::Err::Incomplete for non-alphabetic tag starts. This should
+    // become a Failure with a descriptive message in a future refactor.
     assert!(matches!(result, Err(nom::Err::Incomplete(_))));
 }
 
