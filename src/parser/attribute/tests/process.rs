@@ -197,6 +197,26 @@ fn it_should_process_attribute_key_with_multibyte_bracket() {
     assert_eq!(*rest.fragment(), "=");
 }
 
+#[test]
+fn it_should_process_attribute_value_with_escaped_quote() {
+    let input = Span::new(r#""hello \"world\"" next"#);
+
+    let (rest, value) = process_attribute_value(input, &mut HsmlProcessContext::default()).unwrap();
+
+    assert_eq!(*value.fragment(), r#"hello \"world\""#);
+    assert_eq!(*rest.fragment(), " next");
+}
+
+#[test]
+fn it_should_process_attribute_value_with_double_backslash_before_quote() {
+    let input = Span::new(r#""hello\\" next"#);
+
+    let (rest, value) = process_attribute_value(input, &mut HsmlProcessContext::default()).unwrap();
+
+    assert_eq!(*value.fragment(), r"hello\\");
+    assert_eq!(*rest.fragment(), " next");
+}
+
 // Negative tests
 
 #[test]

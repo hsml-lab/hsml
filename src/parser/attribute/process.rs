@@ -75,7 +75,7 @@ pub(super) fn process_attribute_key(input: Span<'_>) -> IResult<Span<'_>, Span<'
                     }
 
                     if c == '\\' {
-                        is_escaped = true;
+                        is_escaped = !is_escaped;
                         continue;
                     }
 
@@ -110,7 +110,7 @@ pub(super) fn process_attribute_key(input: Span<'_>) -> IResult<Span<'_>, Span<'
                     }
 
                     if c == '\\' {
-                        is_escaped = true;
+                        is_escaped = !is_escaped;
                         continue;
                     }
 
@@ -170,7 +170,7 @@ pub(super) fn process_attribute_value<'a>(
             }
 
             if c == '\\' {
-                is_escaped = true;
+                is_escaped = !is_escaped;
                 continue;
             }
 

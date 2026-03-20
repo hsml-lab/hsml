@@ -66,7 +66,7 @@ pub(super) fn process_class(input: Span<'_>) -> IResult<Span<'_>, Span<'_>> {
                     }
 
                     if c == '\\' {
-                        is_escaped = true;
+                        is_escaped = !is_escaped;
                         continue;
                     }
 
