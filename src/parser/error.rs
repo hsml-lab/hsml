@@ -2,6 +2,20 @@ use nom::error::{ErrorKind, ParseError};
 
 use super::Span;
 
+/// A registered error definition with a unique code and message template.
+pub struct ErrorDef {
+    pub code: &'static str,
+    pub message: &'static str,
+}
+
+// --- Error registry ---
+// All HSML-specific errors are defined here to prevent code collisions.
+
+pub const DUPLICATE_ID: ErrorDef = ErrorDef {
+    code: "E001",
+    message: "Duplicate attribute 'id' is not allowed",
+};
+
 /// Severity level for parser diagnostics.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Severity {
@@ -71,6 +85,11 @@ impl<'a> HsmlError<'a> {
     /// Return a non-recoverable nom error (`nom::Err::Failure`) with a descriptive message.
     pub fn fail_msg(span: Span<'a>, message: impl Into<String>) -> nom::Err<Self> {
         nom::Err::Failure(Self::new(span, message))
+    }
+
+    /// Return a non-recoverable nom error (`nom::Err::Failure`) from a registered error definition.
+    pub fn fail_def(span: Span<'a>, def: &ErrorDef) -> nom::Err<Self> {
+        nom::Err::Failure(Self::new(span, def.message).with_code(def.code))
     }
 
     /// Line number (1-based) from nom_locate.
