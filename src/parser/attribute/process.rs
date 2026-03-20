@@ -11,7 +11,9 @@ fn is_valid_attribute_key_start(c: char) -> bool {
 }
 
 pub(super) fn process_attribute_key(input: Span<'_>) -> IResult<Span<'_>, Span<'_>> {
-    let first_char = input.fragment().chars().next().expect("input is empty");
+    let Some(first_char) = input.fragment().chars().next() else {
+        return Err(nom::Err::Error(Error::new(input, ErrorKind::AlphaNumeric)));
+    };
 
     if first_char.is_numeric() {
         return Err(nom::Err::Error(Error::new(input, ErrorKind::AlphaNumeric)));
@@ -147,7 +149,9 @@ pub(super) fn process_attribute_value<'a>(
     _context: &mut HsmlProcessContext,
 ) -> IResult<Span<'a>, Span<'a>> {
     // get first char
-    let first_char = input.fragment().chars().next().unwrap();
+    let Some(first_char) = input.fragment().chars().next() else {
+        return Err(nom::Err::Error(Error::new(input, ErrorKind::Tag)));
+    };
 
     // if first char is a quote, then we need to find the closing quote and return the value in between (together with the surrounding quotes)
     if first_char == '"' || first_char == '\'' {

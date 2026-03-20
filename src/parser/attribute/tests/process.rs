@@ -257,6 +257,32 @@ fn it_should_not_process_attribute_without_quoted_value() {
 }
 
 #[test]
+fn it_should_not_process_attribute_key_with_empty_input() {
+    let result = process_attribute_key(Span::new(""));
+
+    assert!(result.is_err());
+    if let Err(nom::Err::Error(err)) = result {
+        assert_eq!(*err.input.fragment(), "");
+        assert_eq!(err.code, ErrorKind::AlphaNumeric);
+    } else {
+        panic!("Expected Error");
+    }
+}
+
+#[test]
+fn it_should_not_process_attribute_value_with_empty_input() {
+    let result = process_attribute_value(Span::new(""), &mut HsmlProcessContext::default());
+
+    assert!(result.is_err());
+    if let Err(nom::Err::Error(err)) = result {
+        assert_eq!(*err.input.fragment(), "");
+        assert_eq!(err.code, ErrorKind::Tag);
+    } else {
+        panic!("Expected Error");
+    }
+}
+
+#[test]
 fn it_should_not_process_attribute_with_line_ending() {
     let result = process_attribute(
         Span::new(
