@@ -126,8 +126,8 @@ pub(super) fn process_attribute_key(input: Span<'_>) -> IResult<Span<'_>, Span<'
                     return Err(nom::Err::Error(Error::new(remaining, ErrorKind::Tag)));
                 }
 
-                attribute_key_index += closing_brace_index;
-                remaining = advance(input, attribute_key_index + 1);
+                attribute_key_index += closing_brace_index + 1;
+                remaining = advance(input, attribute_key_index);
 
                 continue;
             }
