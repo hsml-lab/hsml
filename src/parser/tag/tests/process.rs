@@ -1,4 +1,4 @@
-use nom::{Needed, error::ErrorKind};
+use nom::error::ErrorKind;
 
 use crate::parser::Span;
 use crate::parser::tag::process::process_tag;
@@ -87,12 +87,15 @@ fn it_should_process_tag_kebab_case() {
 
 #[test]
 fn it_should_not_process_tag_with_number() {
-    let input = Span::new("42.input");
+    let result = process_tag(Span::new("42.input"));
 
-    assert_eq!(
-        Err(nom::Err::Incomplete(Needed::Unknown)),
-        process_tag(input)
-    );
+    assert!(result.is_err());
+    if let Err(nom::Err::Error(err)) = result {
+        assert_eq!(*err.span.fragment(), "42.input");
+        assert_eq!(err.kind, ErrorKind::Alpha);
+    } else {
+        panic!("Expected Error");
+    }
 }
 
 #[test]
