@@ -1,138 +1,139 @@
-use nom::error::{Error, ErrorKind};
+use nom::error::ErrorKind;
 
+use crate::parser::Span;
 use crate::parser::class::process::process_class;
 
 #[test]
 fn it_should_process_class_with_text() {
-    let input = ".text-red Text";
+    let input = Span::new(".text-red Text");
 
     let (rest, class) = process_class(input).unwrap();
 
-    assert_eq!(class, "text-red");
-    assert_eq!(rest, " Text");
+    assert_eq!(*class.fragment(), "text-red");
+    assert_eq!(*rest.fragment(), " Text");
 }
 
 #[test]
 fn it_should_process_class_with_colon() {
-    let input = ".focus:outline-none Text";
+    let input = Span::new(".focus:outline-none Text");
 
     let (rest, class) = process_class(input).unwrap();
 
-    assert_eq!(class, "focus:outline-none");
-    assert_eq!(rest, " Text");
+    assert_eq!(*class.fragment(), "focus:outline-none");
+    assert_eq!(*rest.fragment(), " Text");
 }
 
 #[test]
 fn it_should_process_class_with_arbitrary_tailwind_value() {
-    let input = ".bg-[#1da1f2]#name Text";
+    let input = Span::new(".bg-[#1da1f2]#name Text");
 
     let (rest, class) = process_class(input).unwrap();
 
-    assert_eq!(class, "bg-[#1da1f2]");
-    assert_eq!(rest, "#name Text");
+    assert_eq!(*class.fragment(), "bg-[#1da1f2]");
+    assert_eq!(*rest.fragment(), "#name Text");
 }
 
 #[test]
 fn it_should_process_class_with_arbitrary_tailwind_value_2() {
-    let input = ".lg:[&:nth-child(3)]:hover:underline#name Text";
+    let input = Span::new(".lg:[&:nth-child(3)]:hover:underline#name Text");
 
     let (rest, class) = process_class(input).unwrap();
 
-    assert_eq!(class, "lg:[&:nth-child(3)]:hover:underline");
-    assert_eq!(rest, "#name Text");
+    assert_eq!(*class.fragment(), "lg:[&:nth-child(3)]:hover:underline");
+    assert_eq!(*rest.fragment(), "#name Text");
 }
 
 #[test]
 fn it_should_process_class_with_arbitrary_tailwind_value_3() {
-    let input = ".bg-[url('/what_a_rush.png')]#name Text";
+    let input = Span::new(".bg-[url('/what_a_rush.png')]#name Text");
 
     let (rest, class) = process_class(input).unwrap();
 
-    assert_eq!(class, "bg-[url('/what_a_rush.png')]");
-    assert_eq!(rest, "#name Text");
+    assert_eq!(*class.fragment(), "bg-[url('/what_a_rush.png')]");
+    assert_eq!(*rest.fragment(), "#name Text");
 }
 
 #[test]
 fn it_should_process_class_with_id() {
-    let input = ".text-red#name Text";
+    let input = Span::new(".text-red#name Text");
 
     let (rest, class) = process_class(input).unwrap();
 
-    assert_eq!(class, "text-red");
-    assert_eq!(rest, "#name Text");
+    assert_eq!(*class.fragment(), "text-red");
+    assert_eq!(*rest.fragment(), "#name Text");
 }
 
 #[test]
 fn it_should_process_class_with_attribute() {
-    let input = ".text-red(disabled) Text";
+    let input = Span::new(".text-red(disabled) Text");
 
     let (rest, class) = process_class(input).unwrap();
 
-    assert_eq!(class, "text-red");
-    assert_eq!(rest, "(disabled) Text");
+    assert_eq!(*class.fragment(), "text-red");
+    assert_eq!(*rest.fragment(), "(disabled) Text");
 }
 
 #[test]
 fn it_should_process_class_with_whitespace() {
-    let input = ".text-red Text";
+    let input = Span::new(".text-red Text");
 
     let (rest, class) = process_class(input).unwrap();
 
-    assert_eq!(class, "text-red");
-    assert_eq!(rest, " Text");
+    assert_eq!(*class.fragment(), "text-red");
+    assert_eq!(*rest.fragment(), " Text");
 }
 
 #[test]
 fn it_should_process_class_with_tab() {
-    let input = ".text-red\t";
+    let input = Span::new(".text-red\t");
 
     let (rest, class) = process_class(input).unwrap();
 
-    assert_eq!(class, "text-red");
-    assert_eq!(rest, "\t");
+    assert_eq!(*class.fragment(), "text-red");
+    assert_eq!(*rest.fragment(), "\t");
 }
 
 #[test]
 fn it_should_process_class_with_line_ending() {
-    let input = ".text-red\n";
+    let input = Span::new(".text-red\n");
 
     let (rest, class) = process_class(input).unwrap();
 
-    assert_eq!(class, "text-red");
-    assert_eq!(rest, "\n");
+    assert_eq!(*class.fragment(), "text-red");
+    assert_eq!(*rest.fragment(), "\n");
 }
 
 #[test]
 fn it_should_process_class_with_crlf() {
-    let input = ".text-red\r\n";
+    let input = Span::new(".text-red\r\n");
 
     let (rest, class) = process_class(input).unwrap();
 
-    assert_eq!(class, "text-red");
-    assert_eq!(rest, "\r\n");
+    assert_eq!(*class.fragment(), "text-red");
+    assert_eq!(*rest.fragment(), "\r\n");
 }
 
 // Negative tests
 
 #[test]
 fn it_should_not_process_class_without_dot() {
-    let input = "text-red(disabled) Text";
+    let result = process_class(Span::new("text-red(disabled) Text"));
 
-    assert_eq!(
-        Err(nom::Err::Error(Error {
-            input: "text-red(disabled) Text",
-            code: ErrorKind::Tag
-        })),
-        process_class(input)
-    );
+    assert!(result.is_err());
+    if let Err(nom::Err::Error(err)) = result {
+        assert_eq!(*err.input.fragment(), "text-red(disabled) Text");
+        assert_eq!(err.code, ErrorKind::Tag);
+    } else {
+        panic!("Expected Error");
+    }
 
-    let input = "#text-red(disabled) Text";
+    let result = process_class(Span::new("#text-red(disabled) Text"));
 
-    assert_eq!(
-        Err(nom::Err::Error(Error {
-            input: "#text-red(disabled) Text",
-            code: ErrorKind::Tag
-        })),
-        process_class(input)
-    );
+    assert!(result.is_err());
+    if let Err(nom::Err::Error(err)) = result {
+        assert_eq!(*err.input.fragment(), "#text-red(disabled) Text");
+        assert_eq!(err.code, ErrorKind::Tag);
+    } else {
+        panic!("Expected Error");
+    }
 }

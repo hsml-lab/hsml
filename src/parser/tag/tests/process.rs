@@ -1,95 +1,93 @@
-use nom::{
-    Needed,
-    error::{Error, ErrorKind},
-};
+use nom::{Needed, error::ErrorKind};
 
+use crate::parser::Span;
 use crate::parser::tag::process::process_tag;
 
 #[test]
 fn it_should_process_tag_div_with_text() {
-    let input = "div Text";
+    let input = Span::new("div Text");
 
     let (rest, tag) = process_tag(input).unwrap();
 
-    assert_eq!(tag, "div");
-    assert_eq!(rest, " Text");
+    assert_eq!(*tag.fragment(), "div");
+    assert_eq!(*rest.fragment(), " Text");
 }
 
 #[test]
 fn it_should_process_tag_h1_with_text() {
-    let input = "h1 Text";
+    let input = Span::new("h1 Text");
 
     let (rest, tag) = process_tag(input).unwrap();
 
-    assert_eq!(tag, "h1");
-    assert_eq!(rest, " Text");
+    assert_eq!(*tag.fragment(), "h1");
+    assert_eq!(*rest.fragment(), " Text");
 }
 
 #[test]
 fn it_should_process_tag_with_id() {
-    let input = "input#name";
+    let input = Span::new("input#name");
 
     let (rest, tag) = process_tag(input).unwrap();
 
-    assert_eq!(tag, "input");
-    assert_eq!(rest, "#name");
+    assert_eq!(*tag.fragment(), "input");
+    assert_eq!(*rest.fragment(), "#name");
 }
 
 #[test]
 fn it_should_process_tag_with_class() {
-    let input = "p.text-red";
+    let input = Span::new("p.text-red");
 
     let (rest, tag) = process_tag(input).unwrap();
 
-    assert_eq!(tag, "p");
-    assert_eq!(rest, ".text-red");
+    assert_eq!(*tag.fragment(), "p");
+    assert_eq!(*rest.fragment(), ".text-red");
 }
 
 #[test]
 fn it_should_process_tag_with_attribute() {
-    let input = "p()";
+    let input = Span::new("p()");
 
     let (rest, tag) = process_tag(input).unwrap();
 
-    assert_eq!(tag, "p");
-    assert_eq!(rest, "()");
+    assert_eq!(*tag.fragment(), "p");
+    assert_eq!(*rest.fragment(), "()");
 }
 
 #[test]
 fn it_should_process_tag_without_content() {
-    let input = "span\n";
+    let input = Span::new("span\n");
 
     let (rest, tag) = process_tag(input).unwrap();
 
-    assert_eq!(tag, "span");
-    assert_eq!(rest, "\n");
+    assert_eq!(*tag.fragment(), "span");
+    assert_eq!(*rest.fragment(), "\n");
 }
 
 #[test]
 fn it_should_process_tag_pascal_case() {
-    let input = "CInput.input";
+    let input = Span::new("CInput.input");
 
     let (rest, tag) = process_tag(input).unwrap();
 
-    assert_eq!(tag, "CInput");
-    assert_eq!(rest, ".input");
+    assert_eq!(*tag.fragment(), "CInput");
+    assert_eq!(*rest.fragment(), ".input");
 }
 
 #[test]
 fn it_should_process_tag_kebab_case() {
-    let input = "c-input.input";
+    let input = Span::new("c-input.input");
 
     let (rest, tag) = process_tag(input).unwrap();
 
-    assert_eq!(tag, "c-input");
-    assert_eq!(rest, ".input");
+    assert_eq!(*tag.fragment(), "c-input");
+    assert_eq!(*rest.fragment(), ".input");
 }
 
 // Negative tests
 
 #[test]
 fn it_should_not_process_tag_with_number() {
-    let input = "42.input";
+    let input = Span::new("42.input");
 
     assert_eq!(
         Err(nom::Err::Incomplete(Needed::Unknown)),
@@ -99,85 +97,85 @@ fn it_should_not_process_tag_with_number() {
 
 #[test]
 fn it_should_not_process_tag_with_special_character() {
-    let input = "$span.input";
+    let result = process_tag(Span::new("$span.input"));
 
-    assert_eq!(
-        Err(nom::Err::Error(Error {
-            input: "$span.input",
-            code: ErrorKind::TakeTill1
-        })),
-        process_tag(input)
-    );
+    assert!(result.is_err());
+    if let Err(nom::Err::Error(err)) = result {
+        assert_eq!(*err.input.fragment(), "$span.input");
+        assert_eq!(err.code, ErrorKind::TakeTill1);
+    } else {
+        panic!("Expected Error");
+    }
 
-    let input = "]span.input";
+    let result = process_tag(Span::new("]span.input"));
 
-    assert_eq!(
-        Err(nom::Err::Error(Error {
-            input: "]span.input",
-            code: ErrorKind::TakeTill1
-        })),
-        process_tag(input)
-    );
+    assert!(result.is_err());
+    if let Err(nom::Err::Error(err)) = result {
+        assert_eq!(*err.input.fragment(), "]span.input");
+        assert_eq!(err.code, ErrorKind::TakeTill1);
+    } else {
+        panic!("Expected Error");
+    }
 
-    let input = ")span.input";
+    let result = process_tag(Span::new(")span.input"));
 
-    assert_eq!(
-        Err(nom::Err::Error(Error {
-            input: ")span.input",
-            code: ErrorKind::TakeTill1
-        })),
-        process_tag(input)
-    );
+    assert!(result.is_err());
+    if let Err(nom::Err::Error(err)) = result {
+        assert_eq!(*err.input.fragment(), ")span.input");
+        assert_eq!(err.code, ErrorKind::TakeTill1);
+    } else {
+        panic!("Expected Error");
+    }
 }
 
 #[test]
 fn it_should_not_process_tag_with_whitespace() {
-    let input = " span.input";
+    let result = process_tag(Span::new(" span.input"));
 
-    assert_eq!(
-        Err(nom::Err::Error(Error {
-            input: " span.input",
-            code: ErrorKind::TakeTill1
-        })),
-        process_tag(input)
-    );
+    assert!(result.is_err());
+    if let Err(nom::Err::Error(err)) = result {
+        assert_eq!(*err.input.fragment(), " span.input");
+        assert_eq!(err.code, ErrorKind::TakeTill1);
+    } else {
+        panic!("Expected Error");
+    }
 }
 
 #[test]
 fn it_should_not_process_tag_with_dot() {
-    let input = ".span.input";
+    let result = process_tag(Span::new(".span.input"));
 
-    assert_eq!(
-        Err(nom::Err::Error(Error {
-            input: ".span.input",
-            code: ErrorKind::TakeTill1
-        })),
-        process_tag(input)
-    );
+    assert!(result.is_err());
+    if let Err(nom::Err::Error(err)) = result {
+        assert_eq!(*err.input.fragment(), ".span.input");
+        assert_eq!(err.code, ErrorKind::TakeTill1);
+    } else {
+        panic!("Expected Error");
+    }
 }
 
 #[test]
 fn it_should_not_process_tag_with_hash() {
-    let input = "#span.input";
+    let result = process_tag(Span::new("#span.input"));
 
-    assert_eq!(
-        Err(nom::Err::Error(Error {
-            input: "#span.input",
-            code: ErrorKind::TakeTill1
-        })),
-        process_tag(input)
-    );
+    assert!(result.is_err());
+    if let Err(nom::Err::Error(err)) = result {
+        assert_eq!(*err.input.fragment(), "#span.input");
+        assert_eq!(err.code, ErrorKind::TakeTill1);
+    } else {
+        panic!("Expected Error");
+    }
 }
 
 #[test]
 fn it_should_not_process_tag_with_line_ending() {
-    let input = "\nspan.input";
+    let result = process_tag(Span::new("\nspan.input"));
 
-    assert_eq!(
-        Err(nom::Err::Error(Error {
-            input: "\nspan.input",
-            code: ErrorKind::TakeTill1
-        })),
-        process_tag(input)
-    );
+    assert!(result.is_err());
+    if let Err(nom::Err::Error(err)) = result {
+        assert_eq!(*err.input.fragment(), "\nspan.input");
+        assert_eq!(err.code, ErrorKind::TakeTill1);
+    } else {
+        panic!("Expected Error");
+    }
 }

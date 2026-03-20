@@ -3,7 +3,7 @@ use nom::{
     bytes::complete::{tag, take_till},
 };
 
-use crate::parser::{HsmlNode, HsmlProcessContext, comment::node::comment_dev_node};
+use crate::parser::{HsmlNode, HsmlProcessContext, Span, comment::node::comment_dev_node};
 
 use super::process::process_attribute;
 
@@ -14,13 +14,14 @@ pub struct AttributeNode {
 }
 
 pub fn attribute_node<'a>(
-    input: &'a str,
+    input: Span<'a>,
     context: &mut HsmlProcessContext,
-) -> IResult<&'a str, AttributeNode> {
+) -> IResult<Span<'a>, AttributeNode> {
     let (input, attribute) = process_attribute(input, context)?;
 
-    let equal_sign_index = attribute.find('=').unwrap_or(attribute.len());
-    let (key, value) = attribute.split_at(equal_sign_index);
+    let attribute_str = *attribute.fragment();
+    let equal_sign_index = attribute_str.find('=').unwrap_or(attribute_str.len());
+    let (key, value) = attribute_str.split_at(equal_sign_index);
 
     // Remove surrounding quotes and leading `=` from value
     let value = value
@@ -38,9 +39,9 @@ pub fn attribute_node<'a>(
 }
 
 pub fn attribute_nodes<'a>(
-    input: &'a str,
+    input: Span<'a>,
     context: &mut HsmlProcessContext,
-) -> IResult<&'a str, Vec<HsmlNode>> {
+) -> IResult<Span<'a>, Vec<HsmlNode>> {
     let (mut input, _) = tag("(")(input)?;
 
     let mut nodes: Vec<HsmlNode> = vec![];

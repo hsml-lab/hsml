@@ -1,6 +1,8 @@
 use nom::{IResult, bytes::complete::tag, bytes::complete::take_while1};
 
-pub(super) fn process_id(input: &str) -> IResult<&str, &str> {
+use crate::parser::Span;
+
+pub(super) fn process_id(input: Span<'_>) -> IResult<Span<'_>, Span<'_>> {
     let (input, _) = tag("#")(input)?;
 
     // HTML5 IDs can contain any characters except ASCII whitespace.

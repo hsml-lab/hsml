@@ -1,4 +1,7 @@
-use nom::{IResult, character::complete::line_ending};
+use nom::{IResult, Input, character::complete::line_ending};
+use nom_locate::LocatedSpan;
+
+pub type Span<'a> = LocatedSpan<&'a str>;
 
 use self::{
     attribute::node::AttributeNode, class::node::ClassNode, comment::node::CommentNode,
@@ -43,6 +46,16 @@ pub struct HsmlProcessContext {
     pub indent_string: String,
 }
 
-pub fn process_newline(input: &str) -> IResult<&str, &str> {
+pub fn process_newline(input: Span<'_>) -> IResult<Span<'_>, Span<'_>> {
     line_ending(input)
+}
+
+/// Helper to advance a span by n bytes, returning the remaining span.
+pub fn advance<'a>(span: Span<'a>, n: usize) -> Span<'a> {
+    span.take_split(n).0
+}
+
+/// Helper to take the first n bytes from a span.
+pub fn take_prefix<'a>(span: Span<'a>, n: usize) -> Span<'a> {
+    span.take_split(n).1
 }

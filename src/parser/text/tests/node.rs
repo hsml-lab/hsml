@@ -1,5 +1,5 @@
 use crate::parser::{
-    HsmlProcessContext,
+    HsmlProcessContext, Span,
     text::node::{TextNode, text_block_node},
 };
 
@@ -10,12 +10,14 @@ fn it_should_return_text_block_node() {
         indent_string: String::from("      "),
     };
 
-    let (input, text_block) = text_block_node(
-        r#".
+    let (rest, text_block) = text_block_node(
+        Span::new(
+            r#".
         "Tailwind CSS is the only framework that I've seen scale
         on large teams. It's easy to customize, adapts to any design,
         and the build size is tiny."
     figcaption.font-medium"#,
+        ),
         context,
     )
     .unwrap();
@@ -31,7 +33,7 @@ and the build size is tiny.""#
         }
     );
 
-    assert_eq!(input, "\n    figcaption.font-medium");
+    assert_eq!(*rest.fragment(), "\n    figcaption.font-medium");
 }
 
 #[test]
@@ -41,11 +43,13 @@ fn it_should_stop_before_next_tag_node() {
         indent_string: String::from("  "),
     };
 
-    let (input, text_block) = text_block_node(
-        r#".
+    let (rest, text_block) = text_block_node(
+        Span::new(
+            r#".
     Sarah Dayan
   .text-[#af05c9].dark:text-slate-500.
     Staff Engineer, Algolia"#,
+        ),
         context,
     )
     .unwrap();
@@ -58,7 +62,7 @@ fn it_should_stop_before_next_tag_node() {
     );
 
     assert_eq!(
-        input,
+        *rest.fragment(),
         "\n  .text-[#af05c9].dark:text-slate-500.\n    Staff Engineer, Algolia"
     );
 }
@@ -70,8 +74,8 @@ fn it_should_return_text_block_node_with_multibyte_chars() {
         indent_string: String::from("  "),
     };
 
-    let (input, text_block) = text_block_node(
-        ".\n    héllo wörld 🌍\n    più línés café\nspan next",
+    let (rest, text_block) = text_block_node(
+        Span::new(".\n    héllo wörld 🌍\n    più línés café\nspan next"),
         context,
     )
     .unwrap();
@@ -83,7 +87,7 @@ fn it_should_return_text_block_node_with_multibyte_chars() {
         }
     );
 
-    assert_eq!(input, "\nspan next");
+    assert_eq!(*rest.fragment(), "\nspan next");
 }
 
 #[test]
@@ -95,7 +99,8 @@ fn it_should_return_empty_text_block_when_first_line_not_indented_enough() {
 
     // First line "span.foo" doesn't have indent_string + extra space/tab,
     // so the text block should be empty.
-    let (input, text_block) = text_block_node(".\n  span.foo\n  span.bar", context).unwrap();
+    let (rest, text_block) =
+        text_block_node(Span::new(".\n  span.foo\n  span.bar"), context).unwrap();
 
     assert_eq!(
         text_block,
@@ -104,7 +109,7 @@ fn it_should_return_empty_text_block_when_first_line_not_indented_enough() {
         }
     );
 
-    assert_eq!(input, "  span.foo\n  span.bar");
+    assert_eq!(*rest.fragment(), "  span.foo\n  span.bar");
 }
 
 #[test]
@@ -116,8 +121,11 @@ fn it_should_strip_indent_from_first_nonempty_line() {
 
     // The indentation prefix of the first non-empty line ("    " = 4 spaces)
     // should be stripped from all lines.
-    let (input, text_block) =
-        text_block_node(".\n    line one\n    line two\nspan next", context).unwrap();
+    let (rest, text_block) = text_block_node(
+        Span::new(".\n    line one\n    line two\nspan next"),
+        context,
+    )
+    .unwrap();
 
     assert_eq!(
         text_block,
@@ -126,7 +134,7 @@ fn it_should_strip_indent_from_first_nonempty_line() {
         }
     );
 
-    assert_eq!(input, "\nspan next");
+    assert_eq!(*rest.fragment(), "\nspan next");
 }
 
 #[test]
@@ -136,8 +144,11 @@ fn it_should_return_text_block_node_with_cjk_and_blank_lines() {
         indent_string: String::from("  "),
     };
 
-    let (input, text_block) =
-        text_block_node(".\n    こんにちは\n\n    世界テスト\nspan next", context).unwrap();
+    let (rest, text_block) = text_block_node(
+        Span::new(".\n    こんにちは\n\n    世界テスト\nspan next"),
+        context,
+    )
+    .unwrap();
 
     assert_eq!(
         text_block,
@@ -146,5 +157,5 @@ fn it_should_return_text_block_node_with_cjk_and_blank_lines() {
         }
     );
 
-    assert_eq!(input, "\nspan next");
+    assert_eq!(*rest.fragment(), "\nspan next");
 }
