@@ -56,7 +56,7 @@ pub(super) fn process_class(input: Span<'_>) -> IResult<Span<'_>, Span<'_>> {
                 let mut closing_bracket_index = 0;
                 let mut is_escaped = false;
 
-                for (index, c) in remaining.fragment().chars().enumerate() {
+                for (index, c) in remaining.fragment().char_indices() {
                     if index == 0 {
                         // skip first char, because it is the opening bracket
                         continue;
@@ -86,8 +86,8 @@ pub(super) fn process_class(input: Span<'_>) -> IResult<Span<'_>, Span<'_>> {
             }
             Some(_) => {
                 // we hit a char, so we need to append it to the class
-                class_index += 1;
-                remaining = advance(remaining, 1);
+                class_index += remaining.fragment().chars().next().unwrap().len_utf8();
+                remaining = advance(input, class_index);
                 continue;
             }
             None => {

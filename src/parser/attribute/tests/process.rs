@@ -159,6 +159,24 @@ fn it_should_process_attribute_with_multiline_value() {
     );
 }
 
+#[test]
+fn it_should_process_attribute_with_multibyte_value() {
+    let input = Span::new(r#"alt="Ünïcödé" next"#);
+
+    let (rest, attribute) = process_attribute(input, &mut HsmlProcessContext::default()).unwrap();
+
+    assert_eq!(*attribute.fragment(), r#"alt="Ünïcödé""#);
+    assert_eq!(*rest.fragment(), " next");
+}
+
+#[test]
+fn it_should_process_attribute_key_with_multibyte_bracket() {
+    let (rest, key) = process_attribute_key(Span::new("[ä]=")).unwrap();
+
+    assert_eq!(*key.fragment(), "[ä]");
+    assert_eq!(*rest.fragment(), "=");
+}
+
 // Negative tests
 
 #[test]

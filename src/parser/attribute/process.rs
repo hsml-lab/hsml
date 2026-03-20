@@ -63,7 +63,7 @@ pub(super) fn process_attribute_key(input: Span<'_>) -> IResult<Span<'_>, Span<'
                 let mut closing_bracket_index = 0;
                 let mut is_escaped = false;
 
-                for (index, c) in remaining.fragment().chars().enumerate() {
+                for (index, c) in remaining.fragment().char_indices() {
                     if index == 0 {
                         // skip first char, because it is the opening bracket
                         continue;
@@ -98,7 +98,7 @@ pub(super) fn process_attribute_key(input: Span<'_>) -> IResult<Span<'_>, Span<'
                 let mut closing_brace_index = 0;
                 let mut is_escaped = false;
 
-                for (index, c) in remaining.fragment().chars().enumerate() {
+                for (index, c) in remaining.fragment().char_indices() {
                     if index == 0 {
                         // skip first char, because it is the opening brace
                         continue;
@@ -127,8 +127,8 @@ pub(super) fn process_attribute_key(input: Span<'_>) -> IResult<Span<'_>, Span<'
                 continue;
             }
             Some(_) => {
-                attribute_key_index += 1;
-                remaining = advance(remaining, 1);
+                attribute_key_index += remaining.fragment().chars().next().unwrap().len_utf8();
+                remaining = advance(input, attribute_key_index);
                 continue;
             }
             None => {
@@ -156,7 +156,7 @@ pub(super) fn process_attribute_value<'a>(
         let mut closing_quote_index = 0;
         let mut is_escaped = false;
 
-        for (index, c) in input.fragment().chars().enumerate() {
+        for (index, c) in input.fragment().char_indices() {
             if index == 0 {
                 // skip first char, because it is the opening quote
                 continue;
