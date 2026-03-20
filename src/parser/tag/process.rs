@@ -1,6 +1,6 @@
-use nom::{Needed, bytes::complete::take_till1};
+use nom::{bytes::complete::take_till1, error::ErrorKind};
 
-use crate::parser::{HsmlResult, Span};
+use crate::parser::{HsmlResult, Span, error::HsmlError};
 
 fn starts_with_ascii_alphabetic(s: &str) -> bool {
     if let Some(c) = s.chars().next() {
@@ -11,11 +11,11 @@ fn starts_with_ascii_alphabetic(s: &str) -> bool {
 }
 
 pub fn process_tag(input: Span<'_>) -> HsmlResult<'_, Span<'_>> {
-    let (input, tag_name) = take_till1(|c: char| c != '-' && !c.is_ascii_alphanumeric())(input)?;
+    let (rest, tag_name) = take_till1(|c: char| c != '-' && !c.is_ascii_alphanumeric())(input)?;
 
     if starts_with_ascii_alphabetic(&tag_name) {
-        Ok((input, tag_name))
+        Ok((rest, tag_name))
     } else {
-        Err(nom::Err::Incomplete(Needed::Unknown))
+        Err(HsmlError::err(input, ErrorKind::Alpha))
     }
 }
