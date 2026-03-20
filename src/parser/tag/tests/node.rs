@@ -65,6 +65,33 @@ fn it_should_error_on_mixed_tabs_and_spaces_indentation() {
     let result = tag_node(input, context);
 
     assert!(result.is_err());
+    // Error span should point to the mixed indentation, not the tag start
+    if let Err(nom::Err::Failure(err)) = result {
+        assert_eq!(*err.span.fragment(), " \t");
+    } else {
+        panic!("Expected Failure error");
+    }
+}
+
+#[test]
+fn it_should_error_on_invalid_child_with_span_at_child() {
+    let context = &mut HsmlProcessContext {
+        nested_tag_level: 0,
+        indent_string: String::new(),
+    };
+
+    // Child starts with a number, which is not a valid tag
+    let input = Span::new("div\n  123invalid");
+
+    let result = tag_node(input, context);
+
+    assert!(result.is_err());
+    // Error span should point to the child content, not the parent tag
+    if let Err(nom::Err::Error(err)) = result {
+        assert_eq!(*err.span.fragment(), "123invalid");
+    } else {
+        panic!("Expected Error");
+    }
 }
 
 #[test]

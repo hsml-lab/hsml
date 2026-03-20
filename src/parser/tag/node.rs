@@ -127,7 +127,7 @@ pub fn tag_node<'a>(input: Span<'a>, context: &mut HsmlProcessContext) -> HsmlRe
 
                 if indentation_str.contains('\t') && indentation_str.contains(' ') {
                     return Err(nom::Err::Failure(HsmlError::from_kind(
-                        input,
+                        indentation,
                         ErrorKind::Tag,
                     )));
                 }
@@ -164,7 +164,10 @@ pub fn tag_node<'a>(input: Span<'a>, context: &mut HsmlProcessContext) -> HsmlRe
                         child_nodes.push(HsmlNode::Tag(node));
                         input = rest;
                     } else {
-                        return Err(nom::Err::Error(HsmlError::from_kind(input, ErrorKind::Tag)));
+                        return Err(nom::Err::Error(HsmlError::from_kind(
+                            remaining,
+                            ErrorKind::Tag,
+                        )));
                     }
                 }
 
