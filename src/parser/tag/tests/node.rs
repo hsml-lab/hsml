@@ -90,7 +90,7 @@ fn it_should_propagate_duplicate_id_error_from_child() {
             err.message.as_deref(),
             Some("Duplicate attribute 'id' is not allowed")
         );
-        assert_eq!(err.code, Some("E001"));
+        assert_eq!(err.code(), Some("E001"));
         assert_eq!(*err.span.fragment(), "#b");
     } else {
         panic!("Expected Failure error with E001");

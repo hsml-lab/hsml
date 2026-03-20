@@ -2,6 +2,32 @@ use nom::error::{ErrorKind, ParseError};
 
 use super::Span;
 
+/// Registry of all HSML-specific errors.
+///
+/// New errors must be added as variants here. Each variant carries a unique
+/// code and message, so collisions are impossible — the compiler enforces
+/// that every variant is distinct.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ErrorCode {
+    DuplicateId,
+}
+
+impl ErrorCode {
+    /// Machine-readable error code (e.g., "E001").
+    pub fn code(&self) -> &'static str {
+        match self {
+            Self::DuplicateId => "E001",
+        }
+    }
+
+    /// Human-readable error message.
+    pub fn message(&self) -> &'static str {
+        match self {
+            Self::DuplicateId => "Duplicate attribute 'id' is not allowed",
+        }
+    }
+}
+
 /// Severity level for parser diagnostics.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Severity {
@@ -23,8 +49,8 @@ pub struct HsmlError<'a> {
     /// Optional human-readable description (only set for custom HSML errors,
     /// not for generic nom combinator errors).
     pub message: Option<String>,
-    /// Optional machine-readable error code (e.g., "E001").
-    pub code: Option<&'static str>,
+    /// Optional registered error code.
+    pub error_code: Option<ErrorCode>,
     /// Severity level.
     pub severity: Severity,
 }
@@ -36,7 +62,7 @@ impl<'a> HsmlError<'a> {
             span,
             kind,
             message: None,
-            code: None,
+            error_code: None,
             severity: Severity::Error,
         }
     }
@@ -47,15 +73,20 @@ impl<'a> HsmlError<'a> {
             span,
             kind: ErrorKind::Fail,
             message: Some(message.into()),
-            code: None,
+            error_code: None,
             severity: Severity::Error,
         }
     }
 
-    /// Builder: attach an error code.
-    pub fn with_code(mut self, code: &'static str) -> Self {
-        self.code = Some(code);
-        self
+    /// Create an error from a registered error code.
+    pub fn from_code(span: Span<'a>, error_code: ErrorCode) -> Self {
+        Self {
+            span,
+            kind: ErrorKind::Fail,
+            message: Some(error_code.message().to_string()),
+            error_code: Some(error_code),
+            severity: Severity::Error,
+        }
     }
 
     /// Return a recoverable nom error (`nom::Err::Error`) with a generic ErrorKind.
@@ -71,6 +102,16 @@ impl<'a> HsmlError<'a> {
     /// Return a non-recoverable nom error (`nom::Err::Failure`) with a descriptive message.
     pub fn fail_msg(span: Span<'a>, message: impl Into<String>) -> nom::Err<Self> {
         nom::Err::Failure(Self::new(span, message))
+    }
+
+    /// Return a non-recoverable nom error (`nom::Err::Failure`) from a registered error code.
+    pub fn fail_code(span: Span<'a>, error_code: ErrorCode) -> nom::Err<Self> {
+        nom::Err::Failure(Self::from_code(span, error_code))
+    }
+
+    /// Machine-readable code string, if this is a registered error.
+    pub fn code(&self) -> Option<&'static str> {
+        self.error_code.map(|c| c.code())
     }
 
     /// Line number (1-based) from nom_locate.
@@ -90,7 +131,7 @@ impl<'a> ParseError<Span<'a>> for HsmlError<'a> {
             span: input,
             kind,
             message: None,
-            code: None,
+            error_code: None,
             severity: Severity::Error,
         }
     }
@@ -104,7 +145,7 @@ impl<'a> ParseError<Span<'a>> for HsmlError<'a> {
 impl<'a> std::fmt::Display for HsmlError<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if let Some(ref msg) = self.message {
-            if let Some(code) = self.code {
+            if let Some(code) = self.code() {
                 write!(
                     f,
                     "[{}] {} at line {}, column {}",
@@ -133,3 +174,6 @@ impl<'a> std::fmt::Display for HsmlError<'a> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests;
