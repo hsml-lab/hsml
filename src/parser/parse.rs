@@ -1,13 +1,14 @@
-use nom::{IResult, bytes::complete::take_till};
+use nom::bytes::complete::take_till;
 
 use super::{
-    HsmlNode, HsmlProcessContext, RootNode, Span,
+    HsmlNode, HsmlProcessContext, HsmlResult, RootNode, Span,
     comment::node::{comment_dev_node, comment_native_node},
     doctype::node::doctype_node,
+    error::HsmlError,
     tag::node::tag_node,
 };
 
-pub fn parse(input: Span<'_>) -> IResult<Span<'_>, RootNode> {
+pub fn parse(input: Span<'_>) -> HsmlResult<'_, RootNode> {
     let mut nodes: Vec<HsmlNode> = vec![];
 
     let mut context = HsmlProcessContext::default();
@@ -17,7 +18,7 @@ pub fn parse(input: Span<'_>) -> IResult<Span<'_>, RootNode> {
     loop {
         // eat leading and trailing newlines and whitespace if there are any
         if let Ok((rest, taken)) =
-            take_till::<_, Span, nom::error::Error<Span>>(|c: char| !c.is_whitespace())(input)
+            take_till::<_, Span, HsmlError>(|c: char| !c.is_whitespace())(input)
         {
             // take the leading spaces and tabs after the last newline as indentation
             context.indent_string = taken

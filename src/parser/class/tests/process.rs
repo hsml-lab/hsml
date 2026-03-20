@@ -201,8 +201,8 @@ fn it_should_not_process_class_without_dot() {
 
     assert!(result.is_err());
     if let Err(nom::Err::Error(err)) = result {
-        assert_eq!(*err.input.fragment(), "text-red(disabled) Text");
-        assert_eq!(err.code, ErrorKind::Tag);
+        assert_eq!(*err.span.fragment(), "text-red(disabled) Text");
+        assert_eq!(err.kind, ErrorKind::Tag);
     } else {
         panic!("Expected Error");
     }
@@ -211,8 +211,8 @@ fn it_should_not_process_class_without_dot() {
 
     assert!(result.is_err());
     if let Err(nom::Err::Error(err)) = result {
-        assert_eq!(*err.input.fragment(), "#text-red(disabled) Text");
-        assert_eq!(err.code, ErrorKind::Tag);
+        assert_eq!(*err.span.fragment(), "#text-red(disabled) Text");
+        assert_eq!(err.kind, ErrorKind::Tag);
     } else {
         panic!("Expected Error");
     }

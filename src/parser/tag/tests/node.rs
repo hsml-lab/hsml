@@ -65,6 +65,54 @@ fn it_should_error_on_mixed_tabs_and_spaces_indentation() {
     let result = tag_node(input, context);
 
     assert!(result.is_err());
+    // Error span should point to the mixed indentation, not the tag start
+    if let Err(nom::Err::Failure(err)) = result {
+        assert_eq!(*err.span.fragment(), " \t");
+    } else {
+        panic!("Expected Failure error");
+    }
+}
+
+#[test]
+fn it_should_propagate_duplicate_id_error_from_child() {
+    let context = &mut HsmlProcessContext {
+        nested_tag_level: 0,
+        indent_string: String::new(),
+    };
+
+    let input = Span::new("div\n  span#a#b");
+
+    let result = tag_node(input, context);
+
+    assert!(result.is_err());
+    if let Err(nom::Err::Failure(err)) = result {
+        assert_eq!(
+            err.message.as_deref(),
+            Some("Duplicate attribute 'id' is not allowed")
+        );
+        assert_eq!(err.code, Some("E001"));
+        assert_eq!(*err.span.fragment(), "#b");
+    } else {
+        panic!("Expected Failure error with E001");
+    }
+}
+
+#[test]
+fn it_should_error_on_invalid_child() {
+    let context = &mut HsmlProcessContext {
+        nested_tag_level: 0,
+        indent_string: String::new(),
+    };
+
+    // Child starts with a number, which is not a valid tag
+    let input = Span::new("div\n  123invalid");
+
+    let result = tag_node(input, context);
+
+    // Incomplete is propagated from process_tag which currently uses
+    // nom::Err::Incomplete for non-alphabetic tag starts. This should
+    // become a Failure with a descriptive message in a future refactor.
+    assert!(matches!(result, Err(nom::Err::Incomplete(_))));
 }
 
 #[test]

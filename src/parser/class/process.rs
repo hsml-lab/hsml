@@ -1,12 +1,8 @@
-use nom::{
-    IResult, Needed,
-    bytes::complete::tag,
-    error::{Error, ErrorKind},
-};
+use nom::{Needed, bytes::complete::tag, error::ErrorKind};
 
-use crate::parser::{Span, advance, take_prefix};
+use crate::parser::{HsmlResult, Span, advance, error::HsmlError, take_prefix};
 
-pub(super) fn process_class(input: Span<'_>) -> IResult<Span<'_>, Span<'_>> {
+pub(super) fn process_class(input: Span<'_>) -> HsmlResult<'_, Span<'_>> {
     let (input, _) = tag(".")(input)?;
 
     let mut remaining = input;
@@ -79,7 +75,10 @@ pub(super) fn process_class(input: Span<'_>) -> IResult<Span<'_>, Span<'_>> {
                 }
 
                 if closing_bracket_index == 0 {
-                    return Err(nom::Err::Error(Error::new(remaining, ErrorKind::Tag)));
+                    return Err(nom::Err::Error(HsmlError::from_kind(
+                        remaining,
+                        ErrorKind::Tag,
+                    )));
                 }
 
                 class_index += closing_bracket_index;

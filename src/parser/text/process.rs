@@ -1,15 +1,15 @@
 use nom::{
-    IResult, Parser,
+    Parser,
     branch::alt,
     bytes::complete::{tag, take_until1},
 };
 
-use crate::parser::{HsmlProcessContext, Span, advance, take_prefix};
+use crate::parser::{HsmlProcessContext, HsmlResult, Span, advance, take_prefix};
 
 pub(super) fn process_text_block<'a>(
     input: Span<'a>,
     context: &mut HsmlProcessContext,
-) -> IResult<Span<'a>, Span<'a>> {
+) -> HsmlResult<'a, Span<'a>> {
     let (rest, _) = tag(".")(input)?;
 
     // eat one \r\n or \n
@@ -70,7 +70,7 @@ pub(super) fn process_text_block<'a>(
     Ok((rest, text_block))
 }
 
-pub(super) fn process_text(input: Span<'_>) -> IResult<Span<'_>, Span<'_>> {
+pub(super) fn process_text(input: Span<'_>) -> HsmlResult<'_, Span<'_>> {
     let (input, _) = tag(" ")(input)?;
     take_until1("\n")(input)
 }

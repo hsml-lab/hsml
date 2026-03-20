@@ -228,8 +228,8 @@ fn it_should_not_process_attribute_with_number() {
 
     assert!(result.is_err());
     if let Err(nom::Err::Error(err)) = result {
-        assert_eq!(*err.input.fragment(), r#"1src="https://github.com""#);
-        assert_eq!(err.code, ErrorKind::AlphaNumeric);
+        assert_eq!(*err.span.fragment(), r#"1src="https://github.com""#);
+        assert_eq!(err.kind, ErrorKind::AlphaNumeric);
     } else {
         panic!("Expected Error");
     }
@@ -244,8 +244,8 @@ fn it_should_not_process_attribute_with_whitespace() {
 
     assert!(result.is_err());
     if let Err(nom::Err::Error(err)) = result {
-        assert_eq!(*err.input.fragment(), r#" src="https://github.com""#);
-        assert_eq!(err.code, ErrorKind::AlphaNumeric);
+        assert_eq!(*err.span.fragment(), r#" src="https://github.com""#);
+        assert_eq!(err.kind, ErrorKind::AlphaNumeric);
     } else {
         panic!("Expected Error");
     }
@@ -260,8 +260,8 @@ fn it_should_not_process_attribute_with_dot() {
 
     assert!(result.is_err());
     if let Err(nom::Err::Error(err)) = result {
-        assert_eq!(*err.input.fragment(), r#".src="https://github.com""#);
-        assert_eq!(err.code, ErrorKind::AlphaNumeric);
+        assert_eq!(*err.span.fragment(), r#".src="https://github.com""#);
+        assert_eq!(err.kind, ErrorKind::AlphaNumeric);
     } else {
         panic!("Expected Error");
     }
@@ -276,8 +276,8 @@ fn it_should_not_process_attribute_with_comma() {
 
     assert!(result.is_err());
     if let Err(nom::Err::Error(err)) = result {
-        assert_eq!(*err.input.fragment(), r#",src="https://github.com""#);
-        assert_eq!(err.code, ErrorKind::AlphaNumeric);
+        assert_eq!(*err.span.fragment(), r#",src="https://github.com""#);
+        assert_eq!(err.kind, ErrorKind::AlphaNumeric);
     } else {
         panic!("Expected Error");
     }
@@ -289,8 +289,8 @@ fn it_should_not_process_attribute_without_quoted_value() {
 
     assert!(result.is_err());
     if let Err(nom::Err::Error(err)) = result {
-        assert_eq!(*err.input.fragment(), "imgSrc");
-        assert_eq!(err.code, ErrorKind::Tag);
+        assert_eq!(*err.span.fragment(), "imgSrc");
+        assert_eq!(err.kind, ErrorKind::Tag);
     } else {
         panic!("Expected Error");
     }
@@ -302,8 +302,8 @@ fn it_should_not_process_attribute_key_with_empty_input() {
 
     assert!(result.is_err());
     if let Err(nom::Err::Error(err)) = result {
-        assert_eq!(*err.input.fragment(), "");
-        assert_eq!(err.code, ErrorKind::AlphaNumeric);
+        assert_eq!(*err.span.fragment(), "");
+        assert_eq!(err.kind, ErrorKind::AlphaNumeric);
     } else {
         panic!("Expected Error");
     }
@@ -315,8 +315,8 @@ fn it_should_not_process_attribute_value_with_empty_input() {
 
     assert!(result.is_err());
     if let Err(nom::Err::Error(err)) = result {
-        assert_eq!(*err.input.fragment(), "");
-        assert_eq!(err.code, ErrorKind::Tag);
+        assert_eq!(*err.span.fragment(), "");
+        assert_eq!(err.kind, ErrorKind::Tag);
     } else {
         panic!("Expected Error");
     }
@@ -335,11 +335,11 @@ src="https://github.com""#,
     assert!(result.is_err());
     if let Err(nom::Err::Error(err)) = result {
         assert_eq!(
-            *err.input.fragment(),
+            *err.span.fragment(),
             r#"
 src="https://github.com""#
         );
-        assert_eq!(err.code, ErrorKind::AlphaNumeric);
+        assert_eq!(err.kind, ErrorKind::AlphaNumeric);
     } else {
         panic!("Expected Error");
     }
