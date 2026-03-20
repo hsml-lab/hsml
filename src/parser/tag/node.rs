@@ -159,15 +159,16 @@ pub fn tag_node<'a>(input: Span<'a>, context: &mut HsmlProcessContext) -> HsmlRe
                 }
                 // or we have now a child tag node
                 else {
-                    // now we have a child tag node
-                    if let Ok((rest, node)) = tag_node(remaining, context) {
-                        child_nodes.push(HsmlNode::Tag(node));
-                        input = rest;
-                    } else {
-                        return Err(nom::Err::Error(HsmlError::from_kind(
-                            remaining,
-                            ErrorKind::Tag,
-                        )));
+                    match tag_node(remaining, context) {
+                        Ok((rest, node)) => {
+                            child_nodes.push(HsmlNode::Tag(node));
+                            input = rest;
+                        }
+                        Err(err) => {
+                            context.nested_tag_level = nested_tag_level;
+                            context.indent_string = indent_string;
+                            return Err(err);
+                        }
                     }
                 }
 

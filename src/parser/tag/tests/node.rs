@@ -74,7 +74,31 @@ fn it_should_error_on_mixed_tabs_and_spaces_indentation() {
 }
 
 #[test]
-fn it_should_error_on_invalid_child_with_span_at_child() {
+fn it_should_propagate_duplicate_id_error_from_child() {
+    let context = &mut HsmlProcessContext {
+        nested_tag_level: 0,
+        indent_string: String::new(),
+    };
+
+    let input = Span::new("div\n  span#a#b");
+
+    let result = tag_node(input, context);
+
+    assert!(result.is_err());
+    if let Err(nom::Err::Failure(err)) = result {
+        assert_eq!(
+            err.message.as_deref(),
+            Some("Duplicate attribute 'id' is not allowed")
+        );
+        assert_eq!(err.code, Some("E001"));
+        assert_eq!(*err.span.fragment(), "#b");
+    } else {
+        panic!("Expected Failure error with E001");
+    }
+}
+
+#[test]
+fn it_should_error_on_invalid_child() {
     let context = &mut HsmlProcessContext {
         nested_tag_level: 0,
         indent_string: String::new(),
@@ -85,13 +109,8 @@ fn it_should_error_on_invalid_child_with_span_at_child() {
 
     let result = tag_node(input, context);
 
-    assert!(result.is_err());
-    // Error span should point to the child content, not the parent tag
-    if let Err(nom::Err::Error(err)) = result {
-        assert_eq!(*err.span.fragment(), "123invalid");
-    } else {
-        panic!("Expected Error");
-    }
+    // The child parser error (Incomplete from process_tag) is propagated directly
+    assert!(matches!(result, Err(nom::Err::Incomplete(_))));
 }
 
 #[test]
