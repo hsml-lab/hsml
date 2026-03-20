@@ -54,7 +54,7 @@ pub fn tag_node<'a>(input: Span<'a>, context: &mut HsmlProcessContext) -> HsmlRe
             // if there was already an id node, throw an error
             if id_node.is_some() {
                 return Err(nom::Err::Failure(
-                    HsmlError::new(input, "Duplicate attribute \"id\" is not allowed")
+                    HsmlError::new(input, "Duplicate attribute 'id' is not allowed")
                         .with_code("E001"),
                 ));
             }

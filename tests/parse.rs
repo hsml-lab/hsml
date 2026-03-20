@@ -283,7 +283,7 @@ fn it_should_not_parse_tag_with_multiple_ids() {
         assert_eq!(err.kind, ErrorKind::Fail);
         assert_eq!(
             err.message.as_deref(),
-            Some("Duplicate attribute \"id\" is not allowed")
+            Some("Duplicate attribute 'id' is not allowed")
         );
         assert_eq!(err.code, Some("E001"));
     } else {
