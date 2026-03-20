@@ -10,7 +10,7 @@ pub(super) fn process_dev_comment(input: Span<'_>) -> HsmlResult<'_, Span<'_>> {
 
     // check next char is not a `!`
     if input.starts_with('!') {
-        return Err(nom::Err::Error(HsmlError::from_kind(input, ErrorKind::Tag)));
+        return Err(HsmlError::err(input, ErrorKind::Tag));
     }
 
     // read until end of line

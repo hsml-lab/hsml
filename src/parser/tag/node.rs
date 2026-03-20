@@ -126,10 +126,7 @@ pub fn tag_node<'a>(input: Span<'a>, context: &mut HsmlProcessContext) -> HsmlRe
                 // if it does, collect an error for diagnostics
 
                 if indentation_str.contains('\t') && indentation_str.contains(' ') {
-                    return Err(nom::Err::Failure(HsmlError::from_kind(
-                        indentation,
-                        ErrorKind::Tag,
-                    )));
+                    return Err(HsmlError::fail(indentation, ErrorKind::Tag));
                 }
 
                 // persist the indentation level so we can restore it later
