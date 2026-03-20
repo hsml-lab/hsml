@@ -16,6 +16,16 @@ fn it_should_process_attribute_key() {
 }
 
 #[test]
+fn it_should_process_attribute_key_with_lone_cr() {
+    let input = Span::new("src\rmore");
+
+    let (rest, attribute_key) = process_attribute_key(input).unwrap();
+
+    assert_eq!(*attribute_key.fragment(), "src");
+    assert_eq!(*rest.fragment(), "\rmore");
+}
+
+#[test]
 fn it_should_process_attribute_value() {
     let input = Span::new(r#""https://github.com/""#);
 

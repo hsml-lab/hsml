@@ -43,7 +43,10 @@ pub(super) fn process_class(input: Span<'_>) -> IResult<Span<'_>, Span<'_>> {
                 // we hit a newline, so we are done
                 break;
             }
-            Some('\r') => {}
+            Some('\r') => {
+                // lone \r (old Mac line ending) — treat as line ending
+                break;
+            }
             Some('\n') => {
                 // we hit a newline, so we are done
                 break;
