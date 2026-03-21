@@ -16,6 +16,15 @@ pub enum ErrorCode {
 }
 
 impl ErrorCode {
+    /// All registered error code variants.
+    /// Update this when adding new variants.
+    pub const ALL: &[ErrorCode] = &[
+        Self::DuplicateId,
+        Self::InvalidTagName,
+        Self::DuplicateClass,
+        Self::MixedIndentation,
+    ];
+
     /// Machine-readable error code (e.g., "E001").
     pub fn code(&self) -> &'static str {
         match self {
