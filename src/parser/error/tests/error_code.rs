@@ -20,7 +20,7 @@ fn from_code_uses_error_code_severity() {
     let span = Span::new("test");
 
     let result = HsmlError::from_code(span, ErrorCode::DuplicateId);
-    assert_eq!(result.severity, Severity::Error);
+    assert_eq!(result.severity, Severity::Warning);
 
     let result = HsmlError::from_code(span, ErrorCode::InvalidTagName);
     assert_eq!(result.severity, Severity::Error);

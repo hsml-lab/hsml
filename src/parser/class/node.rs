@@ -30,6 +30,7 @@ impl Hash for ClassNode {
 impl ClassNode {
     /// Create a ClassNode with only a name (no source location).
     /// Useful in tests where location is not relevant.
+    #[doc(hidden)]
     pub fn new_without_location(name: impl Into<String>) -> Self {
         Self {
             name: name.into(),

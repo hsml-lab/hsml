@@ -21,7 +21,7 @@ fn it_should_compile_simple_tag() {
     let ast = RootNode {
         nodes: vec![HsmlNode::Tag(TagNode {
             tag: String::from("h1"),
-            id: None,
+            ids: vec![],
             classes: None,
             attributes: None,
             text: Some(TextNode {
@@ -41,9 +41,7 @@ fn it_should_compile_content_with_id() {
     let ast = RootNode {
         nodes: vec![HsmlNode::Tag(TagNode {
             tag: String::from("h1"),
-            id: Some(IdNode {
-                id: String::from("title"),
-            }),
+            ids: vec![IdNode::new_without_location("title")],
             classes: None,
             attributes: None,
             text: Some(TextNode {
@@ -231,21 +229,23 @@ fn compile_content_diagnostics_should_return_diagnostics_for_invalid_input() {
 }
 
 #[test]
-fn compile_content_diagnostics_should_return_diagnostics_for_duplicate_id() {
-    let result = compile_content_diagnostics("div#a#b\n");
-    assert!(result.is_err());
-    let diagnostics = result.unwrap_err();
-    assert_eq!(diagnostics.len(), 1);
-    assert_eq!(diagnostics[0].severity, hsml::diagnostic::Severity::Error);
+fn compile_content_diagnostics_should_return_warnings_for_duplicate_id() {
+    let output = compile_content_diagnostics("div#a#b\n").unwrap();
+    assert_eq!(output.html, r#"<div id="a"/>"#);
+    assert_eq!(output.diagnostics.len(), 1);
     assert_eq!(
-        diagnostics[0].code,
+        output.diagnostics[0].severity,
+        hsml::diagnostic::Severity::Warning
+    );
+    assert_eq!(
+        output.diagnostics[0].code,
         Some(ErrorCode::DuplicateId.code().to_string())
     );
     assert_eq!(
-        diagnostics[0].message,
-        "Duplicate attribute 'id' is not allowed"
+        output.diagnostics[0].message,
+        "Duplicate id 'b' is not allowed"
     );
-    assert!(diagnostics[0].location.is_some());
+    assert!(output.diagnostics[0].location.is_some());
 }
 
 #[test]
@@ -281,15 +281,13 @@ fn it_should_error_on_unsupported_child_node_type() {
     let ast = RootNode {
         nodes: vec![HsmlNode::Tag(TagNode {
             tag: String::from("div"),
-            id: None,
+            ids: vec![],
             classes: None,
             attributes: None,
             text: Some(TextNode {
                 text: String::from("hello"),
             }),
-            children: Some(vec![HsmlNode::Id(IdNode {
-                id: String::from("stray"),
-            })]),
+            children: Some(vec![HsmlNode::Id(IdNode::new_without_location("stray"))]),
         })],
     };
 
@@ -306,7 +304,7 @@ fn it_should_error_on_unsupported_attribute_node_type() {
     let ast = RootNode {
         nodes: vec![HsmlNode::Tag(TagNode {
             tag: String::from("span"),
-            id: None,
+            ids: vec![],
             classes: None,
             attributes: Some(vec![HsmlNode::Class(ClassNode::new_without_location(
                 "stray",
@@ -400,36 +398,57 @@ fn it_should_compile_parsed_elk_main_content_component() {
 #[test]
 fn compile_output_serializes_to_json() {
     let output = compile_content_diagnostics("h1 Hello\n").unwrap();
-    let json = serde_json::to_string(&output).unwrap();
+    let json = serde_json::to_value(&output).unwrap();
 
-    assert_eq!(json, r#"{"html":"<h1>Hello</h1>","diagnostics":[]}"#);
+    assert_eq!(json["html"].as_str(), Some("<h1>Hello</h1>"));
+    assert_eq!(json["diagnostics"].as_array().unwrap().len(), 0);
 }
 
 #[test]
 fn compile_output_serializes_warnings_to_json() {
     let output = compile_content_diagnostics("h1.foo.foo Hello\n").unwrap();
-    let json = serde_json::to_string(&output).unwrap();
+    let json = serde_json::to_value(&output).unwrap();
+    let diagnostics = json["diagnostics"].as_array().unwrap();
 
-    assert!(json.contains(r#""severity":"warning""#));
-    assert!(json.contains(r#""code":"W001""#));
-    assert!(json.contains(r#""message":"Duplicate class 'foo'""#));
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(diagnostics[0]["severity"].as_str(), Some("warning"));
+    assert_eq!(
+        diagnostics[0]["code"].as_str(),
+        Some(ErrorCode::DuplicateClass.code())
+    );
+    assert_eq!(
+        diagnostics[0]["message"].as_str(),
+        Some("Duplicate class 'foo'")
+    );
 }
 
 #[test]
 fn compile_diagnostics_serialize_errors_to_json() {
     let diagnostics = compile_content_diagnostics("@@@invalid").unwrap_err();
-    let json = serde_json::to_string(&diagnostics).unwrap();
+    let json = serde_json::to_value(&diagnostics).unwrap();
+    let arr = json.as_array().unwrap();
 
-    assert!(json.contains(r#""severity":"error""#));
-    assert!(json.contains(r#""message":"parse error""#));
+    assert_eq!(arr.len(), 1);
+    assert_eq!(arr[0]["severity"].as_str(), Some("error"));
+    assert_eq!(arr[0]["message"].as_str(), Some("parse error"));
 }
 
 #[test]
 fn compile_diagnostics_serialize_duplicate_id_to_json() {
-    let diagnostics = compile_content_diagnostics("div#a#b\n").unwrap_err();
-    let json = serde_json::to_string(&diagnostics).unwrap();
+    let output = compile_content_diagnostics("div#a#b\n").unwrap();
+    let json = serde_json::to_value(&output).unwrap();
+    let diagnostics = json["diagnostics"].as_array().unwrap();
 
-    assert!(json.contains(r#""severity":"error""#));
-    assert!(json.contains(r#""code":"E001""#));
-    assert!(json.contains(r#""message":"Duplicate attribute 'id' is not allowed""#));
+    assert_eq!(json["html"].as_str(), Some(r#"<div id="a"/>"#));
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(diagnostics[0]["severity"].as_str(), Some("warning"));
+    assert_eq!(
+        diagnostics[0]["code"].as_str(),
+        Some(ErrorCode::DuplicateId.code())
+    );
+    assert_eq!(
+        diagnostics[0]["message"].as_str(),
+        Some("Duplicate id 'b' is not allowed")
+    );
+    assert!(diagnostics[0]["location"].is_object());
 }

@@ -1,13 +1,6 @@
-use nom::error::ErrorKind;
-
 use hsml::parser::{
-    HsmlNode, RootNode, Span,
-    attribute::node::AttributeNode,
-    class::node::ClassNode,
-    comment::node::CommentNode,
-    error::{ErrorCode, Severity},
-    parse::parse,
-    tag::node::TagNode,
+    HsmlNode, RootNode, Span, attribute::node::AttributeNode, class::node::ClassNode,
+    comment::node::CommentNode, id::node::IdNode, parse::parse, tag::node::TagNode,
     text::node::TextNode,
 };
 
@@ -30,7 +23,7 @@ fn it_should_parse() {
             nodes: vec![
                 HsmlNode::Tag(TagNode {
                     tag: String::from("h1"),
-                    id: None,
+                    ids: vec![],
                     classes: Some(vec![ClassNode::new_without_location("text-red")]),
                     attributes: None,
                     text: Some(TextNode {
@@ -40,20 +33,20 @@ fn it_should_parse() {
                 }),
                 HsmlNode::Tag(TagNode {
                     tag: String::from("div"),
-                    id: None,
+                    ids: vec![],
                     classes: Some(vec![ClassNode::new_without_location("card")]),
                     attributes: None,
                     text: None,
                     children: Some(vec![
                         HsmlNode::Tag(TagNode {
                             tag: String::from("div"),
-                            id: None,
+                            ids: vec![],
                             classes: Some(vec![ClassNode::new_without_location("card__image")]),
                             attributes: None,
                             text: None,
                             children: Some(vec![HsmlNode::Tag(TagNode {
                                 tag: String::from("img"),
-                                id: None,
+                                ids: vec![],
                                 classes: None,
                                 attributes: Some(vec![
                                     HsmlNode::Attribute(AttributeNode {
@@ -73,13 +66,13 @@ fn it_should_parse() {
                         }),
                         HsmlNode::Tag(TagNode {
                             tag: String::from("div"),
-                            id: None,
+                            ids: vec![],
                             classes: Some(vec![ClassNode::new_without_location("card__profile")]),
                             attributes: None,
                             text: None,
                             children: Some(vec![HsmlNode::Tag(TagNode {
                                 tag: String::from("img"),
-                                id: None,
+                                ids: vec![],
                                 classes: None,
                                 attributes: Some(vec![
                                     HsmlNode::Attribute(AttributeNode {
@@ -97,7 +90,7 @@ fn it_should_parse() {
                         }),
                         HsmlNode::Tag(TagNode {
                             tag: String::from("div"),
-                            id: None,
+                            ids: vec![],
                             classes: Some(vec![ClassNode::new_without_location("card__body")]),
                             attributes: None,
                             text: Some(TextNode {
@@ -148,7 +141,7 @@ div
                 }),
                 HsmlNode::Tag(TagNode {
                     tag: String::from("div"),
-                    id: None,
+                    ids: vec![],
                     classes: None,
                     attributes: None,
                     text: None,
@@ -159,7 +152,7 @@ div
                         }),
                         HsmlNode::Tag(TagNode {
                             tag: String::from("p"),
-                            id: None,
+                            ids: vec![],
                             classes: None,
                             attributes: None,
                             text: Some(TextNode {
@@ -173,7 +166,7 @@ div
                         }),
                         HsmlNode::Tag(TagNode {
                             tag: String::from("img"),
-                            id: None,
+                            ids: vec![],
                             classes: None,
                             attributes: Some(vec![
                                 HsmlNode::Comment(CommentNode {
@@ -230,7 +223,7 @@ fn it_should_parse_wrapped_attributes() {
         RootNode {
             nodes: vec![HsmlNode::Tag(TagNode {
                 tag: String::from("img"),
-                id: None,
+                ids: vec![],
                 classes: Some(vec![
                     ClassNode::new_without_location("rounded-full"),
                     ClassNode::new_without_location("mx-auto"),
@@ -265,24 +258,27 @@ fn it_should_parse_wrapped_attributes() {
 // Negative tests
 
 #[test]
-fn it_should_not_parse_tag_with_multiple_ids() {
-    let input = r#"div#id1#id2"#;
+fn it_should_parse_tag_with_multiple_ids() {
+    let input = "div#id1#id2\n";
 
-    let result = parse(Span::new(input));
-    assert!(result.is_err());
-    if let Err(nom::Err::Failure(err)) = result {
-        assert_eq!(*err.span.fragment(), "#id2");
-        assert_eq!(err.kind, ErrorKind::Fail);
-        assert_eq!(
-            err.message.as_deref(),
-            Some("Duplicate attribute 'id' is not allowed")
-        );
-        assert_eq!(err.error_code, Some(ErrorCode::DuplicateId));
-        assert_eq!(err.code(), Some(ErrorCode::DuplicateId.code()));
-        assert_eq!(err.severity, Severity::Error);
-        assert_eq!(err.line(), 1);
-        assert_eq!(err.column(), 8);
-    } else {
-        panic!("Expected Failure error");
-    }
+    let (rest, root_node) = parse(Span::new(input)).unwrap();
+
+    assert_eq!(
+        root_node,
+        RootNode {
+            nodes: vec![HsmlNode::Tag(TagNode {
+                tag: String::from("div"),
+                ids: vec![
+                    IdNode::new_without_location("id1"),
+                    IdNode::new_without_location("id2"),
+                ],
+                classes: None,
+                attributes: None,
+                text: None,
+                children: None,
+            })],
+        }
+    );
+
+    assert_eq!(*rest.fragment(), "");
 }

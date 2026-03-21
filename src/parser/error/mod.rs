@@ -11,6 +11,11 @@ use super::Span;
 pub enum ErrorCode {
     DuplicateId,
     InvalidTagName,
+    UnclosedBracket,
+    UnclosedParenthesis,
+    UnclosedQuote,
+    ExpectedAttributeValue,
+    InvalidAttributeKey,
     DuplicateClass,
     MixedIndentation,
 }
@@ -21,6 +26,11 @@ impl ErrorCode {
     pub const ALL: &[ErrorCode] = &[
         Self::DuplicateId,
         Self::InvalidTagName,
+        Self::UnclosedBracket,
+        Self::UnclosedParenthesis,
+        Self::UnclosedQuote,
+        Self::ExpectedAttributeValue,
+        Self::InvalidAttributeKey,
         Self::DuplicateClass,
         Self::MixedIndentation,
     ];
@@ -28,8 +38,13 @@ impl ErrorCode {
     /// Machine-readable error code (e.g., "E001").
     pub fn code(&self) -> &'static str {
         match self {
-            Self::DuplicateId => "E001",
+            Self::DuplicateId => "W002",
             Self::InvalidTagName => "E004",
+            Self::UnclosedBracket => "E005",
+            Self::UnclosedParenthesis => "E008",
+            Self::UnclosedQuote => "E006",
+            Self::ExpectedAttributeValue => "E009",
+            Self::InvalidAttributeKey => "E007",
             Self::DuplicateClass => "W001",
             Self::MixedIndentation => "W003",
         }
@@ -40,6 +55,11 @@ impl ErrorCode {
         match self {
             Self::DuplicateId => "Duplicate attribute 'id' is not allowed",
             Self::InvalidTagName => "Tag name must start with an ASCII letter",
+            Self::UnclosedBracket => "Unclosed bracket",
+            Self::UnclosedParenthesis => "Unclosed parenthesis",
+            Self::UnclosedQuote => "Unclosed quote in attribute value",
+            Self::ExpectedAttributeValue => "Expected quoted attribute value",
+            Self::InvalidAttributeKey => "Invalid attribute key",
             Self::DuplicateClass => "Duplicate class",
             Self::MixedIndentation => "Mixed tabs and spaces in indentation",
         }
@@ -48,8 +68,13 @@ impl ErrorCode {
     /// Default severity for this error code.
     pub fn severity(&self) -> Severity {
         match self {
-            Self::DuplicateId => Severity::Error,
+            Self::DuplicateId => Severity::Warning,
             Self::InvalidTagName => Severity::Error,
+            Self::UnclosedBracket => Severity::Error,
+            Self::UnclosedParenthesis => Severity::Error,
+            Self::UnclosedQuote => Severity::Error,
+            Self::ExpectedAttributeValue => Severity::Error,
+            Self::InvalidAttributeKey => Severity::Error,
             Self::MixedIndentation => Severity::Warning,
             Self::DuplicateClass => Severity::Warning,
         }

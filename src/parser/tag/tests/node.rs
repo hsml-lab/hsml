@@ -2,6 +2,7 @@ use crate::parser::{
     HsmlProcessContext, Span,
     class::node::ClassNode,
     error::ErrorCode,
+    id::node::IdNode,
     tag::node::{TagNode, tag_node},
     text::node::TextNode,
 };
@@ -29,7 +30,7 @@ fn it_should_return_tag_node_with_piped_text() {
         tag,
         TagNode {
             tag: String::from("p"),
-            id: None,
+            ids: vec![],
             classes: Some(vec![
                 ClassNode::new_without_location("text-lg"),
                 ClassNode::new_without_location("font-medium"),
@@ -67,7 +68,7 @@ fn it_should_parse_mixed_tabs_and_spaces_indentation() {
 }
 
 #[test]
-fn it_should_propagate_duplicate_id_error_from_child() {
+fn it_should_parse_child_with_multiple_ids() {
     let context = &mut HsmlProcessContext {
         nested_tag_level: 0,
         indent_string: String::new(),
@@ -75,19 +76,21 @@ fn it_should_propagate_duplicate_id_error_from_child() {
 
     let input = Span::new("div\n  span#a#b");
 
-    let result = tag_node(input, context);
+    let (rest, tag) = tag_node(input, context).unwrap();
 
-    assert!(result.is_err());
-    if let Err(nom::Err::Failure(err)) = result {
-        assert_eq!(
-            err.message.as_deref(),
-            Some("Duplicate attribute 'id' is not allowed")
-        );
-        assert_eq!(err.code(), Some(ErrorCode::DuplicateId.code()));
-        assert_eq!(*err.span.fragment(), "#b");
+    assert_eq!(tag.tag, "div");
+    let children = tag.children.unwrap();
+    assert_eq!(children.len(), 1);
+    if let crate::parser::HsmlNode::Tag(child) = &children[0] {
+        assert_eq!(child.tag, "span");
+        assert_eq!(child.ids.len(), 2);
+        assert_eq!(child.ids[0], IdNode::new_without_location("a"));
+        assert_eq!(child.ids[1], IdNode::new_without_location("b"));
     } else {
-        panic!("Expected Failure error with E001");
+        panic!("Expected Tag node");
     }
+
+    assert_eq!(*rest.fragment(), "");
 }
 
 #[test]
@@ -130,7 +133,7 @@ fn it_should_break_when_indentation_does_not_start_with_parent_indent() {
         tag,
         TagNode {
             tag: String::from("div"),
-            id: None,
+            ids: vec![],
             classes: None,
             attributes: None,
             text: None,

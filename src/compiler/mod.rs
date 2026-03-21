@@ -12,7 +12,8 @@ fn compile_tag_node(tag_node: &TagNode, _options: &HsmlCompileOptions) -> Result
     html_content.push('<');
     html_content.push_str(&tag_node.tag);
 
-    if let Some(id_node) = &tag_node.id {
+    // Use the first id (duplicates are warned about by the validator)
+    if let Some(id_node) = tag_node.ids.first() {
         html_content.push_str(r#" id=""#);
         html_content.push_str(&id_node.id);
         html_content.push('\"');

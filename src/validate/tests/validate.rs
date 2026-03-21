@@ -180,3 +180,33 @@ fn it_should_not_warn_on_whitespace_only_lines() {
     // The whitespace-only line " \t " should not trigger W003
     assert!(diagnostics.is_empty());
 }
+
+#[test]
+fn it_should_warn_on_duplicate_id() {
+    let source = "div#a#b Hello\n";
+    let (_, ast) = parse(Span::new(source)).unwrap();
+
+    let diagnostics = validate(&ast, source);
+
+    let id_warnings: Vec<_> = diagnostics
+        .iter()
+        .filter(|d| d.code == Some(ErrorCode::DuplicateId.code().to_string()))
+        .collect();
+    assert_eq!(id_warnings.len(), 1);
+    assert_eq!(id_warnings[0].severity, Severity::Warning);
+    assert_eq!(id_warnings[0].message, "Duplicate id 'b' is not allowed");
+    assert_eq!(
+        id_warnings[0].location,
+        Some(Location { line: 1, column: 6 })
+    );
+}
+
+#[test]
+fn it_should_not_warn_on_single_id() {
+    let source = "div#my-id Hello\n";
+    let (_, ast) = parse(Span::new(source)).unwrap();
+
+    let diagnostics = validate(&ast, source);
+
+    assert!(diagnostics.is_empty());
+}

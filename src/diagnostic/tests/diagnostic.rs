@@ -8,7 +8,7 @@ fn it_should_convert_hsml_error_with_code() {
     let err = HsmlError::from_code(input, ErrorCode::DuplicateId);
     let diag = Diagnostic::from(&err);
 
-    assert_eq!(diag.severity, Severity::Error);
+    assert_eq!(diag.severity, Severity::Warning);
     assert_eq!(diag.message, "Duplicate attribute 'id' is not allowed");
     assert_eq!(diag.code, Some(ErrorCode::DuplicateId.code().to_string()));
     assert_eq!(diag.location, Some(Location { line: 1, column: 1 }));
