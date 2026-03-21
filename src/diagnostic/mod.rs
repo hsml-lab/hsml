@@ -13,7 +13,7 @@ pub struct Location {
     /// Line number (1-based).
     pub line: u32,
     /// Column number (1-based).
-    pub column: usize,
+    pub column: u32,
 }
 
 /// A format-agnostic diagnostic message.
@@ -65,11 +65,11 @@ impl<'a> From<&HsmlError<'a>> for Diagnostic {
             message: e
                 .message
                 .clone()
-                .unwrap_or_else(|| format!("parse error ({:?})", e.kind)),
+                .unwrap_or_else(|| "parse error".to_string()),
             code: e.code().map(String::from),
             location: Some(Location {
                 line: e.line(),
-                column: e.column(),
+                column: e.column() as u32,
             }),
             file_path: None,
         }

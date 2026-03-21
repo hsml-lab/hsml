@@ -22,7 +22,7 @@ fn it_should_convert_hsml_error_without_message() {
     let diag = Diagnostic::from(&err);
 
     assert_eq!(diag.severity, Severity::Error);
-    assert_eq!(diag.message, "parse error (Tag)");
+    assert_eq!(diag.message, "parse error");
     assert_eq!(diag.code, None);
     assert!(diag.location.is_some());
 }
@@ -34,7 +34,7 @@ fn it_should_convert_nom_err_error() {
     let diag = Diagnostic::from(&nom_err);
 
     assert_eq!(diag.severity, Severity::Error);
-    assert_eq!(diag.message, "parse error (Tag)");
+    assert_eq!(diag.message, "parse error");
 }
 
 #[test]
