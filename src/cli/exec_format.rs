@@ -1,5 +1,5 @@
 use clap::ArgMatches;
 
 pub fn exec_format(_matches: &ArgMatches) -> Result<(), &str> {
-    todo!("Format");
+    Err("The 'fmt' command is not yet implemented")
 }

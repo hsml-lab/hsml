@@ -1,5 +1,5 @@
 use clap::ArgMatches;
 
 pub fn exec_parse(_matches: &ArgMatches) -> Result<(), &str> {
-    todo!("Parse");
+    Err("The 'parse' command is not yet implemented")
 }

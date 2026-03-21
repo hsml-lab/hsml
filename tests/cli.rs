@@ -219,3 +219,32 @@ fn compile_directory_skips_non_hsml_files() {
     assert!(dir.path().join("a.html").exists());
     assert!(!dir.path().join("readme.html").exists());
 }
+
+// --- Unimplemented commands ---
+
+#[test]
+fn parse_command_shows_not_implemented() {
+    cmd()
+        .args(["parse"])
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains("not yet implemented"));
+}
+
+#[test]
+fn fmt_command_shows_not_implemented() {
+    cmd()
+        .args(["fmt"])
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains("not yet implemented"));
+}
+
+#[test]
+fn check_command_shows_not_implemented() {
+    cmd()
+        .args(["check"])
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains("not yet implemented"));
+}
