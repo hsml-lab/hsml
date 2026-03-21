@@ -1,5 +1,5 @@
 use hsml::{
-    compile_content_core,
+    compile_content_core, compile_content_diagnostics,
     compiler::{HsmlCompileOptions, compile},
     parser::{
         HsmlNode, RootNode, Span, class::node::ClassNode, doctype::node::DoctypeNode,
@@ -195,6 +195,37 @@ fn it_should_compile_text_containing_double_slashes() {
         result,
         Ok(String::from(r#"<a>Visit https://example.com</a>"#))
     );
+}
+
+#[test]
+fn compile_content_diagnostics_should_return_html_for_valid_input() {
+    let result = compile_content_diagnostics("h1 Hello\n");
+    assert_eq!(result, Ok(String::from("<h1>Hello</h1>")));
+}
+
+#[test]
+fn compile_content_diagnostics_should_return_diagnostics_for_invalid_input() {
+    let result = compile_content_diagnostics("@@@invalid");
+    assert!(result.is_err());
+    let diagnostics = result.unwrap_err();
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(diagnostics[0].severity, hsml::diagnostic::Severity::Error);
+    assert!(diagnostics[0].location.is_some());
+}
+
+#[test]
+fn compile_content_diagnostics_should_return_diagnostics_for_duplicate_id() {
+    let result = compile_content_diagnostics("div#a#b\n");
+    assert!(result.is_err());
+    let diagnostics = result.unwrap_err();
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(diagnostics[0].severity, hsml::diagnostic::Severity::Error);
+    assert_eq!(diagnostics[0].code, Some("E001".to_string()));
+    assert_eq!(
+        diagnostics[0].message,
+        "Duplicate attribute 'id' is not allowed"
+    );
+    assert!(diagnostics[0].location.is_some());
 }
 
 #[test]
