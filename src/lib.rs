@@ -95,5 +95,14 @@ pub fn compile_content_with_diagnostics(source: &str) -> JsValue {
         },
     };
 
-    serde_wasm_bindgen::to_value(&result).unwrap_or(JsValue::NULL)
+    serde_wasm_bindgen::to_value(&result).unwrap_or_else(|e| {
+        let fallback = WasmCompileResult {
+            success: false,
+            html: None,
+            diagnostics: vec![diagnostic::Diagnostic::compiler_error(format!(
+                "Failed to serialize compile result: {e}"
+            ))],
+        };
+        serde_wasm_bindgen::to_value(&fallback).unwrap_or(JsValue::NULL)
+    })
 }
