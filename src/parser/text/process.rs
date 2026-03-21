@@ -6,6 +6,16 @@ use nom::{
 
 use crate::parser::{HsmlProcessContext, HsmlResult, Span, advance, take_prefix};
 
+/// Check if a line belongs to the current text block based on indentation.
+/// A line belongs if it starts with the indent string followed by a space or tab.
+fn is_text_block_line(line: &str, indent: &str) -> bool {
+    if let Some(after_indent) = line.strip_prefix(indent) {
+        after_indent.starts_with(' ') || after_indent.starts_with('\t')
+    } else {
+        false
+    }
+}
+
 pub(super) fn process_text_block<'a>(
     input: Span<'a>,
     context: &mut HsmlProcessContext,
@@ -15,53 +25,55 @@ pub(super) fn process_text_block<'a>(
     // eat one \r\n or \n
     let (rest, _) = alt((tag("\r\n"), tag("\n"))).parse(rest)?;
 
-    let mut text_block_end = 0;
-
     let rest_str = *rest.fragment();
 
-    // Validate first line as well (the loop below only validates lines after a '\n').
+    // Validate first line
     if let Some(first_line) = rest_str.lines().next()
         && !first_line.is_empty()
+        && !is_text_block_line(first_line, &context.indent_string)
     {
-        if !first_line.starts_with(&context.indent_string) {
-            return Ok((rest, take_prefix(rest, 0)));
-        }
-
-        let after_indent = &first_line[context.indent_string.len()..];
-        if !after_indent.starts_with(' ') && !after_indent.starts_with('\t') {
-            return Ok((rest, take_prefix(rest, 0)));
-        }
+        return Ok((rest, take_prefix(rest, 0)));
     }
 
-    // loop over each line until we find a line that does not starts with the current indent string
-    for (index, c) in rest_str.char_indices() {
-        if c == '\n' {
-            // if next char is also a \n, then continue
-            let line_start = index + 1;
-            let next_char = rest_str[line_start..].chars().next();
-            if next_char == Some('\n') {
-                text_block_end = line_start + 1;
-                continue;
-            }
+    // Scan line by line to find where the text block ends
+    let mut text_block_end = 0;
+    let mut pos = 0;
 
-            let line = &rest_str[line_start..];
+    while pos < rest_str.len() {
+        // Find the end of the current line
+        let line_end = rest_str[pos..]
+            .find('\n')
+            .map_or(rest_str.len(), |i| pos + i);
+        // Include the content up to the end of this line
+        text_block_end = line_end;
 
-            // otherwise check the indentation and if it does not fulfill the indentation, then break
-            // TODO @Shinigami92 2025-03-16: right now this does not support mixed indentations on tag level indentation, but only withing the text block
-            if !line.starts_with(&context.indent_string) {
-                break;
-            }
+        // If there's no newline, we've reached the end of input
+        if line_end >= rest_str.len() {
+            break;
+        }
 
-            let line = &line[context.indent_string.len()..];
+        // Move past the newline
+        let next_pos = line_end + 1;
 
-            // break out if the first character is not a space or tab
-            if !line.starts_with(' ') && !line.starts_with('\t') {
-                break;
-            }
-        } else {
-            text_block_end = index + c.len_utf8();
+        // Check if the next line is blank (consecutive newline)
+        if rest_str[next_pos..].starts_with('\n') {
+            text_block_end = next_pos + 1;
+            pos = next_pos + 1;
             continue;
         }
+
+        // Check if the next line belongs to the text block
+        let next_line_end = rest_str[next_pos..]
+            .find('\n')
+            .map_or(rest_str.len(), |i| next_pos + i);
+        let next_line = &rest_str[next_pos..next_line_end];
+
+        // TODO @Shinigami92 2025-03-16: right now this does not support mixed indentations on tag level indentation, but only within the text block
+        if !is_text_block_line(next_line, &context.indent_string) {
+            break;
+        }
+
+        pos = next_pos;
     }
 
     let text_block = take_prefix(rest, text_block_end);
