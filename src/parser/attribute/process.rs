@@ -77,11 +77,17 @@ pub(super) fn process_attribute_value<'a>(
     _context: &mut HsmlProcessContext,
 ) -> HsmlResult<'a, Span<'a>> {
     let Some(first_char) = input.fragment().chars().next() else {
-        return Err(HsmlError::fail_code(input, ErrorCode::UnclosedQuote));
+        return Err(HsmlError::fail_code(
+            input,
+            ErrorCode::ExpectedAttributeValue,
+        ));
     };
 
     if first_char != '"' && first_char != '\'' {
-        return Err(HsmlError::fail_code(input, ErrorCode::UnclosedQuote));
+        return Err(HsmlError::fail_code(
+            input,
+            ErrorCode::ExpectedAttributeValue,
+        ));
     }
 
     if let Some(len) = quoted_string_len(input.fragment()) {

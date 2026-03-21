@@ -352,7 +352,7 @@ fn it_should_not_process_attribute_without_quoted_value() {
     assert!(result.is_err());
     if let Err(nom::Err::Failure(err)) = result {
         assert_eq!(*err.span.fragment(), "imgSrc");
-        assert_eq!(err.code(), Some(ErrorCode::UnclosedQuote.code()));
+        assert_eq!(err.code(), Some(ErrorCode::ExpectedAttributeValue.code()));
     } else {
         panic!("Expected Failure");
     }
@@ -378,7 +378,7 @@ fn it_should_not_process_attribute_value_with_empty_input() {
     assert!(result.is_err());
     if let Err(nom::Err::Failure(err)) = result {
         assert_eq!(*err.span.fragment(), "");
-        assert_eq!(err.code(), Some(ErrorCode::UnclosedQuote.code()));
+        assert_eq!(err.code(), Some(ErrorCode::ExpectedAttributeValue.code()));
     } else {
         panic!("Expected Failure");
     }
