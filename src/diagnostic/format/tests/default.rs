@@ -71,16 +71,28 @@ fn it_should_format_error_without_location() {
 fn it_should_format_warning() {
     let diag = Diagnostic {
         severity: Severity::Warning,
-        message: "Unused class".to_string(),
+        message: "Duplicate class 'text-red'".to_string(),
         code: None,
-        location: Some(Location { line: 2, column: 5 }),
+        location: Some(Location {
+            line: 1,
+            column: 15,
+        }),
         file_path: Some("test.hsml".to_string()),
     };
 
-    let source = "div\n    .unused-class";
+    let source = "h1.text-red.text-red Hello";
     let output = DefaultFormatter.format(&[diag], Some(source));
 
-    assert!(output.starts_with("warning: Unused class\n"));
+    assert_eq!(
+        output,
+        "\
+warning: Duplicate class 'text-red'
+ --> test.hsml:1:15
+  |
+1 | h1.text-red.text-red Hello
+  |               ^
+"
+    );
 }
 
 #[test]
