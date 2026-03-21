@@ -102,7 +102,7 @@ fn validate_tag(tag: &TagNode, diagnostics: &mut Vec<Diagnostic>) {
     if let Some(attributes) = &tag.attributes {
         let mut seen: HashSet<&str> = HashSet::new();
         for node in attributes {
-            if let HsmlNode::Attribute(AttributeNode { key, .. }) = node {
+            if let HsmlNode::Attribute(AttributeNode { key, location, .. }) = node {
                 if is_mergeable_attribute(key) {
                     continue;
                 }
@@ -111,7 +111,11 @@ fn validate_tag(tag: &TagNode, diagnostics: &mut Vec<Diagnostic>) {
                         severity: Severity::Warning,
                         message: format!("{} '{key}'", ErrorCode::DuplicateAttribute.message()),
                         code: Some(ErrorCode::DuplicateAttribute.code().to_string()),
-                        location: None,
+                        location: if location.line > 0 && location.column > 0 {
+                            Some(location.clone())
+                        } else {
+                            None
+                        },
                         file_path: None,
                     });
                 }

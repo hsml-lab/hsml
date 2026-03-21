@@ -1,21 +1,50 @@
 use nom::bytes::complete::{tag, take_till};
 
+use crate::common::Location;
 use crate::parser::{
     HsmlNode, HsmlProcessContext, HsmlResult, Span, comment::node::comment_dev_node,
 };
 
 use super::process::process_attribute;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Eq)]
 pub struct AttributeNode {
     pub key: String,
     pub value: Option<String>,
+    /// Source location where this attribute appears.
+    pub location: Location,
+}
+
+// PartialEq only compares key and value so that tests comparing parsed ASTs
+// don't need to specify exact location values for every attribute.
+impl PartialEq for AttributeNode {
+    fn eq(&self, other: &Self) -> bool {
+        self.key == other.key && self.value == other.value
+    }
+}
+
+impl AttributeNode {
+    /// Create an AttributeNode with key and value (no source location).
+    /// Useful in tests where location is not relevant.
+    #[doc(hidden)]
+    pub fn new_without_location(key: impl Into<String>, value: Option<impl Into<String>>) -> Self {
+        Self {
+            key: key.into(),
+            value: value.map(|v| v.into()),
+            location: Location { line: 0, column: 0 },
+        }
+    }
 }
 
 pub fn attribute_node<'a>(
     input: Span<'a>,
     context: &mut HsmlProcessContext,
 ) -> HsmlResult<'a, AttributeNode> {
+    let location = Location {
+        line: input.location_line(),
+        column: input.get_column() as u32,
+    };
+
     let (input, attribute) = process_attribute(input, context)?;
 
     let attribute_str = *attribute.fragment();
@@ -33,6 +62,7 @@ pub fn attribute_node<'a>(
         AttributeNode {
             key: key.to_string(),
             value,
+            location,
         },
     ))
 }

@@ -225,6 +225,13 @@ fn it_should_warn_on_duplicate_attribute() {
     assert_eq!(attr_warnings.len(), 1);
     assert_eq!(attr_warnings[0].severity, Severity::Warning);
     assert_eq!(attr_warnings[0].message, "Duplicate attribute 'src'");
+    assert_eq!(
+        attr_warnings[0].location,
+        Some(Location {
+            line: 1,
+            column: 13
+        })
+    );
 }
 
 #[test]
