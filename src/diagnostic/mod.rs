@@ -42,36 +42,6 @@ impl Diagnostic {
         self
     }
 
-    /// Serialize this diagnostic as a JSON object string.
-    pub fn to_json(&self) -> String {
-        use format::json::escape_json;
-
-        let severity = match self.severity {
-            Severity::Error => "error",
-            Severity::Warning => "warning",
-        };
-
-        let mut output = format!(
-            "{{\"severity\":\"{severity}\",\"message\":\"{}\"",
-            escape_json(&self.message)
-        );
-
-        if let Some(ref code) = self.code {
-            output.push_str(&format!(",\"code\":\"{}\"", escape_json(code)));
-        }
-
-        if let Some(ref loc) = self.location {
-            output.push_str(&format!(",\"line\":{},\"column\":{}", loc.line, loc.column));
-        }
-
-        if let Some(ref path) = self.file_path {
-            output.push_str(&format!(",\"file\":\"{}\"", escape_json(path)));
-        }
-
-        output.push('}');
-        output
-    }
-
     /// Serialize a slice of diagnostics as a JSON array string.
     pub fn slice_to_json(diagnostics: &[Diagnostic]) -> String {
         use format::{DiagnosticFormatter, json::JsonFormatter};
