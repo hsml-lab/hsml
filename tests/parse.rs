@@ -31,9 +31,7 @@ fn it_should_parse() {
                 HsmlNode::Tag(TagNode {
                     tag: String::from("h1"),
                     id: None,
-                    classes: Some(vec![ClassNode {
-                        name: String::from("text-red")
-                    }]),
+                    classes: Some(vec![ClassNode::new_without_location("text-red")]),
                     attributes: None,
                     text: Some(TextNode {
                         text: String::from("Vite CJS Faker Demo"),
@@ -43,18 +41,14 @@ fn it_should_parse() {
                 HsmlNode::Tag(TagNode {
                     tag: String::from("div"),
                     id: None,
-                    classes: Some(vec![ClassNode {
-                        name: String::from("card"),
-                    }]),
+                    classes: Some(vec![ClassNode::new_without_location("card")]),
                     attributes: None,
                     text: None,
                     children: Some(vec![
                         HsmlNode::Tag(TagNode {
                             tag: String::from("div"),
                             id: None,
-                            classes: Some(vec![ClassNode {
-                                name: String::from("card__image"),
-                            }]),
+                            classes: Some(vec![ClassNode::new_without_location("card__image")]),
                             attributes: None,
                             text: None,
                             children: Some(vec![HsmlNode::Tag(TagNode {
@@ -80,9 +74,7 @@ fn it_should_parse() {
                         HsmlNode::Tag(TagNode {
                             tag: String::from("div"),
                             id: None,
-                            classes: Some(vec![ClassNode {
-                                name: String::from("card__profile"),
-                            }]),
+                            classes: Some(vec![ClassNode::new_without_location("card__profile")]),
                             attributes: None,
                             text: None,
                             children: Some(vec![HsmlNode::Tag(TagNode {
@@ -106,9 +98,7 @@ fn it_should_parse() {
                         HsmlNode::Tag(TagNode {
                             tag: String::from("div"),
                             id: None,
-                            classes: Some(vec![ClassNode {
-                                name: String::from("card__body"),
-                            }]),
+                            classes: Some(vec![ClassNode::new_without_location("card__body")]),
                             attributes: None,
                             text: Some(TextNode {
                                 text: String::from("{{ fullName }}"),
@@ -242,12 +232,8 @@ fn it_should_parse_wrapped_attributes() {
                 tag: String::from("img"),
                 id: None,
                 classes: Some(vec![
-                    ClassNode {
-                        name: String::from("rounded-full"),
-                    },
-                    ClassNode {
-                        name: String::from("mx-auto"),
-                    },
+                    ClassNode::new_without_location("rounded-full"),
+                    ClassNode::new_without_location("mx-auto"),
                 ]),
                 attributes: Some(vec![
                     HsmlNode::Attribute(AttributeNode {

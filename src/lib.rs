@@ -1,3 +1,4 @@
+pub mod common;
 pub mod compiler;
 pub mod diagnostic;
 pub mod parser;
@@ -54,7 +55,7 @@ pub fn compile_content_diagnostics(
     }
 
     // Run validation to collect warnings
-    let diagnostics = validate::validate(&ast, source);
+    let diagnostics = validate::validate(&ast);
 
     let html = compiler::compile(&ast, &compiler::HsmlCompileOptions::default())
         .map_err(|e| vec![diagnostic::Diagnostic::compiler_error(e)])?;
