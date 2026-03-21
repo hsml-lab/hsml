@@ -1,5 +1,6 @@
 use crate::diagnostic::{Location, Severity};
 use crate::parser::Span;
+use crate::parser::error::ErrorCode;
 use crate::parser::parse::parse;
 use crate::validate::validate;
 
@@ -13,7 +14,10 @@ fn it_should_warn_on_duplicate_class() {
     assert_eq!(diagnostics.len(), 1);
     assert_eq!(diagnostics[0].severity, Severity::Warning);
     assert_eq!(diagnostics[0].message, "Duplicate class 'text-red'");
-    assert_eq!(diagnostics[0].code, Some("W001".to_string()));
+    assert_eq!(
+        diagnostics[0].code,
+        Some(ErrorCode::DuplicateClass.code().to_string())
+    );
     assert_eq!(
         diagnostics[0].location,
         Some(Location {
@@ -107,7 +111,10 @@ fn it_should_warn_on_mixed_indentation() {
         diagnostics[0].message,
         "Mixed tabs and spaces in indentation"
     );
-    assert_eq!(diagnostics[0].code, Some("W003".to_string()));
+    assert_eq!(
+        diagnostics[0].code,
+        Some(ErrorCode::MixedIndentation.code().to_string())
+    );
     assert_eq!(
         diagnostics[0].location,
         Some(Location { line: 2, column: 1 })
@@ -142,7 +149,10 @@ fn it_should_warn_on_tab_then_space_indentation() {
     let diagnostics = validate(&ast, source);
 
     assert_eq!(diagnostics.len(), 1);
-    assert_eq!(diagnostics[0].code, Some("W003".to_string()));
+    assert_eq!(
+        diagnostics[0].code,
+        Some(ErrorCode::MixedIndentation.code().to_string())
+    );
 }
 
 #[test]
@@ -155,7 +165,7 @@ fn it_should_warn_on_multiple_mixed_lines() {
     // Both lines have mixed indentation
     let mixed_warnings: Vec<_> = diagnostics
         .iter()
-        .filter(|d| d.code == Some("W003".to_string()))
+        .filter(|d| d.code == Some(ErrorCode::MixedIndentation.code().to_string()))
         .collect();
     assert_eq!(mixed_warnings.len(), 2);
 }

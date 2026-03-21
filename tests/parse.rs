@@ -278,7 +278,7 @@ fn it_should_not_parse_tag_with_multiple_ids() {
             Some("Duplicate attribute 'id' is not allowed")
         );
         assert_eq!(err.error_code, Some(ErrorCode::DuplicateId));
-        assert_eq!(err.code(), Some("E001"));
+        assert_eq!(err.code(), Some(ErrorCode::DuplicateId.code()));
         assert_eq!(err.severity, Severity::Error);
         assert_eq!(err.line(), 1);
         assert_eq!(err.column(), 8);

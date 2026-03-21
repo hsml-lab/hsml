@@ -1,13 +1,14 @@
 use crate::diagnostic::format::DiagnosticFormatter;
 use crate::diagnostic::format::default::DefaultFormatter;
 use crate::diagnostic::{Diagnostic, Location, Severity};
+use crate::parser::error::ErrorCode;
 
 #[test]
 fn it_should_format_error_with_source_context() {
     let diag = Diagnostic {
         severity: Severity::Error,
         message: "Duplicate attribute 'id' is not allowed".to_string(),
-        code: Some("E001".to_string()),
+        code: Some(ErrorCode::DuplicateId.code().to_string()),
         location: Some(Location { line: 1, column: 8 }),
         file_path: Some("example.hsml".to_string()),
     };
@@ -72,7 +73,7 @@ fn it_should_format_warning() {
     let diag = Diagnostic {
         severity: Severity::Warning,
         message: "Duplicate class 'text-red'".to_string(),
-        code: Some("W001".to_string()),
+        code: Some(ErrorCode::DuplicateClass.code().to_string()),
         location: Some(Location {
             line: 1,
             column: 12,

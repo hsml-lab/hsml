@@ -3,7 +3,7 @@ use hsml::{
     compiler::{HsmlCompileOptions, compile},
     parser::{
         HsmlNode, RootNode, Span, class::node::ClassNode, doctype::node::DoctypeNode,
-        id::node::IdNode, parse::parse, tag::node::TagNode, text::node::TextNode,
+        error::ErrorCode, id::node::IdNode, parse::parse, tag::node::TagNode, text::node::TextNode,
     },
 };
 
@@ -213,7 +213,10 @@ fn compile_content_diagnostics_should_return_warnings_for_duplicate_class() {
         output.diagnostics[0].severity,
         hsml::diagnostic::Severity::Warning
     );
-    assert_eq!(output.diagnostics[0].code, Some("W001".to_string()));
+    assert_eq!(
+        output.diagnostics[0].code,
+        Some(ErrorCode::DuplicateClass.code().to_string())
+    );
     assert_eq!(output.diagnostics[0].message, "Duplicate class 'text-red'");
 }
 
@@ -234,7 +237,10 @@ fn compile_content_diagnostics_should_return_diagnostics_for_duplicate_id() {
     let diagnostics = result.unwrap_err();
     assert_eq!(diagnostics.len(), 1);
     assert_eq!(diagnostics[0].severity, hsml::diagnostic::Severity::Error);
-    assert_eq!(diagnostics[0].code, Some("E001".to_string()));
+    assert_eq!(
+        diagnostics[0].code,
+        Some(ErrorCode::DuplicateId.code().to_string())
+    );
     assert_eq!(
         diagnostics[0].message,
         "Duplicate attribute 'id' is not allowed"
