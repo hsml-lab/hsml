@@ -5,8 +5,10 @@ authors = ["Christopher Quadflieg <chrissi92@hotmail.de>"]
 edition = "2024"
 description = "A pug-inspired HTML preprocessor"
 repository = "https://github.com/hsml-lab/hsml"
+homepage = "https://github.com/hsml-lab/hsml"
 license = "MIT"
-keywords = ["hsml", "html", "preprocessor"]
+rust-version = "1.88"
+keywords = ["hsml", "html", "preprocessor", "wasm"]
 categories = [
     "api-bindings",
     "command-line-utilities",
@@ -14,15 +16,16 @@ categories = [
     "parser-implementations",
 ]
 exclude = [
+    "/.claude",
     "/.github",
     "/.vscode",
+    "/coverage",
+    "CONTRIBUTING.md",
     "example.hsml",
     "example2.hsml",
     "finite_state_machine.dot",
     "notes.md",
 ]
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [lib]
 crate-type = ["cdylib", "rlib"]

@@ -3,6 +3,6 @@
 - https://en.wikipedia.org/wiki/Parser_combinator
 
 ```bash
-wasm-pack build --target nodejs
+wasm-pack build --target bundler
 wasm-pack publish
 ```
