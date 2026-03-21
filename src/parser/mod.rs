@@ -1,4 +1,4 @@
-use nom::{Input, character::complete::line_ending};
+use nom::Input;
 use nom_locate::LocatedSpan;
 
 pub type Span<'a> = LocatedSpan<&'a str>;
@@ -48,10 +48,6 @@ pub struct HsmlProcessContext {
     ///
     /// Can be a combination of spaces and tabs
     pub indent_string: String,
-}
-
-pub fn process_newline(input: Span<'_>) -> HsmlResult<'_, Span<'_>> {
-    line_ending(input)
 }
 
 /// Helper to advance a span by n bytes, returning the remaining span.
