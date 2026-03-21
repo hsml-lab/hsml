@@ -196,6 +196,32 @@ fn it_should_process_class_with_char_after_bracket() {
 // Negative tests
 
 #[test]
+fn it_should_not_process_empty_class_name() {
+    let result = process_class(Span::new("..next"));
+
+    assert!(result.is_err());
+    if let Err(nom::Err::Error(err)) = result {
+        assert_eq!(*err.span.fragment(), ".next");
+        assert_eq!(err.kind, ErrorKind::Alpha);
+    } else {
+        panic!("Expected Error");
+    }
+}
+
+#[test]
+fn it_should_not_process_class_with_unclosed_bracket() {
+    let result = process_class(Span::new(".bg-[unclosed"));
+
+    assert!(result.is_err());
+    if let Err(nom::Err::Error(err)) = result {
+        assert_eq!(*err.span.fragment(), "[unclosed");
+        assert_eq!(err.kind, ErrorKind::Tag);
+    } else {
+        panic!("Expected Error");
+    }
+}
+
+#[test]
 fn it_should_not_process_class_without_dot() {
     let result = process_class(Span::new("text-red(disabled) Text"));
 
