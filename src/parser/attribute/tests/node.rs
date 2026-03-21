@@ -1,4 +1,3 @@
-use crate::common::Location;
 use crate::parser::{
     HsmlNode, HsmlProcessContext, Span,
     attribute::node::{AttributeNode, attribute_node, attribute_nodes},
@@ -13,11 +12,7 @@ fn it_should_return_attribute_node() {
 
     assert_eq!(
         attribute,
-        AttributeNode {
-            key: String::from("key"),
-            value: Some(String::from("value")),
-            location: Location { line: 0, column: 0 },
-        }
+        AttributeNode::new_without_location("key", Some("value"))
     );
 
     assert_eq!(*rest.fragment(), "");
@@ -41,16 +36,15 @@ fn it_should_return_attribute_node_with_multiline() {
 
     assert_eq!(
         attribute,
-        AttributeNode {
-            key: String::from("class"),
-            value: Some(String::from(
+        AttributeNode::new_without_location(
+            "class",
+            Some(
                 r#"{
         'is-active': isActive,
         'is-disabled': isDisabled,
     }"#
-            )),
-            location: Location { line: 0, column: 0 },
-        }
+            )
+        )
     );
 
     assert_eq!(
@@ -70,16 +64,8 @@ fn it_should_return_attribute_nodes() {
     assert_eq!(
         attribute_nodes,
         vec![
-            HsmlNode::Attribute(AttributeNode {
-                key: String::from("key"),
-                value: Some(String::from("value")),
-                location: Location { line: 0, column: 0 },
-            }),
-            HsmlNode::Attribute(AttributeNode {
-                key: String::from(":key2"),
-                value: Some(String::from("value2")),
-                location: Location { line: 0, column: 0 },
-            })
+            HsmlNode::Attribute(AttributeNode::new_without_location("key", Some("value"))),
+            HsmlNode::Attribute(AttributeNode::new_without_location(":key2", Some("value2")))
         ]
     );
 
@@ -105,16 +91,8 @@ fn it_should_return_attribute_nodes_with_wrapped() {
     assert_eq!(
         attribute_nodes,
         vec![
-            HsmlNode::Attribute(AttributeNode {
-                key: String::from("key"),
-                value: Some(String::from("value")),
-                location: Location { line: 0, column: 0 },
-            }),
-            HsmlNode::Attribute(AttributeNode {
-                key: String::from(":key2"),
-                value: Some(String::from("value2")),
-                location: Location { line: 0, column: 0 },
-            })
+            HsmlNode::Attribute(AttributeNode::new_without_location("key", Some("value"))),
+            HsmlNode::Attribute(AttributeNode::new_without_location(":key2", Some("value2")))
         ]
     );
 
@@ -146,20 +124,12 @@ fn it_should_return_attribute_nodes_with_dev_comments() {
                 is_dev: true,
                 text: String::from(" comment 1"),
             }),
-            HsmlNode::Attribute(AttributeNode {
-                key: String::from("key"),
-                value: Some(String::from("value")),
-                location: Location { line: 0, column: 0 },
-            }),
+            HsmlNode::Attribute(AttributeNode::new_without_location("key", Some("value"))),
             HsmlNode::Comment(CommentNode {
                 is_dev: true,
                 text: String::from(" comment 2"),
             }),
-            HsmlNode::Attribute(AttributeNode {
-                key: String::from(":key2"),
-                value: Some(String::from("value2")),
-                location: Location { line: 0, column: 0 },
-            }),
+            HsmlNode::Attribute(AttributeNode::new_without_location(":key2", Some("value2"))),
         ]
     );
 
@@ -185,21 +155,16 @@ fn it_should_return_attribute_nodes_with_multiline() {
     assert_eq!(
         attributes,
         vec![
-            HsmlNode::Attribute(AttributeNode {
-                key: String::from("class"),
-                value: Some(String::from(
+            HsmlNode::Attribute(AttributeNode::new_without_location(
+                "class",
+                Some(
                     r#"{
         'is-active': isActive,
         'is-disabled': isDisabled,
     }"#
-                )),
-                location: Location { line: 0, column: 0 },
-            }),
-            HsmlNode::Attribute(AttributeNode {
-                key: String::from(":key"),
-                value: Some(String::from("item.id")),
-                location: Location { line: 0, column: 0 },
-            }),
+                )
+            )),
+            HsmlNode::Attribute(AttributeNode::new_without_location(":key", Some("item.id"))),
         ]
     );
 

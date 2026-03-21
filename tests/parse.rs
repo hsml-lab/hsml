@@ -1,4 +1,3 @@
-use hsml::common::Location;
 use hsml::parser::{
     HsmlNode, RootNode, Span, attribute::node::AttributeNode, class::node::ClassNode,
     comment::node::CommentNode, id::node::IdNode, parse::parse, tag::node::TagNode,
@@ -50,18 +49,14 @@ fn it_should_parse() {
                                 ids: vec![],
                                 classes: None,
                                 attributes: Some(vec![
-                                    HsmlNode::Attribute(AttributeNode {
-                                        key: String::from(":src"),
-                                        value: Some(String::from("natureImageUrl")),
-                                        location: Location { line: 0, column: 0 },
-                                    }),
-                                    HsmlNode::Attribute(AttributeNode {
-                                        key: String::from(":alt"),
-                                        value: Some(String::from(
-                                            "'Background image for ' + fullName"
-                                        )),
-                                        location: Location { line: 0, column: 0 },
-                                    }),
+                                    HsmlNode::Attribute(AttributeNode::new_without_location(
+                                        ":src",
+                                        Some("natureImageUrl"),
+                                    )),
+                                    HsmlNode::Attribute(AttributeNode::new_without_location(
+                                        ":alt",
+                                        Some("'Background image for ' + fullName"),
+                                    )),
                                 ]),
                                 text: None,
                                 children: None,
@@ -78,16 +73,14 @@ fn it_should_parse() {
                                 ids: vec![],
                                 classes: None,
                                 attributes: Some(vec![
-                                    HsmlNode::Attribute(AttributeNode {
-                                        key: String::from(":src"),
-                                        value: Some(String::from("avatarUrl")),
-                                        location: Location { line: 0, column: 0 },
-                                    }),
-                                    HsmlNode::Attribute(AttributeNode {
-                                        key: String::from(":alt"),
-                                        value: Some(String::from("'Avatar image of ' + fullName")),
-                                        location: Location { line: 0, column: 0 },
-                                    }),
+                                    HsmlNode::Attribute(AttributeNode::new_without_location(
+                                        ":src",
+                                        Some("avatarUrl"),
+                                    )),
+                                    HsmlNode::Attribute(AttributeNode::new_without_location(
+                                        ":alt",
+                                        Some("'Avatar image of ' + fullName"),
+                                    )),
                                 ]),
                                 text: None,
                                 children: None,
@@ -178,30 +171,26 @@ div
                                     text: String::from(" supports attribute inline comments"),
                                     is_dev: true,
                                 }),
-                                HsmlNode::Attribute(AttributeNode {
-                                    key: String::from("src"),
-                                    value: Some(String::from("/fancy-avatar.jpg")),
-                                    location: Location { line: 0, column: 0 },
-                                }),
-                                HsmlNode::Attribute(AttributeNode {
-                                    key: String::from("alt"),
-                                    value: Some(String::from("Fancy Avatar")),
-                                    location: Location { line: 0, column: 0 },
-                                }),
+                                HsmlNode::Attribute(AttributeNode::new_without_location(
+                                    "src",
+                                    Some("/fancy-avatar.jpg"),
+                                )),
+                                HsmlNode::Attribute(AttributeNode::new_without_location(
+                                    "alt",
+                                    Some("Fancy Avatar"),
+                                )),
                                 HsmlNode::Comment(CommentNode {
                                     text: String::from(" the size of the image"),
                                     is_dev: true,
                                 }),
-                                HsmlNode::Attribute(AttributeNode {
-                                    key: String::from("width"),
-                                    value: Some(String::from("384")),
-                                    location: Location { line: 0, column: 0 },
-                                }),
-                                HsmlNode::Attribute(AttributeNode {
-                                    key: String::from("height"),
-                                    value: Some(String::from("512")),
-                                    location: Location { line: 0, column: 0 },
-                                }),
+                                HsmlNode::Attribute(AttributeNode::new_without_location(
+                                    "width",
+                                    Some("384"),
+                                )),
+                                HsmlNode::Attribute(AttributeNode::new_without_location(
+                                    "height",
+                                    Some("512"),
+                                )),
                             ]),
                             text: None,
                             children: None,
@@ -238,26 +227,18 @@ fn it_should_parse_wrapped_attributes() {
                     ClassNode::new_without_location("mx-auto"),
                 ]),
                 attributes: Some(vec![
-                    HsmlNode::Attribute(AttributeNode {
-                        key: String::from("src"),
-                        value: Some(String::from("/fancy-avatar.jpg")),
-                        location: Location { line: 0, column: 0 },
-                    }),
-                    HsmlNode::Attribute(AttributeNode {
-                        key: String::from("alt"),
-                        value: Some(String::from("A fancy avatar")),
-                        location: Location { line: 0, column: 0 },
-                    }),
-                    HsmlNode::Attribute(AttributeNode {
-                        key: String::from("width"),
-                        value: Some(String::from("384")),
-                        location: Location { line: 0, column: 0 },
-                    }),
-                    HsmlNode::Attribute(AttributeNode {
-                        key: String::from("height"),
-                        value: Some(String::from("512")),
-                        location: Location { line: 0, column: 0 },
-                    }),
+                    HsmlNode::Attribute(AttributeNode::new_without_location(
+                        "src",
+                        Some("/fancy-avatar.jpg"),
+                    )),
+                    HsmlNode::Attribute(AttributeNode::new_without_location(
+                        "alt",
+                        Some("A fancy avatar"),
+                    )),
+                    HsmlNode::Attribute(AttributeNode::new_without_location("width", Some("384"),)),
+                    HsmlNode::Attribute(
+                        AttributeNode::new_without_location("height", Some("512"),)
+                    ),
                 ]),
                 text: None,
                 children: None,

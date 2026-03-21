@@ -23,6 +23,19 @@ impl PartialEq for AttributeNode {
     }
 }
 
+impl AttributeNode {
+    /// Create an AttributeNode with key and value (no source location).
+    /// Useful in tests where location is not relevant.
+    #[doc(hidden)]
+    pub fn new_without_location(key: impl Into<String>, value: Option<impl Into<String>>) -> Self {
+        Self {
+            key: key.into(),
+            value: value.map(|v| v.into()),
+            location: Location { line: 0, column: 0 },
+        }
+    }
+}
+
 pub fn attribute_node<'a>(
     input: Span<'a>,
     context: &mut HsmlProcessContext,
