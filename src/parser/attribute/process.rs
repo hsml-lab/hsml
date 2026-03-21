@@ -12,9 +12,10 @@ fn is_valid_attribute_key_start(c: char) -> bool {
     c.is_alphabetic() || c == ':' || c == '#' || c == '@' || c == '[' || c == '('
 }
 
-/// Returns true if the character is an attribute key delimiter (stops parsing).
-fn is_key_delimiter(c: char) -> bool {
-    matches!(c, ')' | ',' | '=' | ' ' | '\r' | '\n' | '[' | '(')
+/// Returns true if the character is a valid attribute key character.
+/// Brackets and parentheses are handled separately as delimited sections.
+fn is_key_char(c: char) -> bool {
+    c.is_alphanumeric() || matches!(c, '-' | '_' | ':' | '#' | '@' | '.' | '{' | '}')
 }
 
 pub(super) fn process_attribute_key(input: Span<'_>) -> HsmlResult<'_, Span<'_>> {
@@ -34,10 +35,8 @@ pub(super) fn process_attribute_key(input: Span<'_>) -> HsmlResult<'_, Span<'_>>
     let mut key_len = 0;
 
     loop {
-        // Consume regular (non-delimiter) characters
-        if let Ok((rest, taken)) =
-            take_while1::<_, Span, HsmlError>(|c: char| !is_key_delimiter(c))(remaining)
-        {
+        // Consume regular key characters (allowlist-based)
+        if let Ok((rest, taken)) = take_while1::<_, Span, HsmlError>(is_key_char)(remaining) {
             key_len += taken.fragment().len();
             remaining = rest;
             continue;

@@ -217,6 +217,27 @@ fn it_should_process_attribute_value_with_double_backslash_before_quote() {
     assert_eq!(*rest.fragment(), " next");
 }
 
+#[test]
+fn it_should_process_attribute_key_with_bracket_containing_quote() {
+    let (rest, key) = process_attribute_key(Span::new(r#"[title="]"]="val""#)).unwrap();
+
+    assert_eq!(*key.fragment(), r#"[title="]"]"#);
+    assert_eq!(*rest.fragment(), r#"="val""#);
+}
+
+#[test]
+fn it_should_not_process_attribute_key_with_invalid_char() {
+    let result = process_attribute_key(Span::new("$invalid"));
+
+    assert!(result.is_err());
+    if let Err(nom::Err::Error(err)) = result {
+        assert_eq!(*err.span.fragment(), "$invalid");
+        assert_eq!(err.kind, ErrorKind::AlphaNumeric);
+    } else {
+        panic!("Expected Error");
+    }
+}
+
 // Negative tests
 
 #[test]
