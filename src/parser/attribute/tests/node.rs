@@ -1,3 +1,4 @@
+use crate::common::Location;
 use crate::parser::{
     HsmlNode, HsmlProcessContext, Span,
     attribute::node::{AttributeNode, attribute_node, attribute_nodes},
@@ -14,7 +15,8 @@ fn it_should_return_attribute_node() {
         attribute,
         AttributeNode {
             key: String::from("key"),
-            value: Some(String::from("value"))
+            value: Some(String::from("value")),
+            location: Location { line: 0, column: 0 },
         }
     );
 
@@ -46,7 +48,8 @@ fn it_should_return_attribute_node_with_multiline() {
         'is-active': isActive,
         'is-disabled': isDisabled,
     }"#
-            ))
+            )),
+            location: Location { line: 0, column: 0 },
         }
     );
 
@@ -69,11 +72,13 @@ fn it_should_return_attribute_nodes() {
         vec![
             HsmlNode::Attribute(AttributeNode {
                 key: String::from("key"),
-                value: Some(String::from("value"))
+                value: Some(String::from("value")),
+                location: Location { line: 0, column: 0 },
             }),
             HsmlNode::Attribute(AttributeNode {
                 key: String::from(":key2"),
-                value: Some(String::from("value2"))
+                value: Some(String::from("value2")),
+                location: Location { line: 0, column: 0 },
             })
         ]
     );
@@ -102,11 +107,13 @@ fn it_should_return_attribute_nodes_with_wrapped() {
         vec![
             HsmlNode::Attribute(AttributeNode {
                 key: String::from("key"),
-                value: Some(String::from("value"))
+                value: Some(String::from("value")),
+                location: Location { line: 0, column: 0 },
             }),
             HsmlNode::Attribute(AttributeNode {
                 key: String::from(":key2"),
-                value: Some(String::from("value2"))
+                value: Some(String::from("value2")),
+                location: Location { line: 0, column: 0 },
             })
         ]
     );
@@ -142,6 +149,7 @@ fn it_should_return_attribute_nodes_with_dev_comments() {
             HsmlNode::Attribute(AttributeNode {
                 key: String::from("key"),
                 value: Some(String::from("value")),
+                location: Location { line: 0, column: 0 },
             }),
             HsmlNode::Comment(CommentNode {
                 is_dev: true,
@@ -150,6 +158,7 @@ fn it_should_return_attribute_nodes_with_dev_comments() {
             HsmlNode::Attribute(AttributeNode {
                 key: String::from(":key2"),
                 value: Some(String::from("value2")),
+                location: Location { line: 0, column: 0 },
             }),
         ]
     );
@@ -184,10 +193,12 @@ fn it_should_return_attribute_nodes_with_multiline() {
         'is-disabled': isDisabled,
     }"#
                 )),
+                location: Location { line: 0, column: 0 },
             }),
             HsmlNode::Attribute(AttributeNode {
                 key: String::from(":key"),
                 value: Some(String::from("item.id")),
+                location: Location { line: 0, column: 0 },
             }),
         ]
     );

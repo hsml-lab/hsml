@@ -36,7 +36,7 @@ fn compile_tag_node(tag_node: &TagNode, _options: &HsmlCompileOptions) -> Result
     if let Some(attributes) = &tag_node.attributes {
         for node in attributes {
             match node {
-                HsmlNode::Attribute(AttributeNode { key, value }) => {
+                HsmlNode::Attribute(AttributeNode { key, value, .. }) => {
                     html_content.push(' ');
                     html_content.push_str(key);
 

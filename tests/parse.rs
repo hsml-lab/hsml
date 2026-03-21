@@ -1,3 +1,4 @@
+use hsml::common::Location;
 use hsml::parser::{
     HsmlNode, RootNode, Span, attribute::node::AttributeNode, class::node::ClassNode,
     comment::node::CommentNode, id::node::IdNode, parse::parse, tag::node::TagNode,
@@ -52,12 +53,14 @@ fn it_should_parse() {
                                     HsmlNode::Attribute(AttributeNode {
                                         key: String::from(":src"),
                                         value: Some(String::from("natureImageUrl")),
+                                        location: Location { line: 0, column: 0 },
                                     }),
                                     HsmlNode::Attribute(AttributeNode {
                                         key: String::from(":alt"),
                                         value: Some(String::from(
                                             "'Background image for ' + fullName"
                                         )),
+                                        location: Location { line: 0, column: 0 },
                                     }),
                                 ]),
                                 text: None,
@@ -78,10 +81,12 @@ fn it_should_parse() {
                                     HsmlNode::Attribute(AttributeNode {
                                         key: String::from(":src"),
                                         value: Some(String::from("avatarUrl")),
+                                        location: Location { line: 0, column: 0 },
                                     }),
                                     HsmlNode::Attribute(AttributeNode {
                                         key: String::from(":alt"),
                                         value: Some(String::from("'Avatar image of ' + fullName")),
+                                        location: Location { line: 0, column: 0 },
                                     }),
                                 ]),
                                 text: None,
@@ -176,10 +181,12 @@ div
                                 HsmlNode::Attribute(AttributeNode {
                                     key: String::from("src"),
                                     value: Some(String::from("/fancy-avatar.jpg")),
+                                    location: Location { line: 0, column: 0 },
                                 }),
                                 HsmlNode::Attribute(AttributeNode {
                                     key: String::from("alt"),
                                     value: Some(String::from("Fancy Avatar")),
+                                    location: Location { line: 0, column: 0 },
                                 }),
                                 HsmlNode::Comment(CommentNode {
                                     text: String::from(" the size of the image"),
@@ -188,10 +195,12 @@ div
                                 HsmlNode::Attribute(AttributeNode {
                                     key: String::from("width"),
                                     value: Some(String::from("384")),
+                                    location: Location { line: 0, column: 0 },
                                 }),
                                 HsmlNode::Attribute(AttributeNode {
                                     key: String::from("height"),
                                     value: Some(String::from("512")),
+                                    location: Location { line: 0, column: 0 },
                                 }),
                             ]),
                             text: None,
@@ -232,18 +241,22 @@ fn it_should_parse_wrapped_attributes() {
                     HsmlNode::Attribute(AttributeNode {
                         key: String::from("src"),
                         value: Some(String::from("/fancy-avatar.jpg")),
+                        location: Location { line: 0, column: 0 },
                     }),
                     HsmlNode::Attribute(AttributeNode {
                         key: String::from("alt"),
                         value: Some(String::from("A fancy avatar")),
+                        location: Location { line: 0, column: 0 },
                     }),
                     HsmlNode::Attribute(AttributeNode {
                         key: String::from("width"),
                         value: Some(String::from("384")),
+                        location: Location { line: 0, column: 0 },
                     }),
                     HsmlNode::Attribute(AttributeNode {
                         key: String::from("height"),
                         value: Some(String::from("512")),
+                        location: Location { line: 0, column: 0 },
                     }),
                 ]),
                 text: None,
