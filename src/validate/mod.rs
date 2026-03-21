@@ -45,14 +45,11 @@ fn validate_mixed_indentation(source: &str, diagnostics: &mut Vec<Diagnostic>) {
     }
 }
 
-/// Attributes that may appear multiple times and should be merged rather than warned about.
-/// This includes `class`, `data-*`, and Vue bindings (`:`, `@`, `v-`).
+/// Attributes that may legitimately appear multiple times and be merged.
+/// Only `class`, `:class` (Vue v-bind:class), and `:style` (Vue v-bind:style)
+/// support merging. All other duplicates are likely mistakes.
 fn is_mergeable_attribute(key: &str) -> bool {
-    key == "class"
-        || key.starts_with("data-")
-        || key.starts_with(':')
-        || key.starts_with('@')
-        || key.starts_with("v-")
+    key == "class" || key == ":class" || key == ":style"
 }
 
 fn validate_node(node: &HsmlNode, diagnostics: &mut Vec<Diagnostic>) {
