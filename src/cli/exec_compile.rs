@@ -68,7 +68,7 @@ fn compile_file(
     let out_file = out_file.unwrap_or(&fallback_out_file);
 
     // compile with structured diagnostics
-    let html_content = compile_content_diagnostics(&content).map_err(|diagnostics| {
+    let output = compile_content_diagnostics(&content).map_err(|diagnostics| {
         let diagnostics: Vec<_> = diagnostics
             .into_iter()
             .map(|d| d.with_file_path(file.display().to_string()))
@@ -76,7 +76,17 @@ fn compile_file(
         format_diagnostics(&diagnostics, &content, format)
     })?;
 
-    fs::write(out_file, html_content)
+    // Print warnings (if any)
+    if !output.diagnostics.is_empty() {
+        let warnings: Vec<_> = output
+            .diagnostics
+            .into_iter()
+            .map(|d| d.with_file_path(file.display().to_string()))
+            .collect();
+        eprintln!("{}", format_diagnostics(&warnings, &content, format));
+    }
+
+    fs::write(out_file, output.html)
         .map_err(|e| format!("Unable to write file {}: {e}", out_file.display()))?;
 
     println!(
