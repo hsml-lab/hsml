@@ -1,5 +1,5 @@
 use hsml::{
-    compile_content_core, compile_content_diagnostics, compile_content_with_diagnostics,
+    compile_content_core, compile_content_diagnostics,
     compiler::{HsmlCompileOptions, compile},
     parser::{
         HsmlNode, RootNode, Span, class::node::ClassNode, doctype::node::DoctypeNode,
@@ -389,42 +389,41 @@ fn it_should_compile_parsed_elk_main_content_component() {
     assert_eq!(*rest.fragment(), "");
 }
 
-// Tests for WASM-compatible compile_content_with_diagnostics
+// Tests for compile output serialization (covers WASM JSON contract)
 
 #[test]
-fn wasm_diagnostics_returns_success_for_valid_input() {
-    let json = compile_content_with_diagnostics("h1 Hello\n");
+fn compile_output_serializes_to_json() {
+    let output = compile_content_diagnostics("h1 Hello\n").unwrap();
+    let json = serde_json::to_string(&output).unwrap();
 
-    assert_eq!(
-        json,
-        r#"{"success":true,"html":"<h1>Hello</h1>","diagnostics":[]}"#
-    );
+    assert_eq!(json, r#"{"html":"<h1>Hello</h1>","diagnostics":[]}"#);
 }
 
 #[test]
-fn wasm_diagnostics_returns_warnings_for_duplicate_class() {
-    let json = compile_content_with_diagnostics("h1.foo.foo Hello\n");
+fn compile_output_serializes_warnings_to_json() {
+    let output = compile_content_diagnostics("h1.foo.foo Hello\n").unwrap();
+    let json = serde_json::to_string(&output).unwrap();
 
-    assert!(json.contains(r#""success":true"#));
-    assert!(json.contains(r#""html":"#));
     assert!(json.contains(r#""severity":"warning""#));
     assert!(json.contains(r#""code":"W001""#));
+    assert!(json.contains(r#""message":"Duplicate class 'foo'""#));
 }
 
 #[test]
-fn wasm_diagnostics_returns_error_for_invalid_input() {
-    let json = compile_content_with_diagnostics("@@@invalid");
+fn compile_diagnostics_serialize_errors_to_json() {
+    let diagnostics = compile_content_diagnostics("@@@invalid").unwrap_err();
+    let json = serde_json::to_string(&diagnostics).unwrap();
 
-    assert!(json.contains(r#""success":false"#));
-    assert!(json.contains(r#""html":null"#));
     assert!(json.contains(r#""severity":"error""#));
+    assert!(json.contains(r#""message":"parse error""#));
 }
 
 #[test]
-fn wasm_diagnostics_returns_error_for_duplicate_id() {
-    let json = compile_content_with_diagnostics("div#a#b\n");
+fn compile_diagnostics_serialize_duplicate_id_to_json() {
+    let diagnostics = compile_content_diagnostics("div#a#b\n").unwrap_err();
+    let json = serde_json::to_string(&diagnostics).unwrap();
 
-    assert!(json.contains(r#""success":false"#));
+    assert!(json.contains(r#""severity":"error""#));
     assert!(json.contains(r#""code":"E001""#));
-    assert!(json.contains(r#""severity":"error""#));
+    assert!(json.contains(r#""message":"Duplicate attribute 'id' is not allowed""#));
 }
