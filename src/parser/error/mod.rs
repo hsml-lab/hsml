@@ -38,7 +38,7 @@ impl ErrorCode {
     /// Machine-readable error code (e.g., "E001").
     pub fn code(&self) -> &'static str {
         match self {
-            Self::DuplicateId => "E001",
+            Self::DuplicateId => "W002",
             Self::InvalidTagName => "E004",
             Self::UnclosedBracket => "E005",
             Self::UnclosedParenthesis => "E008",
@@ -68,7 +68,7 @@ impl ErrorCode {
     /// Default severity for this error code.
     pub fn severity(&self) -> Severity {
         match self {
-            Self::DuplicateId => Severity::Error,
+            Self::DuplicateId => Severity::Warning,
             Self::InvalidTagName => Severity::Error,
             Self::UnclosedBracket => Severity::Error,
             Self::UnclosedParenthesis => Severity::Error,

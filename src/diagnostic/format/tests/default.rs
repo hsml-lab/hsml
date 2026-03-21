@@ -4,9 +4,9 @@ use crate::diagnostic::{Diagnostic, Location, Severity};
 use crate::parser::error::ErrorCode;
 
 #[test]
-fn it_should_format_error_with_source_context() {
+fn it_should_format_warning_with_source_context() {
     let diag = Diagnostic {
-        severity: Severity::Error,
+        severity: Severity::Warning,
         message: "Duplicate attribute 'id' is not allowed".to_string(),
         code: Some(ErrorCode::DuplicateId.code().to_string()),
         location: Some(Location { line: 1, column: 8 }),
@@ -19,7 +19,7 @@ fn it_should_format_error_with_source_context() {
     assert_eq!(
         output,
         "\
-error[E001]: Duplicate attribute 'id' is not allowed
+warning[W002]: Duplicate attribute 'id' is not allowed
  --> example.hsml:1:8
   |
 1 | div#foo#bar

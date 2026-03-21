@@ -4,7 +4,6 @@ use crate::parser::{
     HsmlNode, HsmlProcessContext, HsmlResult, Span, attribute,
     class::node::{ClassNode, class_node},
     comment::node::{comment_dev_node, comment_native_node},
-    error::{ErrorCode, HsmlError},
     id::{self, node::IdNode},
     tag::process::process_tag,
     text::{self, node::TextNode},
@@ -13,7 +12,7 @@ use crate::parser::{
 #[derive(Debug, PartialEq)]
 pub struct TagNode {
     pub tag: String,
-    pub id: Option<IdNode>,
+    pub ids: Vec<IdNode>,
     pub classes: Option<Vec<ClassNode>>,
     pub attributes: Option<Vec<HsmlNode>>,
     pub text: Option<TextNode>,
@@ -35,7 +34,7 @@ pub fn tag_node<'a>(input: Span<'a>, context: &mut HsmlProcessContext) -> HsmlRe
     // if the next char is a dot, we have a class node
     // collect id and class nodes until we hit a whitespace, newline, start of attributes or single dot without trailing alphabetical char
 
-    let mut id_node: Option<IdNode> = None;
+    let mut id_nodes: Vec<IdNode> = vec![];
     let mut class_nodes: Vec<ClassNode> = vec![];
     let mut attribute_nodes: Option<Vec<HsmlNode>> = None;
     let mut text_node: Option<TextNode> = None;
@@ -46,15 +45,9 @@ pub fn tag_node<'a>(input: Span<'a>, context: &mut HsmlProcessContext) -> HsmlRe
         let first_two_chars = input.fragment().get(..2);
 
         if first_char == Some("#") {
-            // we hit an id node
-
-            // if there was already an id node, throw an error
-            if id_node.is_some() {
-                return Err(HsmlError::fail_code(input, ErrorCode::DuplicateId));
-            }
-
+            // Collect all id nodes — duplicates are detected post-parse by the validator.
             let (rest, node) = id::node::id_node(input)?;
-            id_node = Some(node);
+            id_nodes.push(node);
             input = rest;
 
             continue;
@@ -176,7 +169,7 @@ pub fn tag_node<'a>(input: Span<'a>, context: &mut HsmlProcessContext) -> HsmlRe
         input,
         TagNode {
             tag: tag_name.to_string(),
-            id: id_node,
+            ids: id_nodes,
             classes: (!class_nodes.is_empty()).then_some(class_nodes),
             attributes: attribute_nodes,
             text: text_node,

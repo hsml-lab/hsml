@@ -51,6 +51,23 @@ fn validate_node(node: &HsmlNode, diagnostics: &mut Vec<Diagnostic>) {
 }
 
 fn validate_tag(tag: &TagNode, diagnostics: &mut Vec<Diagnostic>) {
+    // Check for duplicate ids (first wins, rest are warned)
+    if tag.ids.len() > 1 {
+        for id in &tag.ids[1..] {
+            diagnostics.push(Diagnostic {
+                severity: Severity::Warning,
+                message: format!("Duplicate id '{}' is not allowed", id.id),
+                code: Some(ErrorCode::DuplicateId.code().to_string()),
+                location: if id.location.line > 0 && id.location.column > 0 {
+                    Some(id.location.clone())
+                } else {
+                    None
+                },
+                file_path: None,
+            });
+        }
+    }
+
     // Check for duplicate classes
     if let Some(classes) = &tag.classes {
         let mut seen: HashSet<&str> = HashSet::new();

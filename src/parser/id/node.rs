@@ -1,14 +1,53 @@
+use std::hash::{Hash, Hasher};
+
+use crate::common::Location;
 use crate::parser::{HsmlResult, Span};
 
 use super::process::process_id;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Eq)]
 pub struct IdNode {
     pub id: String,
+    /// Source location where this id appears.
+    pub location: Location,
+}
+
+// PartialEq and Hash only use `id` so that tests comparing parsed ASTs
+// don't need to specify exact location values.
+impl PartialEq for IdNode {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+    }
+}
+
+impl Hash for IdNode {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.id.hash(state);
+    }
+}
+
+impl IdNode {
+    /// Create an IdNode with only an id (no source location).
+    /// Useful in tests where location is not relevant.
+    pub fn new_without_location(id: impl Into<String>) -> Self {
+        Self {
+            id: id.into(),
+            location: Location { line: 0, column: 0 },
+        }
+    }
 }
 
 pub fn id_node(input: Span<'_>) -> HsmlResult<'_, IdNode> {
-    let (input, id) = process_id(input)?;
+    let (rest, id) = process_id(input)?;
 
-    Ok((input, IdNode { id: id.to_string() }))
+    Ok((
+        rest,
+        IdNode {
+            id: id.to_string(),
+            location: Location {
+                line: input.location_line(),
+                column: input.get_column() as u32,
+            },
+        },
+    ))
 }
