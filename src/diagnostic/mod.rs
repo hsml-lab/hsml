@@ -1,5 +1,6 @@
 pub mod format;
 
+pub use crate::common::Location;
 use crate::parser::error::{self, HsmlError};
 
 /// Severity level for diagnostics.
@@ -7,15 +8,6 @@ use crate::parser::error::{self, HsmlError};
 pub enum Severity {
     Error,
     Warning,
-}
-
-/// Source location, independent of nom_locate.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Location {
-    /// Line number (1-based).
-    pub line: u32,
-    /// Column number (1-based).
-    pub column: u32,
 }
 
 /// A format-agnostic diagnostic message.

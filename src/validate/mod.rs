@@ -1,4 +1,4 @@
-use crate::diagnostic::{Diagnostic, Location, Severity};
+use crate::diagnostic::{Diagnostic, Severity};
 use crate::parser::error::ErrorCode;
 use crate::parser::tag::node::TagNode;
 use crate::parser::{HsmlNode, RootNode};
@@ -31,10 +31,7 @@ fn validate_tag(tag: &TagNode, diagnostics: &mut Vec<Diagnostic>) {
                     severity: Severity::Warning,
                     message: format!("{} '{}'", ErrorCode::DuplicateClass.message(), class.name),
                     code: Some(ErrorCode::DuplicateClass.code().to_string()),
-                    location: Some(Location {
-                        line: class.line,
-                        column: class.column,
-                    }),
+                    location: Some(class.location.clone()),
                     file_path: None,
                 });
             } else {
