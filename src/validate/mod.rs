@@ -31,7 +31,11 @@ fn validate_tag(tag: &TagNode, diagnostics: &mut Vec<Diagnostic>) {
                     severity: Severity::Warning,
                     message: format!("{} '{}'", ErrorCode::DuplicateClass.message(), class.name),
                     code: Some(ErrorCode::DuplicateClass.code().to_string()),
-                    location: Some(class.location.clone()),
+                    location: if class.location.line > 0 && class.location.column > 0 {
+                        Some(class.location.clone())
+                    } else {
+                        None
+                    },
                     file_path: None,
                 });
             } else {

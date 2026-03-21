@@ -302,7 +302,9 @@ fn it_should_error_on_unsupported_attribute_node_type() {
             tag: String::from("span"),
             id: None,
             classes: None,
-            attributes: Some(vec![HsmlNode::Class(ClassNode::new("stray"))]),
+            attributes: Some(vec![HsmlNode::Class(ClassNode::new_without_location(
+                "stray",
+            ))]),
             text: None,
             children: None,
         })],

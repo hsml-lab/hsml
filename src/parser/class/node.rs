@@ -19,9 +19,9 @@ impl PartialEq for ClassNode {
 }
 
 impl ClassNode {
-    /// Create a ClassNode with only a name (location defaults to 0:0).
-    /// Useful in tests and compiler code where location is not relevant.
-    pub fn new(name: impl Into<String>) -> Self {
+    /// Create a ClassNode with only a name (no source location).
+    /// Useful in tests where location is not relevant.
+    pub fn new_without_location(name: impl Into<String>) -> Self {
         Self {
             name: name.into(),
             location: Location { line: 0, column: 0 },
