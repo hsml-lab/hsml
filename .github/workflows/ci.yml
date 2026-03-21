@@ -79,14 +79,14 @@ jobs:
         run: cargo clippy --all-targets --all-features
 
   wasm:
-    name: WASM Build
+    name: WASM Build & Test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
-      - name: Add WASM target
-        run: rustup target add wasm32-unknown-unknown
+      - name: Install wasm-pack
+        run: cargo install wasm-pack@0.14.0
 
-      - name: Build WASM
-        run: cargo build --lib --target wasm32-unknown-unknown
+      - name: Build and test WASM
+        run: wasm-pack test --node
