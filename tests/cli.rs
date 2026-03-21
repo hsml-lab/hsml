@@ -125,7 +125,7 @@ fn compile_duplicate_class_shows_warning() {
         .args(["compile", input.to_str().unwrap()])
         .assert()
         .success()
-        .stderr(predicates::str::contains("warning[W001]"))
+        .stderr(predicates::str::contains("warning[W002]"))
         .stderr(predicates::str::contains("Duplicate class 'foo'"));
 
     // HTML should still be produced
