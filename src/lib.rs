@@ -22,7 +22,7 @@ pub fn compile_content_core(source: &str) -> Result<String, String> {
 }
 
 /// Result of compiling HSML source with diagnostic support.
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CompileOutput {
     /// The compiled HTML output.
     pub html: String,

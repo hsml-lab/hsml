@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 
-use crate::parser::error::ErrorCode;
+use crate::parser::Span;
+use crate::parser::error::{ErrorCode, HsmlError, Severity};
 
 #[test]
 fn error_codes_are_unique() {
@@ -15,4 +16,15 @@ fn error_codes_are_unique() {
             code.code()
         );
     }
+}
+
+#[test]
+fn from_code_uses_error_code_severity() {
+    let span = Span::new("test");
+
+    let error = HsmlError::from_code(span, ErrorCode::DuplicateId);
+    assert_eq!(error.severity, Severity::Error);
+
+    let warning = HsmlError::from_code(span, ErrorCode::DuplicateClass);
+    assert_eq!(warning.severity, Severity::Warning);
 }

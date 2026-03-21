@@ -96,7 +96,7 @@ impl<'a> HsmlError<'a> {
             kind: ErrorKind::Fail,
             message: Some(error_code.message().to_string()),
             error_code: Some(error_code),
-            severity: Severity::Error,
+            severity: error_code.severity(),
         }
     }
 
