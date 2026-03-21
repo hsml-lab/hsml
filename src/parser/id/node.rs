@@ -29,6 +29,7 @@ impl Hash for IdNode {
 impl IdNode {
     /// Create an IdNode with only an id (no source location).
     /// Useful in tests where location is not relevant.
+    #[doc(hidden)]
     pub fn new_without_location(id: impl Into<String>) -> Self {
         Self {
             id: id.into(),

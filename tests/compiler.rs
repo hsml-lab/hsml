@@ -241,6 +241,11 @@ fn compile_content_diagnostics_should_return_warnings_for_duplicate_id() {
         output.diagnostics[0].code,
         Some(ErrorCode::DuplicateId.code().to_string())
     );
+    assert_eq!(
+        output.diagnostics[0].message,
+        "Duplicate id 'b' is not allowed"
+    );
+    assert!(output.diagnostics[0].location.is_some());
 }
 
 #[test]
@@ -424,4 +429,6 @@ fn compile_diagnostics_serialize_duplicate_id_to_json() {
 
     assert!(json.contains(r#""severity":"warning""#));
     assert!(json.contains(r#""code":"W002""#));
+    assert!(json.contains(r#""message":"Duplicate id 'b' is not allowed""#));
+    assert!(json.contains(r#""location""#));
 }
