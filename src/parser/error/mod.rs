@@ -10,16 +10,27 @@ use super::Span;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ErrorCode {
     // Errors (E001-E006)
+    /// E001: Tag name must start with an ASCII letter. (since 0.2.0)
     InvalidTagName,
+    /// E002: Unclosed bracket. (since 0.2.0)
     UnclosedBracket,
+    /// E003: Unclosed parenthesis. (since 0.2.0)
     UnclosedParenthesis,
+    /// E004: Unclosed quote in attribute value. (since 0.2.0)
     UnclosedQuote,
+    /// E005: Expected quoted attribute value. (since 0.2.0)
     ExpectedAttributeValue,
+    /// E006: Invalid attribute key. (since 0.2.0)
     InvalidAttributeKey,
+
     // Warnings (W001-W004)
+    /// W001: Duplicate attribute 'id' is not allowed. (since 0.2.0)
     DuplicateId,
+    /// W002: Duplicate class. (since 0.2.0)
     DuplicateClass,
+    /// W003: Mixed tabs and spaces in indentation. (since 0.2.0)
     MixedIndentation,
+    /// W004: Duplicate attribute. (since 0.2.0)
     DuplicateAttribute,
 }
 
