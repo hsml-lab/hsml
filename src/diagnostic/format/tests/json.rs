@@ -16,7 +16,7 @@ fn it_should_format_single_diagnostic() {
 
     assert_eq!(
         output,
-        r#"[{"severity":"error","message":"Duplicate attribute 'id' is not allowed","code":"E001","line":3,"column":5,"file":"example.hsml"}]"#
+        r#"[{"severity":"error","message":"Duplicate attribute 'id' is not allowed","code":"E001","location":{"line":3,"column":5},"filePath":"example.hsml"}]"#
     );
 }
 

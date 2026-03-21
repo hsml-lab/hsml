@@ -4,6 +4,7 @@ pub mod diagnostic;
 pub mod parser;
 pub mod validate;
 
+use serde::Serialize;
 use wasm_bindgen::prelude::*;
 
 /// Core compile logic shared by WASM and native callers.
@@ -23,7 +24,7 @@ pub fn compile_content_core(source: &str) -> Result<String, String> {
 }
 
 /// Result of compiling HSML source with diagnostic support.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct CompileOutput {
     /// The compiled HTML output.
     pub html: String,
@@ -68,35 +69,45 @@ pub fn compile_content(source: &str) -> Result<String, JsError> {
     compile_content_core(source).map_err(|e| JsError::new(&e))
 }
 
-/// Compile HSML source and return a JSON string with HTML output and diagnostics.
-///
-/// Returns JSON in the format:
-/// ```json
-/// {"success":true,"html":"<h1>Hello</h1>","diagnostics":[]}
-/// ```
-/// On error:
-/// ```json
-/// {"success":false,"html":null,"diagnostics":[{"severity":"error",...}]}
-/// ```
-#[wasm_bindgen(js_name = "compileContentWithDiagnostics")]
-pub fn compile_content_with_diagnostics(source: &str) -> String {
-    use diagnostic::format::json::escape_json;
+/// WASM result type that serializes to a JS object.
+#[derive(Serialize)]
+struct WasmCompileResult {
+    success: bool,
+    html: Option<String>,
+    diagnostics: Vec<diagnostic::Diagnostic>,
+}
 
-    match compile_content_diagnostics(source) {
-        Ok(output) => {
-            let diagnostics_json = diagnostic::Diagnostic::slice_to_json(&output.diagnostics);
-            format!(
-                "{{\"success\":true,\"html\":\"{}\",\"diagnostics\":{}}}",
-                escape_json(&output.html),
-                diagnostics_json
-            )
-        }
-        Err(diagnostics) => {
-            let diagnostics_json = diagnostic::Diagnostic::slice_to_json(&diagnostics);
-            format!(
-                "{{\"success\":false,\"html\":null,\"diagnostics\":{}}}",
-                diagnostics_json
-            )
-        }
-    }
+/// Compile HSML source and return a JS object with HTML output and diagnostics.
+///
+/// Returns a JS object: `{ success: boolean, html: string | null, diagnostics: Diagnostic[] }`
+#[wasm_bindgen(js_name = "compileContentWithDiagnostics")]
+pub fn compile_content_with_diagnostics(source: &str) -> JsValue {
+    let result = match compile_content_diagnostics(source) {
+        Ok(output) => WasmCompileResult {
+            success: true,
+            html: Some(output.html),
+            diagnostics: output.diagnostics,
+        },
+        Err(diagnostics) => WasmCompileResult {
+            success: false,
+            html: None,
+            diagnostics,
+        },
+    };
+
+    let serializer = serde_wasm_bindgen::Serializer::json_compatible();
+    use serde::Serialize;
+
+    result.serialize(&serializer).unwrap_or_else(|e| {
+        let fallback = WasmCompileResult {
+            success: false,
+            html: None,
+            diagnostics: vec![diagnostic::Diagnostic::compiler_error(format!(
+                "Failed to serialize compile result: {e}"
+            ))],
+        };
+        fallback
+            .serialize(&serializer)
+            .expect("fallback WasmCompileResult serialization should always succeed")
+    })
 }

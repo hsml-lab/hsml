@@ -2,9 +2,11 @@ pub mod format;
 
 pub use crate::common::Location;
 use crate::parser::error::{self, HsmlError};
+use serde::Serialize;
 
 /// Severity level for diagnostics.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "lowercase")]
 pub enum Severity {
     Error,
     Warning,
@@ -15,12 +17,16 @@ pub enum Severity {
 /// This is the stable output type for errors and warnings.
 /// Both parser and compiler errors are converted into this type
 /// before being rendered by formatters.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Diagnostic {
     pub severity: Severity,
     pub message: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub location: Option<Location>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub file_path: Option<String>,
 }
 
@@ -44,8 +50,7 @@ impl Diagnostic {
 
     /// Serialize a slice of diagnostics as a JSON array string.
     pub fn slice_to_json(diagnostics: &[Diagnostic]) -> String {
-        use format::{DiagnosticFormatter, json::JsonFormatter};
-        JsonFormatter.format(diagnostics, None)
+        serde_json::to_string(diagnostics).unwrap_or_else(|_| "[]".to_string())
     }
 }
 
