@@ -9,7 +9,7 @@ use crate::diagnostic::Severity;
 /// ```
 pub struct JsonFormatter;
 
-fn escape_json(s: &str) -> String {
+pub fn escape_json(s: &str) -> String {
     let mut escaped = String::with_capacity(s.len());
     for c in s.chars() {
         match c {
