@@ -114,6 +114,28 @@ fn compile_invalid_hsml_content_fails_with_json_format() {
         .stderr(predicates::str::contains(r#""message":"parse error""#));
 }
 
+#[test]
+fn compile_duplicate_class_shows_warning() {
+    let dir = TempDir::new().unwrap();
+    let input = dir.path().join("warn.hsml");
+
+    fs::write(&input, "h1.foo.foo Hello\n").unwrap();
+
+    cmd()
+        .args(["compile", input.to_str().unwrap()])
+        .assert()
+        .success()
+        .stderr(predicates::str::contains("warning[W001]"))
+        .stderr(predicates::str::contains("Duplicate class 'foo'"));
+
+    // HTML should still be produced
+    let output = dir.path().join("warn.html");
+    assert_eq!(
+        fs::read_to_string(output).unwrap(),
+        r#"<h1 class="foo foo">Hello</h1>"#
+    );
+}
+
 // --- Directory compilation ---
 
 #[test]

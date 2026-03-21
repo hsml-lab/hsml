@@ -1,6 +1,7 @@
 pub mod compiler;
 pub mod diagnostic;
 pub mod parser;
+pub mod validate;
 
 use wasm_bindgen::prelude::*;
 
@@ -20,8 +21,20 @@ pub fn compile_content_core(source: &str) -> Result<String, String> {
     compiler::compile(&ast, &compiler::HsmlCompileOptions::default())
 }
 
+/// Result of compiling HSML source with diagnostic support.
+#[derive(Debug, Clone, PartialEq)]
+pub struct CompileOutput {
+    /// The compiled HTML output.
+    pub html: String,
+    /// Warnings and other non-fatal diagnostics collected during validation.
+    pub diagnostics: Vec<diagnostic::Diagnostic>,
+}
+
 /// Compile HSML source, returning structured diagnostics on error.
-pub fn compile_content_diagnostics(source: &str) -> Result<String, Vec<diagnostic::Diagnostic>> {
+/// On success, returns the HTML output along with any warnings.
+pub fn compile_content_diagnostics(
+    source: &str,
+) -> Result<CompileOutput, Vec<diagnostic::Diagnostic>> {
     let span = parser::Span::new(source);
 
     let (rest, ast) =
@@ -40,8 +53,13 @@ pub fn compile_content_diagnostics(source: &str) -> Result<String, Vec<diagnosti
         }]);
     }
 
-    compiler::compile(&ast, &compiler::HsmlCompileOptions::default())
-        .map_err(|e| vec![diagnostic::Diagnostic::compiler_error(e)])
+    // Run validation to collect warnings
+    let diagnostics = validate::validate(&ast, source);
+
+    let html = compiler::compile(&ast, &compiler::HsmlCompileOptions::default())
+        .map_err(|e| vec![diagnostic::Diagnostic::compiler_error(e)])?;
+
+    Ok(CompileOutput { html, diagnostics })
 }
 
 #[wasm_bindgen(js_name = "compileContent")]

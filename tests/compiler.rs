@@ -199,8 +199,22 @@ fn it_should_compile_text_containing_double_slashes() {
 
 #[test]
 fn compile_content_diagnostics_should_return_html_for_valid_input() {
-    let result = compile_content_diagnostics("h1 Hello\n");
-    assert_eq!(result, Ok(String::from("<h1>Hello</h1>")));
+    let output = compile_content_diagnostics("h1 Hello\n").unwrap();
+    assert_eq!(output.html, "<h1>Hello</h1>");
+    assert!(output.diagnostics.is_empty());
+}
+
+#[test]
+fn compile_content_diagnostics_should_return_warnings_for_duplicate_class() {
+    let output = compile_content_diagnostics("h1.text-red.text-red Hello\n").unwrap();
+    assert_eq!(output.html, r#"<h1 class="text-red text-red">Hello</h1>"#);
+    assert_eq!(output.diagnostics.len(), 1);
+    assert_eq!(
+        output.diagnostics[0].severity,
+        hsml::diagnostic::Severity::Warning
+    );
+    assert_eq!(output.diagnostics[0].code, Some("W001".to_string()));
+    assert_eq!(output.diagnostics[0].message, "Duplicate class 'text-red'");
 }
 
 #[test]

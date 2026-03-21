@@ -10,6 +10,7 @@ use super::Span;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ErrorCode {
     DuplicateId,
+    DuplicateClass,
 }
 
 impl ErrorCode {
@@ -17,6 +18,7 @@ impl ErrorCode {
     pub fn code(&self) -> &'static str {
         match self {
             Self::DuplicateId => "E001",
+            Self::DuplicateClass => "W001",
         }
     }
 
@@ -24,6 +26,15 @@ impl ErrorCode {
     pub fn message(&self) -> &'static str {
         match self {
             Self::DuplicateId => "Duplicate attribute 'id' is not allowed",
+            Self::DuplicateClass => "Duplicate class",
+        }
+    }
+
+    /// Default severity for this error code.
+    pub fn severity(&self) -> Severity {
+        match self {
+            Self::DuplicateId => Severity::Error,
+            Self::DuplicateClass => Severity::Warning,
         }
     }
 }
@@ -85,7 +96,7 @@ impl<'a> HsmlError<'a> {
             kind: ErrorKind::Fail,
             message: Some(error_code.message().to_string()),
             error_code: Some(error_code),
-            severity: Severity::Error,
+            severity: error_code.severity(),
         }
     }
 
