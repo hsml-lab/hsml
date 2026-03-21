@@ -219,11 +219,13 @@ fn compile_content_diagnostics_should_return_diagnostics_for_duplicate_id() {
     assert!(result.is_err());
     let diagnostics = result.unwrap_err();
     assert_eq!(diagnostics.len(), 1);
+    assert_eq!(diagnostics[0].severity, hsml::diagnostic::Severity::Error);
     assert_eq!(diagnostics[0].code, Some("E001".to_string()));
     assert_eq!(
         diagnostics[0].message,
         "Duplicate attribute 'id' is not allowed"
     );
+    assert!(diagnostics[0].location.is_some());
 }
 
 #[test]
