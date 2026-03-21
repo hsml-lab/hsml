@@ -30,12 +30,8 @@ fn it_should_return_tag_node_with_piped_text() {
             tag: String::from("p"),
             id: None,
             classes: Some(vec![
-                ClassNode {
-                    name: String::from("text-lg"),
-                },
-                ClassNode {
-                    name: String::from("font-medium"),
-                },
+                ClassNode::new("text-lg"),
+                ClassNode::new("font-medium"),
             ]),
             attributes: None,
             text: Some(TextNode {
