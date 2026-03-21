@@ -1,6 +1,7 @@
 use nom::Input;
 use nom_locate::LocatedSpan;
 
+/// A located span over the input source, tracking line and column information.
 pub type Span<'a> = LocatedSpan<&'a str>;
 
 use self::{
@@ -21,11 +22,13 @@ pub mod text;
 /// Convenience alias for parser results using the custom HSML error type.
 pub type HsmlResult<'a, T> = nom::IResult<Span<'a>, T, error::HsmlError<'a>>;
 
+/// The root of a parsed HSML document, containing all top-level nodes.
 #[derive(Debug, PartialEq)]
 pub struct RootNode {
     pub nodes: Vec<HsmlNode>,
 }
 
+/// A single node in the HSML abstract syntax tree.
 #[derive(Debug, PartialEq)]
 pub enum HsmlNode {
     Root(RootNode),
@@ -38,6 +41,7 @@ pub enum HsmlNode {
     Text(TextNode),
 }
 
+/// Mutable state carried through the parsing process.
 #[derive(Debug, Default)]
 pub struct HsmlProcessContext {
     // nested_tag_level is tracked but not yet used for logic.

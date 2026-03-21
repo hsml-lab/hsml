@@ -8,7 +8,9 @@ use serde::Serialize;
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Severity {
+    /// A fatal error that prevents successful compilation.
     Error,
+    /// A non-fatal issue that does not prevent compilation.
     Warning,
 }
 
