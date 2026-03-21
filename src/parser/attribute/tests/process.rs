@@ -260,7 +260,7 @@ fn it_should_not_process_attribute_key_with_unclosed_paren() {
     assert!(result.is_err());
     if let Err(nom::Err::Failure(err)) = result {
         assert_eq!(*err.span.fragment(), "(unclosed");
-        assert_eq!(err.code(), Some(ErrorCode::UnclosedBracket.code()));
+        assert_eq!(err.code(), Some(ErrorCode::UnclosedParenthesis.code()));
     } else {
         panic!("Expected Failure");
     }

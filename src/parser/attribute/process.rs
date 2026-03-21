@@ -57,7 +57,10 @@ pub(super) fn process_attribute_key(input: Span<'_>) -> HsmlResult<'_, Span<'_>>
                 remaining = advance(input, key_len);
                 continue;
             }
-            return Err(HsmlError::fail_code(remaining, ErrorCode::UnclosedBracket));
+            return Err(HsmlError::fail_code(
+                remaining,
+                ErrorCode::UnclosedParenthesis,
+            ));
         }
 
         // Any other character is a delimiter — stop
