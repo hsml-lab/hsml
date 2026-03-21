@@ -24,7 +24,7 @@ HSML compiles a short, indentation-based syntax into HTML — think [Pug](https:
 
 ## Quick taste
 
-```
+```hsml
 doctype html
 html
   head
@@ -95,7 +95,7 @@ hsml compile index.hsml --report-format json
 ```js
 import { compileContent, compileContentWithDiagnostics } from "hsml";
 
-// Simple compilation
+// Simple compilation (input must end with a newline)
 const html = compileContent("h1.title Hello World\n");
 // => '<h1 class="title">Hello World</h1>'
 
@@ -108,7 +108,7 @@ const result = compileContentWithDiagnostics("h1.foo.foo Hello\n");
 
 ### Tags
 
-```
+```hsml
 h1 Hello World
 div
   p Some text
@@ -116,7 +116,7 @@ div
 
 Tags default to `div` when only a class or id is specified:
 
-```
+```hsml
 .container
   .card
     .card-body Hello
@@ -124,26 +124,26 @@ Tags default to `div` when only a class or id is specified:
 
 ### Classes
 
-```
+```hsml
 h1.text-red.font-bold Hello
 ```
 
 TailwindCSS arbitrary values are fully supported:
 
-```
+```hsml
 .bg-[#1da1f2].lg:[&:nth-child(3)]:hover:underline
 ```
 
 ### IDs
 
-```
+```hsml
 div#app
   h1#title Hello
 ```
 
 ### Attributes
 
-```
+```hsml
 img(src="/photo.jpg" alt="A photo" width="300")
 a(href="https://github.com" target="_blank") GitHub
 button(disabled) Click me
@@ -151,7 +151,7 @@ button(disabled) Click me
 
 Multiline attributes work too:
 
-```
+```hsml
 img(
   src="/photo.jpg"
   alt="A photo"
@@ -164,7 +164,7 @@ img(
 
 Use a trailing `.` to start a text block:
 
-```
+```hsml
 p.
   This is a multi-line
   text block that preserves
@@ -173,14 +173,14 @@ p.
 
 ### Comments
 
-```
+```hsml
 // Dev comment (excluded from HTML output)
 //! Native comment (rendered as <!-- ... -->)
 ```
 
 ### Doctype
 
-```
+```hsml
 doctype html
 ```
 
@@ -188,7 +188,7 @@ doctype html
 
 HSML supports framework-specific attribute syntax out of the box:
 
-```
+```hsml
 // Vue
 button(@click="handleClick" :class="dynamicClass" v-if="show") Click
 template(#default)
@@ -202,7 +202,7 @@ button([disabled]="isDisabled" (click)="onClick()") Click
 
 HSML provides helpful error messages with source context:
 
-```
+```log
 error[E001]: Tag name must start with an ASCII letter
  --> example.hsml:1:1
   |
@@ -212,7 +212,7 @@ error[E001]: Tag name must start with an ASCII letter
 
 And warnings for common mistakes:
 
-```
+```log
 warning[W002]: Duplicate class 'foo'
  --> example.hsml:1:12
   |
