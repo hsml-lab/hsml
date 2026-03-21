@@ -9,79 +9,92 @@ use super::Span;
 /// that every variant is distinct.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ErrorCode {
-    DuplicateId,
+    // Errors (E001-E006)
+    /// E001: Tag name must start with an ASCII letter. (since 0.2.0)
     InvalidTagName,
+    /// E002: Unclosed bracket. (since 0.2.0)
     UnclosedBracket,
+    /// E003: Unclosed parenthesis. (since 0.2.0)
     UnclosedParenthesis,
+    /// E004: Unclosed quote in attribute value. (since 0.2.0)
     UnclosedQuote,
+    /// E005: Expected quoted attribute value. (since 0.2.0)
     ExpectedAttributeValue,
+    /// E006: Invalid attribute key. (since 0.2.0)
     InvalidAttributeKey,
-    DuplicateAttribute,
+
+    // Warnings (W001-W004)
+    /// W001: Duplicate attribute 'id' is not allowed. (since 0.2.0)
+    DuplicateId,
+    /// W002: Duplicate class. (since 0.2.0)
     DuplicateClass,
+    /// W003: Mixed tabs and spaces in indentation. (since 0.2.0)
     MixedIndentation,
+    /// W004: Duplicate attribute. (since 0.2.0)
+    DuplicateAttribute,
 }
 
 impl ErrorCode {
     /// All registered error code variants.
     /// Update this when adding new variants.
     pub const ALL: &[ErrorCode] = &[
-        Self::DuplicateId,
         Self::InvalidTagName,
         Self::UnclosedBracket,
         Self::UnclosedParenthesis,
         Self::UnclosedQuote,
         Self::ExpectedAttributeValue,
         Self::InvalidAttributeKey,
-        Self::DuplicateAttribute,
+        Self::DuplicateId,
         Self::DuplicateClass,
         Self::MixedIndentation,
+        Self::DuplicateAttribute,
     ];
 
     /// Machine-readable error code (e.g., "E001").
     pub fn code(&self) -> &'static str {
         match self {
-            Self::DuplicateId => "W002",
-            Self::InvalidTagName => "E004",
-            Self::UnclosedBracket => "E005",
-            Self::UnclosedParenthesis => "E008",
-            Self::UnclosedQuote => "E006",
-            Self::ExpectedAttributeValue => "E009",
-            Self::InvalidAttributeKey => "E007",
-            Self::DuplicateAttribute => "W004",
-            Self::DuplicateClass => "W001",
+            Self::InvalidTagName => "E001",
+            Self::UnclosedBracket => "E002",
+            Self::UnclosedParenthesis => "E003",
+            Self::UnclosedQuote => "E004",
+            Self::ExpectedAttributeValue => "E005",
+            Self::InvalidAttributeKey => "E006",
+            Self::DuplicateId => "W001",
+            Self::DuplicateClass => "W002",
             Self::MixedIndentation => "W003",
+            Self::DuplicateAttribute => "W004",
         }
     }
 
     /// Human-readable error message.
     pub fn message(&self) -> &'static str {
         match self {
-            Self::DuplicateId => "Duplicate attribute 'id' is not allowed",
             Self::InvalidTagName => "Tag name must start with an ASCII letter",
             Self::UnclosedBracket => "Unclosed bracket",
             Self::UnclosedParenthesis => "Unclosed parenthesis",
             Self::UnclosedQuote => "Unclosed quote in attribute value",
             Self::ExpectedAttributeValue => "Expected quoted attribute value",
             Self::InvalidAttributeKey => "Invalid attribute key",
-            Self::DuplicateAttribute => "Duplicate attribute",
+            Self::DuplicateId => "Duplicate attribute 'id' is not allowed",
             Self::DuplicateClass => "Duplicate class",
             Self::MixedIndentation => "Mixed tabs and spaces in indentation",
+            Self::DuplicateAttribute => "Duplicate attribute",
         }
     }
 
     /// Default severity for this error code.
     pub fn severity(&self) -> Severity {
         match self {
-            Self::DuplicateId => Severity::Warning,
             Self::InvalidTagName => Severity::Error,
             Self::UnclosedBracket => Severity::Error,
             Self::UnclosedParenthesis => Severity::Error,
             Self::UnclosedQuote => Severity::Error,
             Self::ExpectedAttributeValue => Severity::Error,
             Self::InvalidAttributeKey => Severity::Error,
-            Self::DuplicateAttribute => Severity::Warning,
-            Self::MixedIndentation => Severity::Warning,
+            Self::DuplicateId => Severity::Warning,
             Self::DuplicateClass => Severity::Warning,
+            Self::MixedIndentation => Severity::Warning,
+            Self::DuplicateAttribute => Severity::Warning,
         }
     }
 }

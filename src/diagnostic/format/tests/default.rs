@@ -19,7 +19,7 @@ fn it_should_format_warning_with_source_context() {
     assert_eq!(
         output,
         "\
-warning[W002]: Duplicate attribute 'id' is not allowed
+warning[W001]: Duplicate attribute 'id' is not allowed
  --> example.hsml:1:8
   |
 1 | div#foo#bar
@@ -87,7 +87,7 @@ fn it_should_format_warning() {
     assert_eq!(
         output,
         "\
-warning[W001]: Duplicate class 'text-red'
+warning[W002]: Duplicate class 'text-red'
  --> test.hsml:1:12
   |
 1 | h1.text-red.text-red Hello
