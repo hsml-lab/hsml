@@ -1,5 +1,5 @@
 use hsml::{
-    compile_content_core, compile_content_diagnostics,
+    compile_content_core, compile_content_diagnostics, compile_content_with_diagnostics,
     compiler::{HsmlCompileOptions, compile},
     parser::{
         HsmlNode, RootNode, Span, class::node::ClassNode, doctype::node::DoctypeNode,
@@ -387,4 +387,44 @@ fn it_should_compile_parsed_elk_main_content_component() {
         r#"<div ref="container" :class="containerClass"><div class="sticky top-0 z10 backdrop-blur native:lg:w-[calc(100vw-5rem)] native:xl:w-[calc(135%+(100vw-1200px)/2)]" pt="[env(safe-area-inset-top,0)]" bg="[rgba(var(--rgb-bg-base),0.7)]"><div class="flex justify-between px5 py2 native:xl:flex" :class="{ 'xl:hidden': $route.name !== 'tag' }" border="b base"><div class="flex gap-3 items-center py2 w-full" :overflow-hidden="!noOverflowHidden ? '' : false"><NuxtLink class="items-center btn-text p-0 xl:hidden" v-if="backOnSmallScreen || back" flex="~ gap1" :aria-label="$t('nav.back')" @click="$router.go(-1)"><div class="rtl-flip" i-ri:arrow-left-line/></NuxtLink><div class="flex w-full native-mac:justify-center native-mac:text-center native-mac:sm:justify-start" :truncate="!noOverflowHidden ? '' : false" data-tauri-drag-region><slot name="title"/></div><div class="sm:hidde nh-7 w-1px"/></div><div class="flex items-center flex-shrink-0 gap-x-2"><slot name="actions"/><PwaBadge class="lg:hidden"/><NavUser v-if="isHydrated"/><NavUserSkeleton v-else/></div></div><slot name="header"><div hidden/></slot></div><PwaInstallPrompt class="lg:hidden"/><div class="m-auto" :class="isHydrated && wideLayout ? 'xl:w-full sm:max-w-600px' : 'sm:max-w-600px md:shrink-0'"><div class="h-6" hidden :class="{ 'xl:block': $route.name !== 'tag' && !$slots.header }"/><slot/></div></div>"#
     );
     assert_eq!(*rest.fragment(), "");
+}
+
+// Tests for WASM-compatible compile_content_with_diagnostics
+
+#[test]
+fn wasm_diagnostics_returns_success_for_valid_input() {
+    let json = compile_content_with_diagnostics("h1 Hello\n");
+
+    assert_eq!(
+        json,
+        r#"{"success":true,"html":"<h1>Hello</h1>","diagnostics":[]}"#
+    );
+}
+
+#[test]
+fn wasm_diagnostics_returns_warnings_for_duplicate_class() {
+    let json = compile_content_with_diagnostics("h1.foo.foo Hello\n");
+
+    assert!(json.contains(r#""success":true"#));
+    assert!(json.contains(r#""html":"#));
+    assert!(json.contains(r#""severity":"warning""#));
+    assert!(json.contains(r#""code":"W001""#));
+}
+
+#[test]
+fn wasm_diagnostics_returns_error_for_invalid_input() {
+    let json = compile_content_with_diagnostics("@@@invalid");
+
+    assert!(json.contains(r#""success":false"#));
+    assert!(json.contains(r#""html":null"#));
+    assert!(json.contains(r#""severity":"error""#));
+}
+
+#[test]
+fn wasm_diagnostics_returns_error_for_duplicate_id() {
+    let json = compile_content_with_diagnostics("div#a#b\n");
+
+    assert!(json.contains(r#""success":false"#));
+    assert!(json.contains(r#""code":"E001""#));
+    assert!(json.contains(r#""severity":"error""#));
 }

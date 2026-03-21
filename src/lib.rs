@@ -67,3 +67,36 @@ pub fn compile_content_diagnostics(
 pub fn compile_content(source: &str) -> Result<String, JsError> {
     compile_content_core(source).map_err(|e| JsError::new(&e))
 }
+
+/// Compile HSML source and return a JSON string with HTML output and diagnostics.
+///
+/// Returns JSON in the format:
+/// ```json
+/// {"success":true,"html":"<h1>Hello</h1>","diagnostics":[]}
+/// ```
+/// On error:
+/// ```json
+/// {"success":false,"html":null,"diagnostics":[{"severity":"error",...}]}
+/// ```
+#[wasm_bindgen(js_name = "compileContentWithDiagnostics")]
+pub fn compile_content_with_diagnostics(source: &str) -> String {
+    use diagnostic::format::json::escape_json;
+
+    match compile_content_diagnostics(source) {
+        Ok(output) => {
+            let diagnostics_json = diagnostic::Diagnostic::slice_to_json(&output.diagnostics);
+            format!(
+                "{{\"success\":true,\"html\":\"{}\",\"diagnostics\":{}}}",
+                escape_json(&output.html),
+                diagnostics_json
+            )
+        }
+        Err(diagnostics) => {
+            let diagnostics_json = diagnostic::Diagnostic::slice_to_json(&diagnostics);
+            format!(
+                "{{\"success\":false,\"html\":null,\"diagnostics\":{}}}",
+                diagnostics_json
+            )
+        }
+    }
+}

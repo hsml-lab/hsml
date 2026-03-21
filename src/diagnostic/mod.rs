@@ -41,6 +41,12 @@ impl Diagnostic {
         self.file_path = Some(path.into());
         self
     }
+
+    /// Serialize a slice of diagnostics as a JSON array string.
+    pub fn slice_to_json(diagnostics: &[Diagnostic]) -> String {
+        use format::{DiagnosticFormatter, json::JsonFormatter};
+        JsonFormatter.format(diagnostics, None)
+    }
 }
 
 impl From<&error::Severity> for Severity {
