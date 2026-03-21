@@ -133,3 +133,40 @@ fn it_should_not_warn_on_consistent_tab_indentation() {
 
     assert!(diagnostics.is_empty());
 }
+
+#[test]
+fn it_should_warn_on_tab_then_space_indentation() {
+    let source = "div\n\t span Hello\n";
+    let (_, ast) = parse(Span::new(source)).unwrap();
+
+    let diagnostics = validate(&ast, source);
+
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(diagnostics[0].code, Some("W003".to_string()));
+}
+
+#[test]
+fn it_should_warn_on_multiple_mixed_lines() {
+    let source = "div\n \tchild1\n \tchild2\n";
+    let (_, ast) = parse(Span::new(source)).unwrap();
+
+    let diagnostics = validate(&ast, source);
+
+    // Both lines have mixed indentation
+    let mixed_warnings: Vec<_> = diagnostics
+        .iter()
+        .filter(|d| d.code == Some("W003".to_string()))
+        .collect();
+    assert_eq!(mixed_warnings.len(), 2);
+}
+
+#[test]
+fn it_should_not_warn_on_whitespace_only_lines() {
+    let source = "p.\n   text\n \t \n   more text\n";
+    let (_, ast) = parse(Span::new(source)).unwrap();
+
+    let diagnostics = validate(&ast, source);
+
+    // The whitespace-only line " \t " should not trigger W003
+    assert!(diagnostics.is_empty());
+}

@@ -23,6 +23,10 @@ pub fn validate(ast: &RootNode, source: &str) -> Vec<Diagnostic> {
 /// Check each line for mixed tabs and spaces in leading whitespace.
 fn validate_mixed_indentation(source: &str, diagnostics: &mut Vec<Diagnostic>) {
     for (line_idx, line) in source.lines().enumerate() {
+        if line.trim().is_empty() {
+            continue;
+        }
+
         let indent: &str = &line[..line.len() - line.trim_start().len()];
 
         if indent.contains('\t') && indent.contains(' ') {
