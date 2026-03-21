@@ -77,3 +77,18 @@ jobs:
 
       - name: Clippy
         run: cargo clippy --all-targets --all-features
+
+  wasm:
+    name: WASM Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Install wasm-pack
+        uses: taiki-e/install-action@06203676c62f0d3c765be3f2fcfbebbcb02d09f5 # v2
+        with:
+          tool: wasm-pack@0.14.0
+
+      - name: Build and test WASM
+        run: wasm-pack test --node
