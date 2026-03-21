@@ -410,6 +410,7 @@ version = "0.1.0"
 dependencies = [
  "assert_cmd",
  "clap",
+ "js-sys",
  "nom",
  "nom_locate",
  "predicates",
