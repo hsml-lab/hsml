@@ -1,3 +1,5 @@
+use std::hash::{Hash, Hasher};
+
 use crate::common::Location;
 use crate::parser::{HsmlResult, Span};
 
@@ -10,11 +12,18 @@ pub struct ClassNode {
     pub location: Location,
 }
 
-// PartialEq only compares `name` so that tests comparing parsed ASTs
-// don't need to specify exact location values for every class.
+// PartialEq and Hash only use `name` so that tests comparing parsed ASTs
+// don't need to specify exact location values for every class, and the
+// equality/hash invariant is preserved for hash-based collections.
 impl PartialEq for ClassNode {
     fn eq(&self, other: &Self) -> bool {
         self.name == other.name
+    }
+}
+
+impl Hash for ClassNode {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.name.hash(state);
     }
 }
 
