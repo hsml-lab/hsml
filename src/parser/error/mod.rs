@@ -10,6 +10,7 @@ use super::Span;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ErrorCode {
     DuplicateId,
+    InvalidTagName,
     DuplicateClass,
     MixedIndentation,
 }
@@ -19,8 +20,9 @@ impl ErrorCode {
     pub fn code(&self) -> &'static str {
         match self {
             Self::DuplicateId => "E001",
-            Self::MixedIndentation => "W003",
+            Self::InvalidTagName => "E004",
             Self::DuplicateClass => "W001",
+            Self::MixedIndentation => "W003",
         }
     }
 
@@ -28,8 +30,9 @@ impl ErrorCode {
     pub fn message(&self) -> &'static str {
         match self {
             Self::DuplicateId => "Duplicate attribute 'id' is not allowed",
-            Self::MixedIndentation => "Mixed tabs and spaces in indentation",
+            Self::InvalidTagName => "Tag name must start with an ASCII letter",
             Self::DuplicateClass => "Duplicate class",
+            Self::MixedIndentation => "Mixed tabs and spaces in indentation",
         }
     }
 
@@ -37,6 +40,7 @@ impl ErrorCode {
     pub fn severity(&self) -> Severity {
         match self {
             Self::DuplicateId => Severity::Error,
+            Self::InvalidTagName => Severity::Error,
             Self::MixedIndentation => Severity::Warning,
             Self::DuplicateClass => Severity::Warning,
         }

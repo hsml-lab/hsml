@@ -101,8 +101,8 @@ fn it_should_error_on_invalid_child() {
 
     let result = tag_node(input, context);
 
-    // Error is propagated from process_tag for non-alphabetic tag starts.
-    assert!(matches!(result, Err(nom::Err::Error(_))));
+    // Failure is propagated from process_tag (E004: InvalidTagName).
+    assert!(matches!(result, Err(nom::Err::Failure(_))));
 }
 
 #[test]
