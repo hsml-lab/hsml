@@ -72,10 +72,10 @@ fn it_should_format_warning() {
     let diag = Diagnostic {
         severity: Severity::Warning,
         message: "Duplicate class 'text-red'".to_string(),
-        code: None,
+        code: Some("W001".to_string()),
         location: Some(Location {
             line: 1,
-            column: 15,
+            column: 12,
         }),
         file_path: Some("test.hsml".to_string()),
     };
@@ -86,11 +86,11 @@ fn it_should_format_warning() {
     assert_eq!(
         output,
         "\
-warning: Duplicate class 'text-red'
- --> test.hsml:1:15
+warning[W001]: Duplicate class 'text-red'
+ --> test.hsml:1:12
   |
 1 | h1.text-red.text-red Hello
-  |               ^
+  |            ^
 "
     );
 }
