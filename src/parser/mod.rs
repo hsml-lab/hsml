@@ -63,3 +63,45 @@ pub fn advance<'a>(span: Span<'a>, n: usize) -> Span<'a> {
 pub fn take_prefix<'a>(span: Span<'a>, n: usize) -> Span<'a> {
     span.take_split(n).1
 }
+
+/// Find the byte length of an escape-aware delimited section (e.g. `[...]`, `(...)`).
+/// Returns `Some(len)` including the opening and closing delimiters, or `None` if unclosed.
+/// The string must start with `open`.
+pub fn delimited_section_len(s: &str, open: char, close: char) -> Option<usize> {
+    if !s.starts_with(open) {
+        return None;
+    }
+
+    let mut is_escaped = false;
+
+    for (index, c) in s.char_indices() {
+        if index == 0 {
+            continue;
+        }
+
+        if c == '\\' {
+            is_escaped = !is_escaped;
+            continue;
+        }
+
+        if c == close && !is_escaped {
+            return Some(index + c.len_utf8());
+        }
+
+        is_escaped = false;
+    }
+
+    None
+}
+
+/// Find the byte length of an escape-aware quoted string (e.g. `"..."` or `'...'`).
+/// Returns `Some(len)` including the surrounding quotes, or `None` if unclosed.
+/// The string must start with `"` or `'`.
+pub fn quoted_string_len(s: &str) -> Option<usize> {
+    let quote = s.chars().next()?;
+    if quote != '"' && quote != '\'' {
+        return None;
+    }
+
+    delimited_section_len(s, quote, quote)
+}

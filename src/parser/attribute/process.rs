@@ -1,9 +1,20 @@
-use nom::{Needed, bytes::complete::tag, error::ErrorKind};
+use nom::{
+    bytes::complete::{tag, take_while1},
+    error::ErrorKind,
+};
 
-use crate::parser::{HsmlProcessContext, HsmlResult, Span, advance, error::HsmlError, take_prefix};
+use crate::parser::{
+    HsmlProcessContext, HsmlResult, Span, advance, delimited_section_len, error::HsmlError,
+    quoted_string_len, take_prefix,
+};
 
 fn is_valid_attribute_key_start(c: char) -> bool {
     c.is_alphabetic() || c == ':' || c == '#' || c == '@' || c == '[' || c == '('
+}
+
+/// Returns true if the character is an attribute key delimiter (stops parsing).
+fn is_key_delimiter(c: char) -> bool {
+    matches!(c, ')' | ',' | '=' | ' ' | '\r' | '\n' | '[' | '(')
 }
 
 pub(super) fn process_attribute_key(input: Span<'_>) -> HsmlResult<'_, Span<'_>> {
@@ -20,125 +31,43 @@ pub(super) fn process_attribute_key(input: Span<'_>) -> HsmlResult<'_, Span<'_>>
     }
 
     let mut remaining = input;
-
-    let mut attribute_key_index = 0;
+    let mut key_len = 0;
 
     loop {
-        // get first char and check if it is a `(`
-        // if so, find the closing brace, because otherwise the closing brace is the end of the attributes
-        let first_char = remaining.fragment().chars().next();
-
-        match first_char {
-            Some(')') => {
-                // we hit the end of the attributes, so we are done
-                break;
-            }
-            Some(',') => {
-                // we hit a comma, so we are done
-                break;
-            }
-            Some('=') => {
-                // we hit an equal sign, so we are done
-                break;
-            }
-            Some(' ') => {
-                // we hit a whitespace, so we are done
-                break;
-            }
-            Some('\r') if remaining.fragment().as_bytes().get(1) == Some(&b'\n') => {
-                // we hit a newline, so we are done
-                break;
-            }
-            Some('\r') => {
-                // lone \r (old Mac line ending) — treat as line ending
-                break;
-            }
-            Some('\n') => {
-                // we hit a newline, so we are done
-                break;
-            }
-            Some('[') => {
-                // find the closing bracket
-                let closing_bracket = ']';
-
-                let mut closing_bracket_index = 0;
-                let mut is_escaped = false;
-
-                for (index, c) in remaining.fragment().char_indices() {
-                    if index == 0 {
-                        // skip first char, because it is the opening bracket
-                        continue;
-                    }
-
-                    if c == '\\' {
-                        is_escaped = !is_escaped;
-                        continue;
-                    }
-
-                    if c == closing_bracket && !is_escaped {
-                        closing_bracket_index = index;
-                        break;
-                    }
-
-                    is_escaped = false;
-                }
-
-                if closing_bracket_index == 0 {
-                    return Err(HsmlError::err(remaining, ErrorKind::Tag));
-                }
-
-                attribute_key_index += closing_bracket_index;
-                remaining = advance(input, attribute_key_index);
-
-                continue;
-            }
-            Some('(') => {
-                // find the closing brace
-                let closing_brace = ')';
-
-                let mut closing_brace_index = 0;
-                let mut is_escaped = false;
-
-                for (index, c) in remaining.fragment().char_indices() {
-                    if index == 0 {
-                        // skip first char, because it is the opening brace
-                        continue;
-                    }
-
-                    if c == '\\' {
-                        is_escaped = !is_escaped;
-                        continue;
-                    }
-
-                    if c == closing_brace && !is_escaped {
-                        closing_brace_index = index;
-                        break;
-                    }
-
-                    is_escaped = false;
-                }
-
-                if closing_brace_index == 0 {
-                    return Err(HsmlError::err(remaining, ErrorKind::Tag));
-                }
-
-                attribute_key_index += closing_brace_index + 1;
-                remaining = advance(input, attribute_key_index);
-
-                continue;
-            }
-            Some(_) => {
-                attribute_key_index += remaining.fragment().chars().next().unwrap().len_utf8();
-                remaining = advance(input, attribute_key_index);
-                continue;
-            }
-            None => {
-                return Err(nom::Err::Incomplete(Needed::Unknown));
-            }
+        // Consume regular (non-delimiter) characters
+        if let Ok((rest, taken)) =
+            take_while1::<_, Span, HsmlError>(|c: char| !is_key_delimiter(c))(remaining)
+        {
+            key_len += taken.fragment().len();
+            remaining = rest;
+            continue;
         }
+
+        // Check for bracket section [...]
+        if remaining.fragment().starts_with('[') {
+            if let Some(len) = delimited_section_len(remaining.fragment(), '[', ']') {
+                key_len += len;
+                remaining = advance(input, key_len);
+                continue;
+            }
+            return Err(HsmlError::err(remaining, ErrorKind::Tag));
+        }
+
+        // Check for parenthesized section (...)
+        if remaining.fragment().starts_with('(') {
+            if let Some(len) = delimited_section_len(remaining.fragment(), '(', ')') {
+                key_len += len;
+                remaining = advance(input, key_len);
+                continue;
+            }
+            return Err(HsmlError::err(remaining, ErrorKind::Tag));
+        }
+
+        // Any other character is a delimiter — stop
+        break;
     }
 
-    let attribute_key = take_prefix(input, attribute_key_index);
+    let attribute_key = take_prefix(input, key_len);
 
     Ok((remaining, attribute_key))
 }
@@ -147,50 +76,23 @@ pub(super) fn process_attribute_value<'a>(
     input: Span<'a>,
     _context: &mut HsmlProcessContext,
 ) -> HsmlResult<'a, Span<'a>> {
-    // get first char
     let Some(first_char) = input.fragment().chars().next() else {
         return Err(HsmlError::err(input, ErrorKind::Tag));
     };
 
-    // if first char is a quote, then we need to find the closing quote and return the value in between (together with the surrounding quotes)
-    if first_char == '"' || first_char == '\'' {
-        let closing_quote = if first_char == '"' { '"' } else { '\'' };
+    if first_char != '"' && first_char != '\'' {
+        return Err(HsmlError::err(input, ErrorKind::Tag));
+    }
 
-        let mut closing_quote_index = 0;
-        let mut is_escaped = false;
-
-        for (index, c) in input.fragment().char_indices() {
-            if index == 0 {
-                // skip first char, because it is the opening quote
-                continue;
-            }
-
-            if c == '\\' {
-                is_escaped = !is_escaped;
-                continue;
-            }
-
-            if c == closing_quote && !is_escaped {
-                closing_quote_index = index;
-                break;
-            }
-
-            is_escaped = false;
-        }
-
-        if closing_quote_index == 0 {
-            return Err(HsmlError::err(input, ErrorKind::Tag));
-        }
-
+    if let Some(len) = quoted_string_len(input.fragment()) {
         // value between quotes (excluding the quotes themselves)
-        let attribute_value = take_prefix(advance(input, 1), closing_quote_index - 1);
-
-        let remaining = advance(input, closing_quote_index + 1);
+        let attribute_value = take_prefix(advance(input, 1), len - 2);
+        let remaining = advance(input, len);
 
         return Ok((remaining, attribute_value));
     }
 
-    // otherwise it was not a valid attribute value
+    // Unclosed quote
     Err(HsmlError::err(input, ErrorKind::Tag))
 }
 
