@@ -1,3 +1,5 @@
+pub mod format;
+
 use crate::parser::error::{self, HsmlError};
 
 /// Severity level for diagnostics.
