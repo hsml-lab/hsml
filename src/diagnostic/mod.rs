@@ -74,15 +74,8 @@ impl Diagnostic {
 
     /// Serialize a slice of diagnostics as a JSON array string.
     pub fn slice_to_json(diagnostics: &[Diagnostic]) -> String {
-        let mut output = String::from("[");
-        for (i, diag) in diagnostics.iter().enumerate() {
-            if i > 0 {
-                output.push(',');
-            }
-            output.push_str(&diag.to_json());
-        }
-        output.push(']');
-        output
+        use format::{DiagnosticFormatter, json::JsonFormatter};
+        JsonFormatter.format(diagnostics, None)
     }
 }
 

@@ -395,9 +395,10 @@ fn it_should_compile_parsed_elk_main_content_component() {
 fn wasm_diagnostics_returns_success_for_valid_input() {
     let json = compile_content_with_diagnostics("h1 Hello\n");
 
-    assert!(json.contains(r#""success":true"#));
-    assert!(json.contains(r#""html":"<h1>Hello</h1>""#));
-    assert!(json.contains(r#""diagnostics":[]"#));
+    assert_eq!(
+        json,
+        r#"{"success":true,"html":"<h1>Hello</h1>","diagnostics":[]}"#
+    );
 }
 
 #[test]
