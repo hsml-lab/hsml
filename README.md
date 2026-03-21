@@ -95,7 +95,7 @@ hsml compile index.hsml --report-format json
 ```js
 import { compileContent, compileContentWithDiagnostics } from "hsml";
 
-// Simple compilation (input must end with a newline)
+// Simple compilation
 const html = compileContent("h1.title Hello World\n");
 // => '<h1 class="title">Hello World</h1>'
 
@@ -230,7 +230,7 @@ warning[W002]: Duplicate class 'foo'
 | E004 | Unclosed quote in attribute value        |
 | E005 | Expected quoted attribute value          |
 | E006 | Invalid attribute key                    |
-| W001 | Duplicate id                             |
+| W001 | Duplicate id (only one per element)      |
 | W002 | Duplicate class                          |
 | W003 | Mixed tabs and spaces in indentation     |
 | W004 | Duplicate attribute                      |
