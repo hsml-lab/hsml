@@ -63,3 +63,63 @@ pub fn advance<'a>(span: Span<'a>, n: usize) -> Span<'a> {
 pub fn take_prefix<'a>(span: Span<'a>, n: usize) -> Span<'a> {
     span.take_split(n).1
 }
+
+/// Find the byte length of an escape-aware delimited section (e.g. `[...]`, `(...)`).
+/// Returns `Some(len)` including the opening and closing delimiters, or `None` if unclosed.
+/// The string must start with `open`. Quoted substrings inside are treated as atomic
+/// (a closing delimiter inside quotes is not matched).
+pub fn delimited_section_len(s: &str, open: char, close: char) -> Option<usize> {
+    if !s.starts_with(open) {
+        return None;
+    }
+
+    let mut chars = s.char_indices();
+    chars.next(); // skip the opening delimiter
+
+    let mut is_escaped = false;
+
+    while let Some((index, c)) = chars.next() {
+        if c == '\\' {
+            is_escaped = !is_escaped;
+            continue;
+        }
+
+        // Skip quoted substrings atomically (but not when the delimiter itself is a quote)
+        if !is_escaped && (c == '"' || c == '\'') && c != close {
+            let quote = c;
+            let mut quote_escaped = false;
+            for (_, qc) in chars.by_ref() {
+                if qc == '\\' {
+                    quote_escaped = !quote_escaped;
+                    continue;
+                }
+                if qc == quote && !quote_escaped {
+                    break;
+                }
+                quote_escaped = false;
+            }
+            is_escaped = false;
+            continue;
+        }
+
+        if c == close && !is_escaped {
+            return Some(index + c.len_utf8());
+        }
+
+        is_escaped = false;
+    }
+
+    None
+}
+
+/// Find the byte length of an escape-aware quoted string (e.g. `"..."` or `'...'`).
+/// Returns `Some(len)` including the surrounding quotes, or `None` if unclosed.
+/// The string must start with `"` or `'`.
+pub fn quoted_string_len(s: &str) -> Option<usize> {
+    let quote = s.chars().next()?;
+    if quote != '"' && quote != '\'' {
+        return None;
+    }
+
+    delimited_section_len(s, quote, quote)
+}

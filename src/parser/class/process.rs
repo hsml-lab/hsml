@@ -3,40 +3,13 @@ use nom::{
     error::ErrorKind,
 };
 
-use crate::parser::{HsmlResult, Span, advance, error::HsmlError, take_prefix};
+use crate::parser::{
+    HsmlResult, Span, advance, delimited_section_len, error::HsmlError, take_prefix,
+};
 
 /// Returns true if the character is a class name delimiter (stops parsing).
 fn is_class_delimiter(c: char) -> bool {
     matches!(c, '#' | '.' | '(' | ' ' | '\t' | '\r' | '\n' | '[')
-}
-
-/// Parse an escape-aware bracketed section like `[arbitrary-value]`.
-/// Returns the byte length consumed including the opening and closing brackets.
-fn bracket_section_len(s: &str) -> Option<usize> {
-    if !s.starts_with('[') {
-        return None;
-    }
-
-    let mut is_escaped = false;
-
-    for (index, c) in s.char_indices() {
-        if index == 0 {
-            continue;
-        }
-
-        if c == '\\' {
-            is_escaped = !is_escaped;
-            continue;
-        }
-
-        if c == ']' && !is_escaped {
-            return Some(index + c.len_utf8());
-        }
-
-        is_escaped = false;
-    }
-
-    None
 }
 
 pub(super) fn process_class(input: Span<'_>) -> HsmlResult<'_, Span<'_>> {
@@ -57,7 +30,7 @@ pub(super) fn process_class(input: Span<'_>) -> HsmlResult<'_, Span<'_>> {
 
         // Check for bracket section
         if remaining.fragment().starts_with('[') {
-            if let Some(len) = bracket_section_len(remaining.fragment()) {
+            if let Some(len) = delimited_section_len(remaining.fragment(), '[', ']') {
                 class_len += len;
                 remaining = advance(input, class_len);
                 continue;
