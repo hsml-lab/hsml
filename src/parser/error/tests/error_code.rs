@@ -30,7 +30,7 @@ fn from_code_uses_error_code_severity() {
     assert_eq!(result.severity, Severity::Error);
 
     let result = HsmlError::from_code(span, ErrorCode::MixedIndentation);
-    assert_eq!(result.severity, Severity::Error);
+    assert_eq!(result.severity, Severity::Warning);
 
     let result = HsmlError::from_code(span, ErrorCode::DuplicateClass);
     assert_eq!(result.severity, Severity::Warning);

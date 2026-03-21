@@ -1,20 +1,43 @@
 use std::collections::HashSet;
 
+use crate::common::Location;
 use crate::diagnostic::{Diagnostic, Severity};
 use crate::parser::error::ErrorCode;
 use crate::parser::tag::node::TagNode;
 use crate::parser::{HsmlNode, RootNode};
 
-/// Validate an AST and return any diagnostics (warnings, etc.).
-/// This runs after parsing succeeds — errors here don't prevent compilation.
-pub fn validate(ast: &RootNode) -> Vec<Diagnostic> {
+/// Validate an AST and source, returning any diagnostics (warnings, etc.).
+/// This runs after parsing succeeds — diagnostics here don't prevent compilation.
+pub fn validate(ast: &RootNode, source: &str) -> Vec<Diagnostic> {
     let mut diagnostics = Vec::new();
+
+    validate_mixed_indentation(source, &mut diagnostics);
 
     for node in &ast.nodes {
         validate_node(node, &mut diagnostics);
     }
 
     diagnostics
+}
+
+/// Check each line for mixed tabs and spaces in leading whitespace.
+fn validate_mixed_indentation(source: &str, diagnostics: &mut Vec<Diagnostic>) {
+    for (line_idx, line) in source.lines().enumerate() {
+        let indent: &str = &line[..line.len() - line.trim_start().len()];
+
+        if indent.contains('\t') && indent.contains(' ') {
+            diagnostics.push(Diagnostic {
+                severity: Severity::Warning,
+                message: ErrorCode::MixedIndentation.message().to_string(),
+                code: Some(ErrorCode::MixedIndentation.code().to_string()),
+                location: Some(Location {
+                    line: (line_idx + 1) as u32,
+                    column: 1,
+                }),
+                file_path: None,
+            });
+        }
+    }
 }
 
 fn validate_node(node: &HsmlNode, diagnostics: &mut Vec<Diagnostic>) {
