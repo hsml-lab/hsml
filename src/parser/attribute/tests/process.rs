@@ -1,8 +1,7 @@
-use nom::error::ErrorKind;
-
 use crate::parser::{
     HsmlProcessContext, Span,
     attribute::process::{process_attribute, process_attribute_key, process_attribute_value},
+    error::ErrorCode,
 };
 
 #[test]
@@ -233,11 +232,11 @@ fn it_should_not_process_attribute_value_with_unclosed_quote() {
     );
 
     assert!(result.is_err());
-    if let Err(nom::Err::Error(err)) = result {
+    if let Err(nom::Err::Failure(err)) = result {
         assert_eq!(*err.span.fragment(), r#""unclosed"#);
-        assert_eq!(err.kind, ErrorKind::Tag);
+        assert_eq!(err.code(), Some(ErrorCode::UnclosedQuote.code()));
     } else {
-        panic!("Expected Error");
+        panic!("Expected Failure");
     }
 }
 
@@ -246,11 +245,11 @@ fn it_should_not_process_attribute_key_with_unclosed_bracket() {
     let result = process_attribute_key(Span::new("[unclosed"));
 
     assert!(result.is_err());
-    if let Err(nom::Err::Error(err)) = result {
+    if let Err(nom::Err::Failure(err)) = result {
         assert_eq!(*err.span.fragment(), "[unclosed");
-        assert_eq!(err.kind, ErrorKind::Tag);
+        assert_eq!(err.code(), Some(ErrorCode::UnclosedBracket.code()));
     } else {
-        panic!("Expected Error");
+        panic!("Expected Failure");
     }
 }
 
@@ -259,11 +258,11 @@ fn it_should_not_process_attribute_key_with_unclosed_paren() {
     let result = process_attribute_key(Span::new("(unclosed"));
 
     assert!(result.is_err());
-    if let Err(nom::Err::Error(err)) = result {
+    if let Err(nom::Err::Failure(err)) = result {
         assert_eq!(*err.span.fragment(), "(unclosed");
-        assert_eq!(err.kind, ErrorKind::Tag);
+        assert_eq!(err.code(), Some(ErrorCode::UnclosedBracket.code()));
     } else {
-        panic!("Expected Error");
+        panic!("Expected Failure");
     }
 }
 
@@ -272,11 +271,11 @@ fn it_should_not_process_attribute_key_with_invalid_char() {
     let result = process_attribute_key(Span::new("$invalid"));
 
     assert!(result.is_err());
-    if let Err(nom::Err::Error(err)) = result {
+    if let Err(nom::Err::Failure(err)) = result {
         assert_eq!(*err.span.fragment(), "$invalid");
-        assert_eq!(err.kind, ErrorKind::AlphaNumeric);
+        assert_eq!(err.code(), Some(ErrorCode::InvalidAttributeKey.code()));
     } else {
-        panic!("Expected Error");
+        panic!("Expected Failure");
     }
 }
 
@@ -290,11 +289,11 @@ fn it_should_not_process_attribute_with_number() {
     );
 
     assert!(result.is_err());
-    if let Err(nom::Err::Error(err)) = result {
+    if let Err(nom::Err::Failure(err)) = result {
         assert_eq!(*err.span.fragment(), r#"1src="https://github.com""#);
-        assert_eq!(err.kind, ErrorKind::AlphaNumeric);
+        assert_eq!(err.code(), Some(ErrorCode::InvalidAttributeKey.code()));
     } else {
-        panic!("Expected Error");
+        panic!("Expected Failure");
     }
 }
 
@@ -306,11 +305,11 @@ fn it_should_not_process_attribute_with_whitespace() {
     );
 
     assert!(result.is_err());
-    if let Err(nom::Err::Error(err)) = result {
+    if let Err(nom::Err::Failure(err)) = result {
         assert_eq!(*err.span.fragment(), r#" src="https://github.com""#);
-        assert_eq!(err.kind, ErrorKind::AlphaNumeric);
+        assert_eq!(err.code(), Some(ErrorCode::InvalidAttributeKey.code()));
     } else {
-        panic!("Expected Error");
+        panic!("Expected Failure");
     }
 }
 
@@ -322,11 +321,11 @@ fn it_should_not_process_attribute_with_dot() {
     );
 
     assert!(result.is_err());
-    if let Err(nom::Err::Error(err)) = result {
+    if let Err(nom::Err::Failure(err)) = result {
         assert_eq!(*err.span.fragment(), r#".src="https://github.com""#);
-        assert_eq!(err.kind, ErrorKind::AlphaNumeric);
+        assert_eq!(err.code(), Some(ErrorCode::InvalidAttributeKey.code()));
     } else {
-        panic!("Expected Error");
+        panic!("Expected Failure");
     }
 }
 
@@ -338,11 +337,11 @@ fn it_should_not_process_attribute_with_comma() {
     );
 
     assert!(result.is_err());
-    if let Err(nom::Err::Error(err)) = result {
+    if let Err(nom::Err::Failure(err)) = result {
         assert_eq!(*err.span.fragment(), r#",src="https://github.com""#);
-        assert_eq!(err.kind, ErrorKind::AlphaNumeric);
+        assert_eq!(err.code(), Some(ErrorCode::InvalidAttributeKey.code()));
     } else {
-        panic!("Expected Error");
+        panic!("Expected Failure");
     }
 }
 
@@ -351,11 +350,11 @@ fn it_should_not_process_attribute_without_quoted_value() {
     let result = process_attribute(Span::new("src=imgSrc"), &mut HsmlProcessContext::default());
 
     assert!(result.is_err());
-    if let Err(nom::Err::Error(err)) = result {
+    if let Err(nom::Err::Failure(err)) = result {
         assert_eq!(*err.span.fragment(), "imgSrc");
-        assert_eq!(err.kind, ErrorKind::Tag);
+        assert_eq!(err.code(), Some(ErrorCode::UnclosedQuote.code()));
     } else {
-        panic!("Expected Error");
+        panic!("Expected Failure");
     }
 }
 
@@ -364,11 +363,11 @@ fn it_should_not_process_attribute_key_with_empty_input() {
     let result = process_attribute_key(Span::new(""));
 
     assert!(result.is_err());
-    if let Err(nom::Err::Error(err)) = result {
+    if let Err(nom::Err::Failure(err)) = result {
         assert_eq!(*err.span.fragment(), "");
-        assert_eq!(err.kind, ErrorKind::AlphaNumeric);
+        assert_eq!(err.code(), Some(ErrorCode::InvalidAttributeKey.code()));
     } else {
-        panic!("Expected Error");
+        panic!("Expected Failure");
     }
 }
 
@@ -377,11 +376,11 @@ fn it_should_not_process_attribute_value_with_empty_input() {
     let result = process_attribute_value(Span::new(""), &mut HsmlProcessContext::default());
 
     assert!(result.is_err());
-    if let Err(nom::Err::Error(err)) = result {
+    if let Err(nom::Err::Failure(err)) = result {
         assert_eq!(*err.span.fragment(), "");
-        assert_eq!(err.kind, ErrorKind::Tag);
+        assert_eq!(err.code(), Some(ErrorCode::UnclosedQuote.code()));
     } else {
-        panic!("Expected Error");
+        panic!("Expected Failure");
     }
 }
 
@@ -396,14 +395,14 @@ src="https://github.com""#,
     );
 
     assert!(result.is_err());
-    if let Err(nom::Err::Error(err)) = result {
+    if let Err(nom::Err::Failure(err)) = result {
         assert_eq!(
             *err.span.fragment(),
             r#"
 src="https://github.com""#
         );
-        assert_eq!(err.kind, ErrorKind::AlphaNumeric);
+        assert_eq!(err.code(), Some(ErrorCode::InvalidAttributeKey.code()));
     } else {
-        panic!("Expected Error");
+        panic!("Expected Failure");
     }
 }

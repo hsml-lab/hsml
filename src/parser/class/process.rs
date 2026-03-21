@@ -4,7 +4,9 @@ use nom::{
 };
 
 use crate::parser::{
-    HsmlResult, Span, advance, delimited_section_len, error::HsmlError, take_prefix,
+    HsmlResult, Span, advance, delimited_section_len,
+    error::{ErrorCode, HsmlError},
+    take_prefix,
 };
 
 /// Returns true if the character is a class name delimiter (stops parsing).
@@ -35,7 +37,7 @@ pub(super) fn process_class(input: Span<'_>) -> HsmlResult<'_, Span<'_>> {
                 remaining = advance(input, class_len);
                 continue;
             }
-            return Err(HsmlError::err(remaining, ErrorKind::Tag));
+            return Err(HsmlError::fail_code(remaining, ErrorCode::UnclosedBracket));
         }
 
         // Any other character is a delimiter — stop

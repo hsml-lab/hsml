@@ -2,6 +2,7 @@ use nom::error::ErrorKind;
 
 use crate::parser::Span;
 use crate::parser::class::process::process_class;
+use crate::parser::error::ErrorCode;
 
 #[test]
 fn it_should_process_class_with_text() {
@@ -213,11 +214,11 @@ fn it_should_not_process_class_with_unclosed_bracket() {
     let result = process_class(Span::new(".bg-[unclosed"));
 
     assert!(result.is_err());
-    if let Err(nom::Err::Error(err)) = result {
+    if let Err(nom::Err::Failure(err)) = result {
         assert_eq!(*err.span.fragment(), "[unclosed");
-        assert_eq!(err.kind, ErrorKind::Tag);
+        assert_eq!(err.code(), Some(ErrorCode::UnclosedBracket.code()));
     } else {
-        panic!("Expected Error");
+        panic!("Expected Failure");
     }
 }
 

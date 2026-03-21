@@ -1,10 +1,8 @@
-use nom::{
-    bytes::complete::{tag, take_while1},
-    error::ErrorKind,
-};
+use nom::bytes::complete::{tag, take_while1};
 
 use crate::parser::{
-    HsmlProcessContext, HsmlResult, Span, advance, delimited_section_len, error::HsmlError,
+    HsmlProcessContext, HsmlResult, Span, advance, delimited_section_len,
+    error::{ErrorCode, HsmlError},
     quoted_string_len, take_prefix,
 };
 
@@ -20,15 +18,15 @@ fn is_key_char(c: char) -> bool {
 
 pub(super) fn process_attribute_key(input: Span<'_>) -> HsmlResult<'_, Span<'_>> {
     let Some(first_char) = input.fragment().chars().next() else {
-        return Err(HsmlError::err(input, ErrorKind::AlphaNumeric));
+        return Err(HsmlError::fail_code(input, ErrorCode::InvalidAttributeKey));
     };
 
     if first_char.is_numeric() {
-        return Err(HsmlError::err(input, ErrorKind::AlphaNumeric));
+        return Err(HsmlError::fail_code(input, ErrorCode::InvalidAttributeKey));
     }
 
     if !is_valid_attribute_key_start(first_char) {
-        return Err(HsmlError::err(input, ErrorKind::AlphaNumeric));
+        return Err(HsmlError::fail_code(input, ErrorCode::InvalidAttributeKey));
     }
 
     let mut remaining = input;
@@ -49,7 +47,7 @@ pub(super) fn process_attribute_key(input: Span<'_>) -> HsmlResult<'_, Span<'_>>
                 remaining = advance(input, key_len);
                 continue;
             }
-            return Err(HsmlError::err(remaining, ErrorKind::Tag));
+            return Err(HsmlError::fail_code(remaining, ErrorCode::UnclosedBracket));
         }
 
         // Check for parenthesized section (...)
@@ -59,7 +57,7 @@ pub(super) fn process_attribute_key(input: Span<'_>) -> HsmlResult<'_, Span<'_>>
                 remaining = advance(input, key_len);
                 continue;
             }
-            return Err(HsmlError::err(remaining, ErrorKind::Tag));
+            return Err(HsmlError::fail_code(remaining, ErrorCode::UnclosedBracket));
         }
 
         // Any other character is a delimiter — stop
@@ -76,11 +74,11 @@ pub(super) fn process_attribute_value<'a>(
     _context: &mut HsmlProcessContext,
 ) -> HsmlResult<'a, Span<'a>> {
     let Some(first_char) = input.fragment().chars().next() else {
-        return Err(HsmlError::err(input, ErrorKind::Tag));
+        return Err(HsmlError::fail_code(input, ErrorCode::UnclosedQuote));
     };
 
     if first_char != '"' && first_char != '\'' {
-        return Err(HsmlError::err(input, ErrorKind::Tag));
+        return Err(HsmlError::fail_code(input, ErrorCode::UnclosedQuote));
     }
 
     if let Some(len) = quoted_string_len(input.fragment()) {
@@ -92,7 +90,7 @@ pub(super) fn process_attribute_value<'a>(
     }
 
     // Unclosed quote
-    Err(HsmlError::err(input, ErrorKind::Tag))
+    Err(HsmlError::fail_code(input, ErrorCode::UnclosedQuote))
 }
 
 // An attribute key can only contain a-z, A-Z, 0-9, `-`, `_`, `:`, `#`, `@`, `[`, `]`, `(`, `)`, `{`, `}`

@@ -11,6 +11,9 @@ use super::Span;
 pub enum ErrorCode {
     DuplicateId,
     InvalidTagName,
+    UnclosedBracket,
+    UnclosedQuote,
+    InvalidAttributeKey,
     DuplicateClass,
     MixedIndentation,
 }
@@ -21,6 +24,9 @@ impl ErrorCode {
     pub const ALL: &[ErrorCode] = &[
         Self::DuplicateId,
         Self::InvalidTagName,
+        Self::UnclosedBracket,
+        Self::UnclosedQuote,
+        Self::InvalidAttributeKey,
         Self::DuplicateClass,
         Self::MixedIndentation,
     ];
@@ -30,6 +36,9 @@ impl ErrorCode {
         match self {
             Self::DuplicateId => "E001",
             Self::InvalidTagName => "E004",
+            Self::UnclosedBracket => "E005",
+            Self::UnclosedQuote => "E006",
+            Self::InvalidAttributeKey => "E007",
             Self::DuplicateClass => "W001",
             Self::MixedIndentation => "W003",
         }
@@ -40,6 +49,9 @@ impl ErrorCode {
         match self {
             Self::DuplicateId => "Duplicate attribute 'id' is not allowed",
             Self::InvalidTagName => "Tag name must start with an ASCII letter",
+            Self::UnclosedBracket => "Unclosed bracket",
+            Self::UnclosedQuote => "Unclosed quote in attribute value",
+            Self::InvalidAttributeKey => "Invalid attribute key",
             Self::DuplicateClass => "Duplicate class",
             Self::MixedIndentation => "Mixed tabs and spaces in indentation",
         }
@@ -50,6 +62,9 @@ impl ErrorCode {
         match self {
             Self::DuplicateId => Severity::Error,
             Self::InvalidTagName => Severity::Error,
+            Self::UnclosedBracket => Severity::Error,
+            Self::UnclosedQuote => Severity::Error,
+            Self::InvalidAttributeKey => Severity::Error,
             Self::MixedIndentation => Severity::Warning,
             Self::DuplicateClass => Severity::Warning,
         }
