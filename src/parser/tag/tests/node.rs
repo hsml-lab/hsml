@@ -61,9 +61,13 @@ fn it_should_error_on_mixed_tabs_and_spaces_indentation() {
     let result = tag_node(input, context);
 
     assert!(result.is_err());
-    // Error span should point to the mixed indentation, not the tag start
     if let Err(nom::Err::Failure(err)) = result {
         assert_eq!(*err.span.fragment(), " \t");
+        assert_eq!(err.code(), Some("E003"));
+        assert_eq!(
+            err.message.as_deref(),
+            Some("Mixed tabs and spaces in indentation")
+        );
     } else {
         panic!("Expected Failure error");
     }

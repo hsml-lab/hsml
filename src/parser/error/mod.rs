@@ -11,6 +11,7 @@ use super::Span;
 pub enum ErrorCode {
     DuplicateId,
     DuplicateClass,
+    MixedIndentation,
 }
 
 impl ErrorCode {
@@ -18,6 +19,7 @@ impl ErrorCode {
     pub fn code(&self) -> &'static str {
         match self {
             Self::DuplicateId => "E001",
+            Self::MixedIndentation => "E003",
             Self::DuplicateClass => "W001",
         }
     }
@@ -26,6 +28,7 @@ impl ErrorCode {
     pub fn message(&self) -> &'static str {
         match self {
             Self::DuplicateId => "Duplicate attribute 'id' is not allowed",
+            Self::MixedIndentation => "Mixed tabs and spaces in indentation",
             Self::DuplicateClass => "Duplicate class",
         }
     }
@@ -34,6 +37,7 @@ impl ErrorCode {
     pub fn severity(&self) -> Severity {
         match self {
             Self::DuplicateId => Severity::Error,
+            Self::MixedIndentation => Severity::Error,
             Self::DuplicateClass => Severity::Warning,
         }
     }

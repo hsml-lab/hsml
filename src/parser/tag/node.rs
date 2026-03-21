@@ -1,7 +1,4 @@
-use nom::{
-    bytes::complete::{take_till, take_till1},
-    error::ErrorKind,
-};
+use nom::bytes::complete::{take_till, take_till1};
 
 use crate::parser::{
     HsmlNode, HsmlProcessContext, HsmlResult, Span, attribute,
@@ -123,7 +120,10 @@ pub fn tag_node<'a>(input: Span<'a>, context: &mut HsmlProcessContext) -> HsmlRe
                 // if it does, collect an error for diagnostics
 
                 if indentation_str.contains('\t') && indentation_str.contains(' ') {
-                    return Err(HsmlError::fail(indentation, ErrorKind::Tag));
+                    return Err(HsmlError::fail_code(
+                        indentation,
+                        ErrorCode::MixedIndentation,
+                    ));
                 }
 
                 // persist the indentation level so we can restore it later

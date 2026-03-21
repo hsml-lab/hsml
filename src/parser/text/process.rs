@@ -93,7 +93,7 @@ pub(super) fn process_text_block<'a>(
             .map_or(rest_str.len(), |i| next_pos + i);
         let next_line = rest_str[next_pos..next_line_end].trim_end_matches('\r');
 
-        // TODO @Shinigami92 2025-03-16: right now this does not support mixed indentations on tag level indentation, but only within the text block
+        // Mixed indentation at tag level is prevented by E003 (MixedIndentation error).
         if !is_text_block_line(next_line, &context.indent_string) {
             break;
         }
