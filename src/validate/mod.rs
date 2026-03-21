@@ -46,7 +46,7 @@ fn validate_mixed_indentation(source: &str, diagnostics: &mut Vec<Diagnostic>) {
 }
 
 /// Attributes that may appear multiple times and should be merged rather than warned about.
-/// This includes `class`, `data-*`, and framework bindings (Vue `:`, `@`, `v-`; Angular `(`, `[`).
+/// This includes `class`, `data-*`, and Vue bindings (`:`, `@`, `v-`).
 fn is_mergeable_attribute(key: &str) -> bool {
     key == "class"
         || key.starts_with("data-")

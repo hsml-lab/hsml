@@ -254,7 +254,8 @@ fn it_should_not_warn_on_duplicate_class_attribute() {
 
 #[test]
 fn it_should_not_warn_on_vue_binding_attributes() {
-    let source = "div(:class=\"a\" :class=\"b\" @click=\"x\" @click=\"y\")\n";
+    let source =
+        "div(:class=\"a\" :class=\"b\" @click=\"x\" @click=\"y\" v-model=\"a\" v-model=\"b\")\n";
     let (_, ast) = parse(Span::new(source)).unwrap();
 
     let diagnostics = validate(&ast, source);
