@@ -12,6 +12,8 @@ use crate::parser::{
 #[derive(Debug, PartialEq)]
 pub struct TagNode {
     pub tag: String,
+    /// All id selectors on this tag. Only the first is used in compilation;
+    /// duplicates are reported as warnings by the validator.
     pub ids: Vec<IdNode>,
     pub classes: Option<Vec<ClassNode>>,
     pub attributes: Option<Vec<HsmlNode>>,
