@@ -26,6 +26,7 @@ jobs:
 
   publish-npm:
     name: Publish to npm
+    needs: publish-crate
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -35,7 +36,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Install wasm-pack
-        run: curl https://drager.github.io/wasm-pack/installer/init.sh -sSf | sh
+        run: cargo install wasm-pack@0.14.0
 
       - name: Build WASM package
         run: wasm-pack build --target bundler

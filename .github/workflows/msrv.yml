@@ -6,11 +6,9 @@ on:
       - main
     paths:
       - 'Cargo.toml'
-      - 'Cargo.lock'
   pull_request:
     paths:
       - 'Cargo.toml'
-      - 'Cargo.lock'
 
 permissions:
   contents: read
@@ -28,7 +26,7 @@ jobs:
 
       - name: Install MSRV toolchain
         run: |
-          MSRV=$(grep '^rust-version' Cargo.toml | sed 's/.*= *"\(.*\)"/\1/')
+          MSRV=$(cargo metadata --format-version 1 --no-deps | jq -r '.packages[0].rust_version')
           rustup toolchain install "$MSRV" --profile minimal
           rustup override set "$MSRV"
 
