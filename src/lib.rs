@@ -20,6 +20,30 @@ pub fn compile_content_core(source: &str) -> Result<String, String> {
     compiler::compile(&ast, &compiler::HsmlCompileOptions::default())
 }
 
+/// Compile HSML source, returning structured diagnostics on error.
+pub fn compile_content_diagnostics(source: &str) -> Result<String, Vec<diagnostic::Diagnostic>> {
+    let span = parser::Span::new(source);
+
+    let (rest, ast) =
+        parser::parse::parse(span).map_err(|e| vec![diagnostic::Diagnostic::from(&e)])?;
+
+    if !rest.fragment().is_empty() {
+        return Err(vec![diagnostic::Diagnostic {
+            severity: diagnostic::Severity::Error,
+            message: "Unconsumed input".to_string(),
+            code: None,
+            location: Some(diagnostic::Location {
+                line: rest.location_line(),
+                column: rest.get_column() as u32,
+            }),
+            file_path: None,
+        }]);
+    }
+
+    compiler::compile(&ast, &compiler::HsmlCompileOptions::default())
+        .map_err(|e| vec![diagnostic::Diagnostic::compiler_error(e)])
+}
+
 #[wasm_bindgen(js_name = "compileContent")]
 pub fn compile_content(source: &str) -> Result<String, JsError> {
     compile_content_core(source).map_err(|e| JsError::new(&e))

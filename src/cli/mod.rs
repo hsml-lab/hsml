@@ -22,6 +22,11 @@ pub fn cli() -> Command {
                 .arg(
                     arg!(output: -o --out <OUTPUT> "Output file or directory")
                         .value_parser(value_parser!(PathBuf)),
+                )
+                .arg(
+                    arg!(report_format: --"report-format" <FORMAT> "Report format for diagnostics")
+                        .value_parser(["default", "json"])
+                        .default_value("default"),
                 ),
         )
         .subcommand(

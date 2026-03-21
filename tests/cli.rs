@@ -91,7 +91,27 @@ fn compile_invalid_hsml_content_fails() {
         .args(["compile", input.to_str().unwrap()])
         .assert()
         .failure()
-        .stderr(predicates::str::contains("Unable to parse file"));
+        .stderr(predicates::str::contains("error: parse error"));
+}
+
+#[test]
+fn compile_invalid_hsml_content_fails_with_json_format() {
+    let dir = TempDir::new().unwrap();
+    let input = dir.path().join("bad.hsml");
+
+    fs::write(&input, "@@@invalid\n").unwrap();
+
+    cmd()
+        .args([
+            "compile",
+            input.to_str().unwrap(),
+            "--report-format",
+            "json",
+        ])
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains(r#""severity":"error""#))
+        .stderr(predicates::str::contains(r#""message":"parse error""#));
 }
 
 // --- Directory compilation ---
@@ -153,7 +173,7 @@ fn compile_directory_reports_errors_from_invalid_files() {
         .args(["compile", dir.path().to_str().unwrap()])
         .assert()
         .failure()
-        .stderr(predicates::str::contains("Unable to parse file"));
+        .stderr(predicates::str::contains("error: parse error"));
 
     // good file should still have been compiled
     assert_eq!(
