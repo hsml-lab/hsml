@@ -1,13 +1,14 @@
 use crate::diagnostic::format::DiagnosticFormatter;
 use crate::diagnostic::format::json::JsonFormatter;
 use crate::diagnostic::{Diagnostic, Location, Severity};
+use crate::parser::error::ErrorCode;
 
 #[test]
 fn it_should_format_single_diagnostic() {
     let diag = Diagnostic {
         severity: Severity::Error,
         message: "Duplicate attribute 'id' is not allowed".to_string(),
-        code: Some("E001".to_string()),
+        code: Some(ErrorCode::DuplicateId.code().to_string()),
         location: Some(Location { line: 3, column: 5 }),
         file_path: Some("example.hsml".to_string()),
     };

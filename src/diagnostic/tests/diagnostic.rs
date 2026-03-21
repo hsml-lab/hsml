@@ -10,7 +10,7 @@ fn it_should_convert_hsml_error_with_code() {
 
     assert_eq!(diag.severity, Severity::Error);
     assert_eq!(diag.message, "Duplicate attribute 'id' is not allowed");
-    assert_eq!(diag.code, Some("E001".to_string()));
+    assert_eq!(diag.code, Some(ErrorCode::DuplicateId.code().to_string()));
     assert_eq!(diag.location, Some(Location { line: 1, column: 1 }));
     assert_eq!(diag.file_path, None);
 }
@@ -44,7 +44,7 @@ fn it_should_convert_nom_err_failure() {
     let diag = Diagnostic::from(&nom_err);
 
     assert_eq!(diag.message, "Duplicate attribute 'id' is not allowed");
-    assert_eq!(diag.code, Some("E001".to_string()));
+    assert_eq!(diag.code, Some(ErrorCode::DuplicateId.code().to_string()));
 }
 
 #[test]

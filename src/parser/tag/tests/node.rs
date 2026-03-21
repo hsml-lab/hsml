@@ -1,6 +1,7 @@
 use crate::parser::{
     HsmlProcessContext, Span,
     class::node::ClassNode,
+    error::ErrorCode,
     tag::node::{TagNode, tag_node},
     text::node::TextNode,
 };
@@ -82,7 +83,7 @@ fn it_should_propagate_duplicate_id_error_from_child() {
             err.message.as_deref(),
             Some("Duplicate attribute 'id' is not allowed")
         );
-        assert_eq!(err.code(), Some("E001"));
+        assert_eq!(err.code(), Some(ErrorCode::DuplicateId.code()));
         assert_eq!(*err.span.fragment(), "#b");
     } else {
         panic!("Expected Failure error with E001");
@@ -103,7 +104,7 @@ fn it_should_error_on_invalid_child() {
 
     // Failure is propagated from process_tag (E004: InvalidTagName).
     if let Err(nom::Err::Failure(err)) = result {
-        assert_eq!(err.code(), Some("E004"));
+        assert_eq!(err.code(), Some(ErrorCode::InvalidTagName.code()));
         assert_eq!(
             err.message.as_deref(),
             Some("Tag name must start with an ASCII letter")

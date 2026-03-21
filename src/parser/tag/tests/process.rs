@@ -1,6 +1,7 @@
 use nom::error::ErrorKind;
 
 use crate::parser::Span;
+use crate::parser::error::ErrorCode;
 use crate::parser::tag::process::process_tag;
 
 #[test]
@@ -92,7 +93,7 @@ fn it_should_not_process_tag_with_number() {
     assert!(result.is_err());
     if let Err(nom::Err::Failure(err)) = result {
         assert_eq!(*err.span.fragment(), "42.input");
-        assert_eq!(err.code(), Some("E004"));
+        assert_eq!(err.code(), Some(ErrorCode::InvalidTagName.code()));
         assert_eq!(
             err.message.as_deref(),
             Some("Tag name must start with an ASCII letter")
