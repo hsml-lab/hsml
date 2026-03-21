@@ -103,6 +103,7 @@ pub fn compile_content_with_diagnostics(source: &str) -> JsValue {
                 "Failed to serialize compile result: {e}"
             ))],
         };
-        serde_wasm_bindgen::to_value(&fallback).unwrap_or(JsValue::NULL)
+        serde_wasm_bindgen::to_value(&fallback)
+            .expect("fallback WasmCompileResult serialization should always succeed")
     })
 }
