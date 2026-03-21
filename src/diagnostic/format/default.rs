@@ -42,8 +42,8 @@ impl DiagnosticFormatter for DefaultFormatter {
 
                 // Source context
                 if let Some(source) = source
-                    && let Some(source_line) =
-                        source.lines().nth(loc.line.saturating_sub(1) as usize)
+                    && let Some(line_idx) = loc.line.checked_sub(1)
+                    && let Some(source_line) = source.lines().nth(line_idx as usize)
                 {
                     let line_num = loc.line.to_string();
                     let padding = " ".repeat(line_num.len());
