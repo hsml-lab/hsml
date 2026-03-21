@@ -102,7 +102,15 @@ fn it_should_error_on_invalid_child() {
     let result = tag_node(input, context);
 
     // Failure is propagated from process_tag (E004: InvalidTagName).
-    assert!(matches!(result, Err(nom::Err::Failure(_))));
+    if let Err(nom::Err::Failure(err)) = result {
+        assert_eq!(err.code(), Some("E004"));
+        assert_eq!(
+            err.message.as_deref(),
+            Some("Tag name must start with an ASCII letter")
+        );
+    } else {
+        panic!("Expected Failure error with E004");
+    }
 }
 
 #[test]
