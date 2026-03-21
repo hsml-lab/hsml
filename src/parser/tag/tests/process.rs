@@ -90,11 +90,15 @@ fn it_should_not_process_tag_with_number() {
     let result = process_tag(Span::new("42.input"));
 
     assert!(result.is_err());
-    if let Err(nom::Err::Error(err)) = result {
+    if let Err(nom::Err::Failure(err)) = result {
         assert_eq!(*err.span.fragment(), "42.input");
-        assert_eq!(err.kind, ErrorKind::Alpha);
+        assert_eq!(err.code(), Some("E004"));
+        assert_eq!(
+            err.message.as_deref(),
+            Some("Tag name must start with an ASCII letter")
+        );
     } else {
-        panic!("Expected Error");
+        panic!("Expected Failure");
     }
 }
 
