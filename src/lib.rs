@@ -95,7 +95,10 @@ pub fn compile_content_with_diagnostics(source: &str) -> JsValue {
         },
     };
 
-    serde_wasm_bindgen::to_value(&result).unwrap_or_else(|e| {
+    let serializer = serde_wasm_bindgen::Serializer::json_compatible();
+    use serde::Serialize;
+
+    result.serialize(&serializer).unwrap_or_else(|e| {
         let fallback = WasmCompileResult {
             success: false,
             html: None,
@@ -103,7 +106,8 @@ pub fn compile_content_with_diagnostics(source: &str) -> JsValue {
                 "Failed to serialize compile result: {e}"
             ))],
         };
-        serde_wasm_bindgen::to_value(&fallback)
+        fallback
+            .serialize(&serializer)
             .expect("fallback WasmCompileResult serialization should always succeed")
     })
 }
