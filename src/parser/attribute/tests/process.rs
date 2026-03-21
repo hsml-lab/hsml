@@ -226,6 +226,48 @@ fn it_should_process_attribute_key_with_bracket_containing_quote() {
 }
 
 #[test]
+fn it_should_not_process_attribute_value_with_unclosed_quote() {
+    let result = process_attribute_value(
+        Span::new(r#""unclosed"#),
+        &mut HsmlProcessContext::default(),
+    );
+
+    assert!(result.is_err());
+    if let Err(nom::Err::Error(err)) = result {
+        assert_eq!(*err.span.fragment(), r#""unclosed"#);
+        assert_eq!(err.kind, ErrorKind::Tag);
+    } else {
+        panic!("Expected Error");
+    }
+}
+
+#[test]
+fn it_should_not_process_attribute_key_with_unclosed_bracket() {
+    let result = process_attribute_key(Span::new("[unclosed"));
+
+    assert!(result.is_err());
+    if let Err(nom::Err::Error(err)) = result {
+        assert_eq!(*err.span.fragment(), "[unclosed");
+        assert_eq!(err.kind, ErrorKind::Tag);
+    } else {
+        panic!("Expected Error");
+    }
+}
+
+#[test]
+fn it_should_not_process_attribute_key_with_unclosed_paren() {
+    let result = process_attribute_key(Span::new("(unclosed"));
+
+    assert!(result.is_err());
+    if let Err(nom::Err::Error(err)) = result {
+        assert_eq!(*err.span.fragment(), "(unclosed");
+        assert_eq!(err.kind, ErrorKind::Tag);
+    } else {
+        panic!("Expected Error");
+    }
+}
+
+#[test]
 fn it_should_not_process_attribute_key_with_invalid_char() {
     let result = process_attribute_key(Span::new("$invalid"));
 
