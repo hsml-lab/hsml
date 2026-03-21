@@ -210,3 +210,88 @@ fn it_should_not_warn_on_single_id() {
 
     assert!(diagnostics.is_empty());
 }
+
+#[test]
+fn it_should_warn_on_duplicate_attribute() {
+    let source = "div(src=\"a\" src=\"b\")\n";
+    let (_, ast) = parse(Span::new(source)).unwrap();
+
+    let diagnostics = validate(&ast, source);
+
+    let attr_warnings: Vec<_> = diagnostics
+        .iter()
+        .filter(|d| d.code == Some(ErrorCode::DuplicateAttribute.code().to_string()))
+        .collect();
+    assert_eq!(attr_warnings.len(), 1);
+    assert_eq!(attr_warnings[0].severity, Severity::Warning);
+    assert_eq!(attr_warnings[0].message, "Duplicate attribute 'src'");
+}
+
+#[test]
+fn it_should_not_warn_on_unique_attributes() {
+    let source = "img(src=\"img.jpg\" alt=\"Image\")\n";
+    let (_, ast) = parse(Span::new(source)).unwrap();
+
+    let diagnostics = validate(&ast, source);
+
+    assert!(diagnostics.is_empty());
+}
+
+#[test]
+fn it_should_not_warn_on_duplicate_class_attribute() {
+    let source = "div(class=\"a\" class=\"b\")\n";
+    let (_, ast) = parse(Span::new(source)).unwrap();
+
+    let diagnostics = validate(&ast, source);
+
+    // class is mergeable, should not warn
+    let attr_warnings: Vec<_> = diagnostics
+        .iter()
+        .filter(|d| d.code == Some(ErrorCode::DuplicateAttribute.code().to_string()))
+        .collect();
+    assert_eq!(attr_warnings.len(), 0);
+}
+
+#[test]
+fn it_should_not_warn_on_mergeable_vue_class_and_style() {
+    let source = "div(:class=\"a\" :class=\"b\" :style=\"x\" :style=\"y\")\n";
+    let (_, ast) = parse(Span::new(source)).unwrap();
+
+    let diagnostics = validate(&ast, source);
+
+    let attr_warnings: Vec<_> = diagnostics
+        .iter()
+        .filter(|d| d.code == Some(ErrorCode::DuplicateAttribute.code().to_string()))
+        .collect();
+    assert_eq!(attr_warnings.len(), 0);
+}
+
+#[test]
+fn it_should_warn_on_duplicate_vue_event_bindings() {
+    let source = "div(@click=\"x\" @click=\"y\")\n";
+    let (_, ast) = parse(Span::new(source)).unwrap();
+
+    let diagnostics = validate(&ast, source);
+
+    let attr_warnings: Vec<_> = diagnostics
+        .iter()
+        .filter(|d| d.code == Some(ErrorCode::DuplicateAttribute.code().to_string()))
+        .collect();
+    assert_eq!(attr_warnings.len(), 1);
+    assert_eq!(attr_warnings[0].message, "Duplicate attribute '@click'");
+}
+
+#[test]
+fn it_should_warn_on_duplicate_data_attributes() {
+    let source = "div(data-x=\"a\" data-x=\"b\")\n";
+    let (_, ast) = parse(Span::new(source)).unwrap();
+
+    let diagnostics = validate(&ast, source);
+
+    let attr_warnings: Vec<_> = diagnostics
+        .iter()
+        .filter(|d| d.code == Some(ErrorCode::DuplicateAttribute.code().to_string()))
+        .collect();
+    assert_eq!(attr_warnings.len(), 1);
+    assert_eq!(attr_warnings[0].message, "Duplicate attribute 'data-x'");
+}
