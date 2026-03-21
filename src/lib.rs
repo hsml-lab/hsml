@@ -64,6 +64,9 @@ pub fn compile_content_diagnostics(
     Ok(CompileOutput { html, diagnostics })
 }
 
+/// Compile HSML source to HTML, exposed as a WASM binding.
+///
+/// Returns the compiled HTML string, or a `JsError` on parse/compile failure.
 #[wasm_bindgen(js_name = "compileContent")]
 pub fn compile_content(source: &str) -> Result<String, JsError> {
     compile_content_core(source).map_err(|e| JsError::new(&e))

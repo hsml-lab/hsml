@@ -3,6 +3,7 @@ use crate::parser::{
     doctype::node::DoctypeNode, tag::node::TagNode,
 };
 
+/// Options for configuring the HSML-to-HTML compiler.
 #[derive(Default)]
 pub struct HsmlCompileOptions {}
 
@@ -125,6 +126,9 @@ fn compile_node(node: &HsmlNode, options: &HsmlCompileOptions) -> Result<String,
     }
 }
 
+/// Compile an HSML AST into an HTML string.
+///
+/// Returns `Ok(html)` on success, or `Err(message)` if a node cannot be compiled.
 pub fn compile(hsml_ast: &RootNode, options: &HsmlCompileOptions) -> Result<String, String> {
     let mut html_content = String::new();
 
