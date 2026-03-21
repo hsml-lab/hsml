@@ -16,6 +16,7 @@ pub enum ErrorCode {
     UnclosedQuote,
     ExpectedAttributeValue,
     InvalidAttributeKey,
+    DuplicateAttribute,
     DuplicateClass,
     MixedIndentation,
 }
@@ -31,6 +32,7 @@ impl ErrorCode {
         Self::UnclosedQuote,
         Self::ExpectedAttributeValue,
         Self::InvalidAttributeKey,
+        Self::DuplicateAttribute,
         Self::DuplicateClass,
         Self::MixedIndentation,
     ];
@@ -45,6 +47,7 @@ impl ErrorCode {
             Self::UnclosedQuote => "E006",
             Self::ExpectedAttributeValue => "E009",
             Self::InvalidAttributeKey => "E007",
+            Self::DuplicateAttribute => "W004",
             Self::DuplicateClass => "W001",
             Self::MixedIndentation => "W003",
         }
@@ -60,6 +63,7 @@ impl ErrorCode {
             Self::UnclosedQuote => "Unclosed quote in attribute value",
             Self::ExpectedAttributeValue => "Expected quoted attribute value",
             Self::InvalidAttributeKey => "Invalid attribute key",
+            Self::DuplicateAttribute => "Duplicate attribute",
             Self::DuplicateClass => "Duplicate class",
             Self::MixedIndentation => "Mixed tabs and spaces in indentation",
         }
@@ -75,6 +79,7 @@ impl ErrorCode {
             Self::UnclosedQuote => Severity::Error,
             Self::ExpectedAttributeValue => Severity::Error,
             Self::InvalidAttributeKey => Severity::Error,
+            Self::DuplicateAttribute => Severity::Warning,
             Self::MixedIndentation => Severity::Warning,
             Self::DuplicateClass => Severity::Warning,
         }

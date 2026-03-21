@@ -2,6 +2,7 @@ use std::collections::HashSet;
 
 use crate::common::Location;
 use crate::diagnostic::{Diagnostic, Severity};
+use crate::parser::attribute::node::AttributeNode;
 use crate::parser::error::ErrorCode;
 use crate::parser::tag::node::TagNode;
 use crate::parser::{HsmlNode, RootNode};
@@ -42,6 +43,16 @@ fn validate_mixed_indentation(source: &str, diagnostics: &mut Vec<Diagnostic>) {
             });
         }
     }
+}
+
+/// Attributes that may appear multiple times and should be merged rather than warned about.
+/// This includes `class`, `data-*`, and framework bindings (Vue `:`, `@`, `v-`; Angular `(`, `[`).
+fn is_mergeable_attribute(key: &str) -> bool {
+    key == "class"
+        || key.starts_with("data-")
+        || key.starts_with(':')
+        || key.starts_with('@')
+        || key.starts_with("v-")
 }
 
 fn validate_node(node: &HsmlNode, diagnostics: &mut Vec<Diagnostic>) {
@@ -86,6 +97,27 @@ fn validate_tag(tag: &TagNode, diagnostics: &mut Vec<Diagnostic>) {
                 });
             } else {
                 seen.insert(&class.name);
+            }
+        }
+    }
+
+    // Check for duplicate attributes (skip class, data-*, and framework bindings)
+    if let Some(attributes) = &tag.attributes {
+        let mut seen: HashSet<&str> = HashSet::new();
+        for node in attributes {
+            if let HsmlNode::Attribute(AttributeNode { key, .. }) = node {
+                if is_mergeable_attribute(key) {
+                    continue;
+                }
+                if !seen.insert(key.as_str()) {
+                    diagnostics.push(Diagnostic {
+                        severity: Severity::Warning,
+                        message: format!("{} '{key}'", ErrorCode::DuplicateAttribute.message()),
+                        code: Some(ErrorCode::DuplicateAttribute.code().to_string()),
+                        location: None,
+                        file_path: None,
+                    });
+                }
             }
         }
     }
