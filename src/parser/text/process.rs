@@ -16,6 +16,17 @@ fn is_text_block_line(line: &str, indent: &str) -> bool {
     }
 }
 
+/// Find the newline length at the given position (1 for `\n`, 2 for `\r\n`, 0 if none).
+fn newline_len_at(s: &str) -> usize {
+    if s.starts_with("\r\n") {
+        2
+    } else if s.starts_with('\n') {
+        1
+    } else {
+        0
+    }
+}
+
 pub(super) fn process_text_block<'a>(
     input: Span<'a>,
     context: &mut HsmlProcessContext,
@@ -40,10 +51,23 @@ pub(super) fn process_text_block<'a>(
     let mut pos = 0;
 
     while pos < rest_str.len() {
+        // Validate the current line (skip for first iteration — already validated above)
+        if pos > 0 {
+            let line_end = rest_str[pos..]
+                .find('\n')
+                .map_or(rest_str.len(), |i| pos + i);
+            let line = &rest_str[pos..line_end].trim_end_matches('\r');
+
+            if !line.is_empty() && !is_text_block_line(line, &context.indent_string) {
+                break;
+            }
+        }
+
         // Find the end of the current line
         let line_end = rest_str[pos..]
             .find('\n')
             .map_or(rest_str.len(), |i| pos + i);
+
         // Include the content up to the end of this line
         text_block_end = line_end;
 
@@ -55,10 +79,11 @@ pub(super) fn process_text_block<'a>(
         // Move past the newline
         let next_pos = line_end + 1;
 
-        // Check if the next line is blank (consecutive newline)
-        if rest_str[next_pos..].starts_with('\n') {
-            text_block_end = next_pos + 1;
-            pos = next_pos + 1;
+        // Check if the next line is blank (consecutive newline or \r\n)
+        let nl = newline_len_at(&rest_str[next_pos..]);
+        if nl > 0 {
+            text_block_end = next_pos + nl;
+            pos = next_pos + nl;
             continue;
         }
 
@@ -66,7 +91,7 @@ pub(super) fn process_text_block<'a>(
         let next_line_end = rest_str[next_pos..]
             .find('\n')
             .map_or(rest_str.len(), |i| next_pos + i);
-        let next_line = &rest_str[next_pos..next_line_end];
+        let next_line = rest_str[next_pos..next_line_end].trim_end_matches('\r');
 
         // TODO @Shinigami92 2025-03-16: right now this does not support mixed indentations on tag level indentation, but only within the text block
         if !is_text_block_line(next_line, &context.indent_string) {

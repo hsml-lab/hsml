@@ -173,6 +173,57 @@ fn it_should_process_when_first_line_is_blank() {
 }
 
 #[test]
+fn it_should_not_include_unindented_line_after_blank_line() {
+    let mut context = HsmlProcessContext {
+        nested_tag_level: 1,
+        indent_string: String::from("  "),
+    };
+
+    // After a blank line, "foo" is not indented — should not be included
+    let input = Span::new(".\n   valid text\n\nfoo\n");
+
+    let (rest, text_block) = process_text_block(input, &mut context).unwrap();
+
+    assert_eq!(*text_block.fragment(), "   valid text\n\n");
+    assert_eq!(*rest.fragment(), "foo\n");
+}
+
+#[test]
+fn it_should_process_text_block_with_crlf_blank_lines() {
+    let mut context = HsmlProcessContext {
+        nested_tag_level: 1,
+        indent_string: String::from("  "),
+    };
+
+    // CRLF blank line between valid text block lines
+    let input = Span::new(".\n   first line\r\n\r\n   second line\nspan next\n");
+
+    let (rest, text_block) = process_text_block(input, &mut context).unwrap();
+
+    assert_eq!(
+        *text_block.fragment(),
+        "   first line\r\n\r\n   second line"
+    );
+    assert_eq!(*rest.fragment(), "\nspan next\n");
+}
+
+#[test]
+fn it_should_process_text_block_ending_without_newline() {
+    let mut context = HsmlProcessContext {
+        nested_tag_level: 1,
+        indent_string: String::from("  "),
+    };
+
+    // Input ends mid-text-block without a trailing newline
+    let input = Span::new(".\n   text without trailing newline");
+
+    let (rest, text_block) = process_text_block(input, &mut context).unwrap();
+
+    assert_eq!(*text_block.fragment(), "   text without trailing newline");
+    assert_eq!(*rest.fragment(), "");
+}
+
+#[test]
 fn test_process_text() {
     let input = Span::new(" hello world\n");
 
