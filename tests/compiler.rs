@@ -398,37 +398,57 @@ fn it_should_compile_parsed_elk_main_content_component() {
 #[test]
 fn compile_output_serializes_to_json() {
     let output = compile_content_diagnostics("h1 Hello\n").unwrap();
-    let json = serde_json::to_string(&output).unwrap();
+    let json = serde_json::to_value(&output).unwrap();
 
-    assert_eq!(json, r#"{"html":"<h1>Hello</h1>","diagnostics":[]}"#);
+    assert_eq!(json["html"].as_str(), Some("<h1>Hello</h1>"));
+    assert_eq!(json["diagnostics"].as_array().unwrap().len(), 0);
 }
 
 #[test]
 fn compile_output_serializes_warnings_to_json() {
     let output = compile_content_diagnostics("h1.foo.foo Hello\n").unwrap();
-    let json = serde_json::to_string(&output).unwrap();
+    let json = serde_json::to_value(&output).unwrap();
+    let diagnostics = json["diagnostics"].as_array().unwrap();
 
-    assert!(json.contains(r#""severity":"warning""#));
-    assert!(json.contains(r#""code":"W001""#));
-    assert!(json.contains(r#""message":"Duplicate class 'foo'""#));
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(diagnostics[0]["severity"].as_str(), Some("warning"));
+    assert_eq!(
+        diagnostics[0]["code"].as_str(),
+        Some(ErrorCode::DuplicateClass.code())
+    );
+    assert_eq!(
+        diagnostics[0]["message"].as_str(),
+        Some("Duplicate class 'foo'")
+    );
 }
 
 #[test]
 fn compile_diagnostics_serialize_errors_to_json() {
     let diagnostics = compile_content_diagnostics("@@@invalid").unwrap_err();
-    let json = serde_json::to_string(&diagnostics).unwrap();
+    let json = serde_json::to_value(&diagnostics).unwrap();
+    let arr = json.as_array().unwrap();
 
-    assert!(json.contains(r#""severity":"error""#));
-    assert!(json.contains(r#""message":"parse error""#));
+    assert_eq!(arr.len(), 1);
+    assert_eq!(arr[0]["severity"].as_str(), Some("error"));
+    assert_eq!(arr[0]["message"].as_str(), Some("parse error"));
 }
 
 #[test]
 fn compile_diagnostics_serialize_duplicate_id_to_json() {
     let output = compile_content_diagnostics("div#a#b\n").unwrap();
-    let json = serde_json::to_string(&output).unwrap();
+    let json = serde_json::to_value(&output).unwrap();
+    let diagnostics = json["diagnostics"].as_array().unwrap();
 
-    assert!(json.contains(r#""severity":"warning""#));
-    assert!(json.contains(r#""code":"W002""#));
-    assert!(json.contains(r#""message":"Duplicate id 'b' is not allowed""#));
-    assert!(json.contains(r#""location""#));
+    assert_eq!(json["html"].as_str(), Some(r#"<div id="a"/>"#));
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(diagnostics[0]["severity"].as_str(), Some("warning"));
+    assert_eq!(
+        diagnostics[0]["code"].as_str(),
+        Some(ErrorCode::DuplicateId.code())
+    );
+    assert_eq!(
+        diagnostics[0]["message"].as_str(),
+        Some("Duplicate id 'b' is not allowed")
+    );
+    assert!(diagnostics[0]["location"].is_object());
 }
