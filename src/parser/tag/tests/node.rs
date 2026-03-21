@@ -49,28 +49,20 @@ and the build size is tiny.""#
 }
 
 #[test]
-fn it_should_error_on_mixed_tabs_and_spaces_indentation() {
+fn it_should_parse_mixed_tabs_and_spaces_indentation() {
     let context = &mut HsmlProcessContext {
         nested_tag_level: 0,
         indent_string: String::new(),
     };
 
-    // Child indented with mixed tabs and spaces
-    let input = Span::new("div\n \tchild");
+    // Mixed indentation is accepted by the parser (validator warns about it)
+    let input = Span::new("div\n \tchild\n");
 
-    let result = tag_node(input, context);
+    let (rest, tag) = tag_node(input, context).unwrap();
 
-    assert!(result.is_err());
-    if let Err(nom::Err::Failure(err)) = result {
-        assert_eq!(*err.span.fragment(), " \t");
-        assert_eq!(err.code(), Some("E003"));
-        assert_eq!(
-            err.message.as_deref(),
-            Some("Mixed tabs and spaces in indentation")
-        );
-    } else {
-        panic!("Expected Failure error");
-    }
+    assert_eq!(tag.tag, "div");
+    assert!(tag.children.is_some());
+    assert_eq!(*rest.fragment(), "\n");
 }
 
 #[test]

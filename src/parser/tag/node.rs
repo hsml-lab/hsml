@@ -116,15 +116,7 @@ pub fn tag_node<'a>(input: Span<'a>, context: &mut HsmlProcessContext) -> HsmlRe
             let indentation_str = *indentation.fragment();
 
             if !indentation_str.is_empty() {
-                // check that the indentation is consistent and does not include tabs and spaces at the same time
-                // if it does, collect an error for diagnostics
-
-                if indentation_str.contains('\t') && indentation_str.contains(' ') {
-                    return Err(HsmlError::fail_code(
-                        indentation,
-                        ErrorCode::MixedIndentation,
-                    ));
-                }
+                // Mixed tabs and spaces are detected post-parse by the validator (W003).
 
                 // persist the indentation level so we can restore it later
                 let nested_tag_level = context.nested_tag_level;

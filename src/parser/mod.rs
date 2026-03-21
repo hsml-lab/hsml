@@ -40,7 +40,8 @@ pub enum HsmlNode {
 
 #[derive(Debug, Default)]
 pub struct HsmlProcessContext {
-    // TODO @Shinigami92 2025-03-16: Currently nested_tag_level is not used, but should be later to allow mixed spaces and tabs in indentation
+    // nested_tag_level is tracked but not yet used for logic.
+    // It will be used by `hsml format` to normalize indentation.
     /// The tracked nested tag level
     pub nested_tag_level: usize,
 

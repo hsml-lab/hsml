@@ -19,7 +19,7 @@ impl ErrorCode {
     pub fn code(&self) -> &'static str {
         match self {
             Self::DuplicateId => "E001",
-            Self::MixedIndentation => "E003",
+            Self::MixedIndentation => "W003",
             Self::DuplicateClass => "W001",
         }
     }
@@ -37,7 +37,7 @@ impl ErrorCode {
     pub fn severity(&self) -> Severity {
         match self {
             Self::DuplicateId => Severity::Error,
-            Self::MixedIndentation => Severity::Error,
+            Self::MixedIndentation => Severity::Warning,
             Self::DuplicateClass => Severity::Warning,
         }
     }
