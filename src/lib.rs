@@ -1,4 +1,5 @@
 pub mod compiler;
+pub mod diagnostic;
 pub mod parser;
 
 use wasm_bindgen::prelude::*;
