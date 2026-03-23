@@ -10,14 +10,15 @@ use hsml::{
 };
 
 pub fn exec_check(matches: &ArgMatches) -> Result<(), String> {
-    let path = matches.get_one::<PathBuf>("path");
     let format = matches
         .get_one::<String>("report_format")
         .map(|s| s.as_str());
 
-    let fallback_path =
-        env::current_dir().map_err(|e| format!("Unable to get current directory: {e}"))?;
-    let path = path.unwrap_or(&fallback_path);
+    let path = match matches.get_one::<PathBuf>("path") {
+        Some(p) => p.clone(),
+        None => env::current_dir().map_err(|e| format!("Unable to get current directory: {e}"))?,
+    };
+    let path = &path;
 
     if path.is_dir() {
         check_hsml_files_in_dir(path, format)
@@ -80,6 +81,15 @@ fn check_hsml_files_in_dir(dir: &PathBuf, format: Option<&str>) -> Result<(), St
     {
         let entry = entry
             .map_err(|e| format!("Unable to read directory entry in {}: {e}", dir.display()))?;
+
+        // Skip symlinks to prevent infinite recursion from circular links
+        let file_type = entry
+            .file_type()
+            .map_err(|e| format!("Unable to read file type in {}: {e}", dir.display()))?;
+        if file_type.is_symlink() {
+            continue;
+        }
+
         let path = entry.path();
 
         if path.is_dir() {
