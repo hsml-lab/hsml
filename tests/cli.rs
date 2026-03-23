@@ -242,11 +242,108 @@ fn fmt_command_shows_not_implemented() {
         .stderr(predicates::str::contains("not yet implemented"));
 }
 
+// --- Check command ---
+
 #[test]
-fn check_command_shows_not_implemented() {
+fn check_valid_file_succeeds() {
+    let dir = TempDir::new().unwrap();
+    let input = dir.path().join("valid.hsml");
+
+    fs::write(&input, "h1 Hello\n").unwrap();
+
     cmd()
-        .args(["check"])
+        .args(["check", input.to_str().unwrap()])
+        .assert()
+        .success();
+}
+
+#[test]
+fn check_invalid_file_fails() {
+    let dir = TempDir::new().unwrap();
+    let input = dir.path().join("bad.hsml");
+
+    fs::write(&input, "@@@invalid\n").unwrap();
+
+    cmd()
+        .args(["check", input.to_str().unwrap()])
         .assert()
         .failure()
-        .stderr(predicates::str::contains("not yet implemented"));
+        .stderr(predicates::str::contains("error: parse error"));
+}
+
+#[test]
+fn check_file_with_warnings_succeeds() {
+    let dir = TempDir::new().unwrap();
+    let input = dir.path().join("warn.hsml");
+
+    fs::write(&input, "h1.foo.foo Hello\n").unwrap();
+
+    cmd()
+        .args(["check", input.to_str().unwrap()])
+        .assert()
+        .success()
+        .stderr(predicates::str::contains("warning[W002]"));
+}
+
+#[test]
+fn check_with_json_format() {
+    let dir = TempDir::new().unwrap();
+    let input = dir.path().join("warn.hsml");
+
+    fs::write(&input, "h1.foo.foo Hello\n").unwrap();
+
+    cmd()
+        .args(["check", input.to_str().unwrap(), "--report-format", "json"])
+        .assert()
+        .success()
+        .stderr(predicates::str::contains(r#""severity":"warning""#));
+}
+
+#[test]
+fn check_directory() {
+    let dir = TempDir::new().unwrap();
+
+    fs::write(dir.path().join("good.hsml"), "h1 OK\n").unwrap();
+    fs::write(dir.path().join("bad.hsml"), "@@@\n").unwrap();
+
+    cmd()
+        .args(["check", dir.path().to_str().unwrap()])
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains("error: parse error"));
+}
+
+#[test]
+fn check_defaults_to_current_directory() {
+    let dir = TempDir::new().unwrap();
+
+    fs::write(dir.path().join("test.hsml"), "h1 Hello\n").unwrap();
+
+    // Run check without a path argument — should use current directory
+    cmd()
+        .args(["check"])
+        .current_dir(dir.path())
+        .assert()
+        .success();
+}
+
+#[cfg(unix)]
+#[test]
+fn check_directory_skips_symlinks() {
+    use std::os::unix::fs::symlink;
+
+    let dir = TempDir::new().unwrap();
+
+    // Create a valid hsml file
+    fs::write(dir.path().join("good.hsml"), "h1 Hello\n").unwrap();
+
+    // Create a circular symlink: sub -> parent
+    let sub = dir.path().join("sub");
+    symlink(dir.path(), &sub).unwrap();
+
+    // Should succeed without infinite recursion
+    cmd()
+        .args(["check", dir.path().to_str().unwrap()])
+        .assert()
+        .success();
 }

@@ -34,6 +34,18 @@ pub fn cli() -> Command {
                 .about("Parse given .hsml file and print the AST to stdout as JSON"),
         )
         .subcommand(Command::new("fmt").about("Format given .hsml file or directory"))
-        .subcommand(Command::new("check").about("Check given .hsml file or directory"))
+        .subcommand(
+            Command::new("check")
+                .about("Check given .hsml file or directory for errors and warnings")
+                .arg(
+                    arg!(path: [PATH] "Path to .hsml file or directory containing .hsml files")
+                        .value_parser(value_parser!(PathBuf)),
+                )
+                .arg(
+                    arg!(report_format: --"report-format" <FORMAT> "Report format for diagnostics")
+                        .value_parser(["default", "json"])
+                        .default_value("default"),
+                ),
+        )
         .subcommand(Command::new("lsp").about("Run Language Server Protocol"))
 }

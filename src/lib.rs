@@ -32,6 +32,32 @@ pub struct CompileOutput {
     pub diagnostics: Vec<diagnostic::Diagnostic>,
 }
 
+/// Check HSML source for errors and warnings without compiling.
+/// Returns all diagnostics (both parse errors and validation warnings).
+pub fn check_content(source: &str) -> Vec<diagnostic::Diagnostic> {
+    let span = parser::Span::new(source);
+
+    let (rest, ast) = match parser::parse::parse(span) {
+        Ok(result) => result,
+        Err(e) => return vec![diagnostic::Diagnostic::from(&e)],
+    };
+
+    if !rest.fragment().is_empty() {
+        return vec![diagnostic::Diagnostic {
+            severity: diagnostic::Severity::Error,
+            message: "Unconsumed input".to_string(),
+            code: None,
+            location: Some(diagnostic::Location {
+                line: rest.location_line(),
+                column: rest.get_column() as u32,
+            }),
+            file_path: None,
+        }];
+    }
+
+    validate::validate(&ast, source)
+}
+
 /// Compile HSML source, returning structured diagnostics on error.
 /// On success, returns the HTML output along with any warnings.
 pub fn compile_content_diagnostics(

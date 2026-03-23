@@ -1,5 +1,5 @@
 use hsml::{
-    compile_content_core, compile_content_diagnostics,
+    check_content, compile_content_core, compile_content_diagnostics,
     compiler::{HsmlCompileOptions, compile},
     parser::{
         HsmlNode, RootNode, Span, class::node::ClassNode, doctype::node::DoctypeNode,
@@ -451,4 +451,38 @@ fn compile_diagnostics_serialize_duplicate_id_to_json() {
         Some("Duplicate id 'b' is not allowed")
     );
     assert!(diagnostics[0]["location"].is_object());
+}
+
+// Tests for check_content
+
+#[test]
+fn check_content_returns_empty_for_valid_input() {
+    let diagnostics = check_content("h1 Hello\n");
+    assert!(diagnostics.is_empty());
+}
+
+#[test]
+fn check_content_returns_error_for_invalid_input() {
+    let diagnostics = check_content("@@@invalid");
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(diagnostics[0].severity, hsml::diagnostic::Severity::Error);
+}
+
+#[test]
+fn check_content_returns_warnings_for_duplicate_class() {
+    let diagnostics = check_content("h1.foo.foo Hello\n");
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(diagnostics[0].severity, hsml::diagnostic::Severity::Warning);
+    assert_eq!(
+        diagnostics[0].code,
+        Some(ErrorCode::DuplicateClass.code().to_string())
+    );
+}
+
+#[test]
+fn check_content_does_not_compile() {
+    // check_content should succeed even with valid input — it doesn't compile
+    // This test verifies it only parses + validates, not compiles
+    let diagnostics = check_content("div\n  span Hello\n");
+    assert!(diagnostics.is_empty());
 }
