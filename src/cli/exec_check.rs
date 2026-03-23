@@ -73,7 +73,7 @@ fn check_file(file: &PathBuf, format: Option<&str>) -> Result<(), String> {
 }
 
 fn check_hsml_files_in_dir(dir: &PathBuf, format: Option<&str>) -> Result<(), String> {
-    let mut has_errors = false;
+    let mut has_diagnostic_errors = false;
 
     for entry in
         fs::read_dir(dir).map_err(|e| format!("Unable to read directory {}: {e}", dir.display()))?
@@ -83,18 +83,21 @@ fn check_hsml_files_in_dir(dir: &PathBuf, format: Option<&str>) -> Result<(), St
         let path = entry.path();
 
         if path.is_dir() {
-            if check_hsml_files_in_dir(&path, format).is_err() {
-                has_errors = true;
+            match check_hsml_files_in_dir(&path, format) {
+                Ok(()) => {}
+                Err(e) if e.is_empty() => has_diagnostic_errors = true,
+                Err(e) => return Err(e),
             }
-        } else if path.is_file()
-            && path.extension().is_some_and(|ext| ext == "hsml")
-            && check_file(&path, format).is_err()
-        {
-            has_errors = true;
+        } else if path.is_file() && path.extension().is_some_and(|ext| ext == "hsml") {
+            match check_file(&path, format) {
+                Ok(()) => {}
+                Err(e) if e.is_empty() => has_diagnostic_errors = true,
+                Err(e) => return Err(e),
+            }
         }
     }
 
-    if has_errors {
+    if has_diagnostic_errors {
         Err(String::new())
     } else {
         Ok(())
