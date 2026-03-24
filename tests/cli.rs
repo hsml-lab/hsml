@@ -223,6 +223,43 @@ fn compile_directory_skips_non_hsml_files() {
 }
 
 #[test]
+fn compile_defaults_to_current_directory() {
+    let dir = TempDir::new().unwrap();
+
+    fs::write(dir.path().join("test.hsml"), "h1 Hello\n").unwrap();
+
+    cmd()
+        .args(["compile"])
+        .current_dir(dir.path())
+        .assert()
+        .success();
+
+    assert!(dir.path().join("test.html").exists());
+}
+
+#[cfg(unix)]
+#[test]
+fn compile_directory_skips_symlinks() {
+    use std::os::unix::fs::symlink;
+
+    let dir = TempDir::new().unwrap();
+
+    fs::write(dir.path().join("good.hsml"), "h1 Hello\n").unwrap();
+
+    // Create a circular symlink: sub -> parent
+    let sub = dir.path().join("sub");
+    symlink(dir.path(), &sub).unwrap();
+
+    // Should succeed without infinite recursion
+    cmd()
+        .args(["compile", dir.path().to_str().unwrap()])
+        .assert()
+        .success();
+
+    assert!(dir.path().join("good.html").exists());
+}
+
+#[test]
 fn compile_json_format_suppresses_status_messages() {
     let dir = TempDir::new().unwrap();
     let input = dir.path().join("test.hsml");
