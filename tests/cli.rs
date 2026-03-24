@@ -327,6 +327,35 @@ fn check_defaults_to_current_directory() {
         .success();
 }
 
+#[test]
+fn check_directory_json_aggregates_all_diagnostics() {
+    let dir = TempDir::new().unwrap();
+
+    // Two files with warnings
+    fs::write(dir.path().join("a.hsml"), "h1.foo.foo Hello\n").unwrap();
+    fs::write(dir.path().join("b.hsml"), "h2.bar.bar World\n").unwrap();
+
+    let output = cmd()
+        .args([
+            "check",
+            dir.path().to_str().unwrap(),
+            "--report-format",
+            "json",
+        ])
+        .output()
+        .unwrap();
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+
+    // Should be a single JSON array containing diagnostics from both files
+    let parsed: serde_json::Value =
+        serde_json::from_str(stderr.trim()).expect("stderr should be a single valid JSON array");
+    let arr = parsed.as_array().expect("should be an array");
+
+    assert_eq!(arr.len(), 2, "should have one diagnostic per file");
+    assert!(arr.iter().all(|d| d["severity"] == "warning"));
+}
+
 #[cfg(unix)]
 #[test]
 fn check_directory_skips_symlinks() {
