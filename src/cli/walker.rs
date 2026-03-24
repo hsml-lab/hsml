@@ -66,7 +66,7 @@ pub fn walk_hsml_files(dir: &Path, ignore_patterns: &[String]) -> Result<WalkRes
                 let path = entry.path();
                 if is_file
                     && path.extension().is_some_and(|ext| ext == "hsml")
-                    && !is_builtin_ignored(path, &reincluded)
+                    && !is_builtin_ignored(dir, path, &reincluded)
                 {
                     files.push(path.to_path_buf());
                 }
@@ -89,14 +89,23 @@ fn load_reinclude_patterns(dir: &Path) -> HashSet<String> {
     content
         .lines()
         .filter_map(|line| line.strip_prefix('!'))
-        .map(|name| name.trim_end_matches('/').to_string())
+        .filter_map(|pattern| {
+            let cleaned = pattern.trim_start_matches('/').trim_end_matches('/');
+            Path::new(cleaned)
+                .file_name()
+                .and_then(|n| n.to_str())
+                .map(|s| s.to_string())
+        })
         .collect()
 }
 
-/// Check if any path component matches a built-in ignored directory name,
-/// unless that name has been re-included via `.hsmlignore`.
-fn is_builtin_ignored(path: &Path, reincluded: &HashSet<String>) -> bool {
-    path.ancestors().any(|ancestor| {
+/// Check if any path component (relative to the walk root) matches a built-in
+/// ignored directory name, unless that name has been re-included via `.hsmlignore`.
+fn is_builtin_ignored(root: &Path, path: &Path, reincluded: &HashSet<String>) -> bool {
+    let Ok(rel) = path.strip_prefix(root) else {
+        return false;
+    };
+    rel.ancestors().any(|ancestor| {
         ancestor.file_name().is_some_and(|name| {
             BUILTIN_IGNORES
                 .iter()

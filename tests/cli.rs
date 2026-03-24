@@ -842,3 +842,24 @@ fn check_hsmlignore_can_reinclude_builtin_ignores() {
         .assert()
         .success();
 }
+
+#[test]
+fn compile_builtin_ignore_does_not_match_parent_dirs() {
+    // If the project lives under a path containing a built-in ignore name
+    // (e.g. /tmp/.../build/project/), files should NOT be filtered out.
+    let dir = TempDir::new().unwrap();
+    let project = dir.path().join("build").join("project");
+    fs::create_dir_all(&project).unwrap();
+
+    fs::write(project.join("index.hsml"), "h1 Hello\n").unwrap();
+
+    cmd()
+        .args(["compile", project.to_str().unwrap()])
+        .assert()
+        .success();
+
+    assert!(
+        project.join("index.html").exists(),
+        "files should compile even if project is under a build/ parent"
+    );
+}
