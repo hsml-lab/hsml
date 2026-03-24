@@ -107,7 +107,7 @@ You can also pass ignore patterns via CLI:
 
 ```sh
 hsml compile src/ --ignore-pattern "vendor/"
-hsml compile src/ --ignore-pattern "tmp/" --ignore-pattern "generated/"
+hsml check src/ --ignore-pattern "tmp/" --ignore-pattern "generated/"
 ```
 
 To re-include a built-in ignored directory, add a negation to `.hsmlignore`:
