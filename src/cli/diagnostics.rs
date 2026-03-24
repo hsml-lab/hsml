@@ -14,9 +14,9 @@ pub struct FileDiagnostics {
 }
 
 /// Render collected diagnostics to stderr.
-/// JSON format outputs a single aggregated array.
+/// JSON format outputs a single aggregated array (empty `[]` when clean).
 /// Default format renders per-file with source context.
-pub fn render_diagnostics(results: &[&FileDiagnostics], format: Option<&str>) {
+pub fn render_diagnostics(results: &[FileDiagnostics], format: Option<&str>) {
     let all_diagnostics: Vec<&Diagnostic> =
         results.iter().flat_map(|r| r.diagnostics.iter()).collect();
 
@@ -40,7 +40,7 @@ pub fn render_diagnostics(results: &[&FileDiagnostics], format: Option<&str>) {
 }
 
 /// Check if any diagnostic is an error.
-pub fn has_errors(results: &[&FileDiagnostics]) -> bool {
+pub fn has_errors(results: &[FileDiagnostics]) -> bool {
     results
         .iter()
         .flat_map(|r| r.diagnostics.iter())

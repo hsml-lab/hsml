@@ -1,4 +1,7 @@
-use std::{env, fs, path::PathBuf};
+use std::{
+    env, fs,
+    path::{Path, PathBuf},
+};
 
 use clap::ArgMatches;
 use hsml::check_content;
@@ -32,19 +35,18 @@ pub fn exec_check(matches: &ArgMatches) -> Result<(), String> {
     }
 
     // Always render diagnostics before reporting IO errors
-    let refs: Vec<&FileDiagnostics> = results.iter().collect();
-    render_diagnostics(&refs, format);
+    render_diagnostics(&results, format);
 
     if !io_errors.is_empty() {
         Err(io_errors.join("\n"))
-    } else if has_errors(&refs) {
+    } else if has_errors(&results) {
         Err(String::new())
     } else {
         Ok(())
     }
 }
 
-fn collect_file(file: &PathBuf, results: &mut Vec<FileDiagnostics>) -> Result<(), String> {
+fn collect_file(file: &Path, results: &mut Vec<FileDiagnostics>) -> Result<(), String> {
     if !file.exists() {
         return Err("File does not exist".to_string());
     }
@@ -73,10 +75,7 @@ fn collect_file(file: &PathBuf, results: &mut Vec<FileDiagnostics>) -> Result<()
     Ok(())
 }
 
-fn collect_hsml_files_in_dir(
-    dir: &PathBuf,
-    results: &mut Vec<FileDiagnostics>,
-) -> Result<(), String> {
+fn collect_hsml_files_in_dir(dir: &Path, results: &mut Vec<FileDiagnostics>) -> Result<(), String> {
     for entry in
         fs::read_dir(dir).map_err(|e| format!("Unable to read directory {}: {e}", dir.display()))?
     {
