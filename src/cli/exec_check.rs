@@ -7,11 +7,17 @@ use clap::ArgMatches;
 use hsml::check_content;
 
 use super::diagnostics::{FileDiagnostics, has_errors, render_diagnostics};
+use super::walker::walk_hsml_files;
 
 pub fn exec_check(matches: &ArgMatches) -> Result<(), String> {
     let format = matches
         .get_one::<String>("report_format")
         .map(|s| s.as_str());
+
+    let ignore_patterns: Vec<String> = matches
+        .get_many::<String>("ignore_pattern")
+        .map(|vals| vals.cloned().collect())
+        .unwrap_or_default();
 
     let path = match matches.get_one::<PathBuf>("path") {
         Some(p) => p.clone(),
@@ -23,8 +29,16 @@ pub fn exec_check(matches: &ArgMatches) -> Result<(), String> {
     let mut io_errors: Vec<String> = Vec::new();
 
     if path.is_dir() {
-        if let Err(e) = collect_hsml_files_in_dir(path, &mut results) {
-            io_errors.push(e);
+        match walk_hsml_files(path, &ignore_patterns) {
+            Ok(result) => {
+                io_errors.extend(result.errors);
+                for file in &result.files {
+                    if let Err(e) = collect_file(file, &mut results) {
+                        io_errors.push(e);
+                    }
+                }
+            }
+            Err(e) => io_errors.push(e),
         }
     } else if path.is_file() {
         if let Err(e) = collect_file(path, &mut results) {
@@ -71,33 +85,6 @@ fn collect_file(file: &Path, results: &mut Vec<FileDiagnostics>) -> Result<(), S
         diagnostics,
         source: content,
     });
-
-    Ok(())
-}
-
-fn collect_hsml_files_in_dir(dir: &Path, results: &mut Vec<FileDiagnostics>) -> Result<(), String> {
-    for entry in
-        fs::read_dir(dir).map_err(|e| format!("Unable to read directory {}: {e}", dir.display()))?
-    {
-        let entry = entry
-            .map_err(|e| format!("Unable to read directory entry in {}: {e}", dir.display()))?;
-
-        // Skip symlinks to prevent infinite recursion from circular links
-        let file_type = entry
-            .file_type()
-            .map_err(|e| format!("Unable to read file type in {}: {e}", dir.display()))?;
-        if file_type.is_symlink() {
-            continue;
-        }
-
-        let path = entry.path();
-
-        if path.is_dir() {
-            collect_hsml_files_in_dir(&path, results)?;
-        } else if path.is_file() && path.extension().is_some_and(|ext| ext == "hsml") {
-            collect_file(&path, results)?;
-        }
-    }
 
     Ok(())
 }
