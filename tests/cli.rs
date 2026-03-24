@@ -222,6 +222,98 @@ fn compile_directory_skips_non_hsml_files() {
     assert!(!dir.path().join("readme.html").exists());
 }
 
+#[test]
+fn compile_json_format_suppresses_status_messages() {
+    let dir = TempDir::new().unwrap();
+    let input = dir.path().join("test.hsml");
+
+    fs::write(&input, "h1 Hello\n").unwrap();
+
+    let output = cmd()
+        .args([
+            "compile",
+            input.to_str().unwrap(),
+            "--report-format",
+            "json",
+        ])
+        .output()
+        .unwrap();
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        !stdout.contains("Compiling"),
+        "JSON mode should not print status messages"
+    );
+    assert!(dir.path().join("test.html").exists());
+}
+
+#[test]
+fn compile_directory_json_aggregates_all_diagnostics() {
+    let dir = TempDir::new().unwrap();
+
+    fs::write(dir.path().join("a.hsml"), "h1.foo.foo A\n").unwrap();
+    fs::write(dir.path().join("b.hsml"), "h2.bar.bar B\n").unwrap();
+
+    let output = cmd()
+        .args([
+            "compile",
+            dir.path().to_str().unwrap(),
+            "--report-format",
+            "json",
+        ])
+        .output()
+        .unwrap();
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+
+    let parsed: serde_json::Value =
+        serde_json::from_str(stderr.trim()).expect("stderr should be a single valid JSON array");
+    let arr = parsed.as_array().expect("should be an array");
+
+    assert_eq!(arr.len(), 2, "should have one warning per file");
+    assert!(arr.iter().all(|d| d["severity"] == "warning"));
+
+    // HTML should still be produced
+    assert!(dir.path().join("a.html").exists());
+    assert!(dir.path().join("b.html").exists());
+}
+
+#[test]
+fn compile_directory_json_mixes_errors_and_warnings() {
+    let dir = TempDir::new().unwrap();
+
+    fs::write(dir.path().join("good.hsml"), "h1.foo.foo OK\n").unwrap();
+    fs::write(dir.path().join("bad.hsml"), "@@@invalid\n").unwrap();
+
+    let output = cmd()
+        .args([
+            "compile",
+            dir.path().to_str().unwrap(),
+            "--report-format",
+            "json",
+        ])
+        .output()
+        .unwrap();
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+
+    let parsed: serde_json::Value =
+        serde_json::from_str(stderr.trim()).expect("stderr should be a single valid JSON array");
+    let arr = parsed.as_array().expect("should be an array");
+
+    assert!(arr.len() >= 2, "should have at least error + warning");
+
+    let has_error = arr.iter().any(|d| d["severity"] == "error");
+    let has_warning = arr.iter().any(|d| d["severity"] == "warning");
+    assert!(has_error, "should contain an error");
+    assert!(has_warning, "should contain a warning");
+
+    // Good file should still compile
+    assert!(dir.path().join("good.html").exists());
+    // Bad file should not produce HTML
+    assert!(!dir.path().join("bad.html").exists());
+}
+
 // --- Unimplemented commands ---
 
 #[test]
