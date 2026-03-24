@@ -749,6 +749,28 @@ fn compile_skips_hidden_directories() {
 }
 
 #[test]
+fn compile_builtin_ignores_target_directory() {
+    let dir = TempDir::new().unwrap();
+
+    fs::write(dir.path().join("index.hsml"), "h1 Hello\n").unwrap();
+
+    let target = dir.path().join("target");
+    fs::create_dir(&target).unwrap();
+    fs::write(target.join("out.hsml"), "h2 Target\n").unwrap();
+
+    cmd()
+        .args(["compile", dir.path().to_str().unwrap()])
+        .assert()
+        .success();
+
+    assert!(dir.path().join("index.html").exists());
+    assert!(
+        !target.join("out.html").exists(),
+        "target/ should be ignored by default"
+    );
+}
+
+#[test]
 fn compile_hsmlignore_can_reinclude_builtin_ignores() {
     let dir = TempDir::new().unwrap();
 
@@ -789,6 +811,22 @@ fn check_skips_hidden_directories() {
 }
 
 #[test]
+fn check_builtin_ignores_target_directory() {
+    let dir = TempDir::new().unwrap();
+
+    fs::write(dir.path().join("index.hsml"), "h1 Hello\n").unwrap();
+
+    let target = dir.path().join("target");
+    fs::create_dir(&target).unwrap();
+    fs::write(target.join("bad.hsml"), "@@@invalid\n").unwrap();
+
+    cmd()
+        .args(["check", dir.path().to_str().unwrap()])
+        .assert()
+        .success();
+}
+
+#[test]
 fn check_hsmlignore_can_reinclude_builtin_ignores() {
     let dir = TempDir::new().unwrap();
 
@@ -803,4 +841,25 @@ fn check_hsmlignore_can_reinclude_builtin_ignores() {
         .args(["check", dir.path().to_str().unwrap()])
         .assert()
         .success();
+}
+
+#[test]
+fn compile_builtin_ignore_does_not_match_parent_dirs() {
+    // If the project lives under a path containing a built-in ignore name
+    // (e.g. /tmp/.../build/project/), files should NOT be filtered out.
+    let dir = TempDir::new().unwrap();
+    let project = dir.path().join("build").join("project");
+    fs::create_dir_all(&project).unwrap();
+
+    fs::write(project.join("index.hsml"), "h1 Hello\n").unwrap();
+
+    cmd()
+        .args(["compile", project.to_str().unwrap()])
+        .assert()
+        .success();
+
+    assert!(
+        project.join("index.html").exists(),
+        "files should compile even if project is under a build/ parent"
+    );
 }
