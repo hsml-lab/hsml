@@ -5,13 +5,6 @@ use hsml::compile_content_diagnostics;
 
 use super::diagnostics::{FileDiagnostics, has_errors, render_diagnostics};
 
-/// Result of compiling a single file.
-struct CompileResult {
-    diagnostics: FileDiagnostics,
-    out_file: PathBuf,
-    html: Option<String>,
-}
-
 pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
     let out = matches.get_one::<PathBuf>("output");
     let format = matches
@@ -29,55 +22,40 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
         println!("Compiling...");
     }
 
-    let mut results: Vec<CompileResult> = Vec::new();
+    let mut diagnostics: Vec<FileDiagnostics> = Vec::new();
     let mut io_errors: Vec<String> = Vec::new();
 
     if path.is_dir() {
-        if let Err(e) = collect_compile_dir(path, &mut results) {
+        if let Err(e) = compile_dir(path, is_json, &mut diagnostics, &mut io_errors) {
             io_errors.push(e);
         }
     } else if path.is_file() {
-        if let Err(e) = collect_compile_file(path, out, &mut results) {
+        if let Err(e) = compile_file(path, out, is_json, &mut diagnostics, &mut io_errors) {
             io_errors.push(e);
         }
     } else {
         return Err("Path must be a file or directory".to_string());
     }
 
-    // Write HTML for successful compilations
-    for result in &results {
-        if let Some(html) = &result.html {
-            if let Err(e) = fs::write(&result.out_file, html) {
-                io_errors.push(format!(
-                    "Unable to write file {}: {e}",
-                    result.out_file.display()
-                ));
-            } else if !is_json {
-                println!(
-                    "Compiled HTML written to {} successfully",
-                    result.out_file.display()
-                );
-            }
-        }
-    }
-
     // Always render diagnostics before reporting errors
-    let file_diagnostics: Vec<&FileDiagnostics> = results.iter().map(|r| &r.diagnostics).collect();
-    render_diagnostics(&file_diagnostics, format);
+    let refs: Vec<&FileDiagnostics> = diagnostics.iter().collect();
+    render_diagnostics(&refs, format);
 
     if !io_errors.is_empty() {
         Err(io_errors.join("\n"))
-    } else if has_errors(&file_diagnostics) {
+    } else if has_errors(&refs) {
         Err(String::new())
     } else {
         Ok(())
     }
 }
 
-fn collect_compile_file(
+fn compile_file(
     file: &PathBuf,
     out_file: Option<&PathBuf>,
-    results: &mut Vec<CompileResult>,
+    is_json: bool,
+    diagnostics: &mut Vec<FileDiagnostics>,
+    io_errors: &mut Vec<String>,
 ) -> Result<(), String> {
     if !file.exists() {
         return Err("File does not exist".to_string());
@@ -95,38 +73,43 @@ fn collect_compile_file(
         .map_err(|e| format!("Unable to read file {}: {e}", file.display()))?;
 
     let fallback_out_file = file.with_extension("html");
-    let out_file = out_file.unwrap_or(&fallback_out_file).clone();
+    let out_file = out_file.unwrap_or(&fallback_out_file);
 
     match compile_content_diagnostics(&content) {
         Ok(output) => {
-            let diagnostics: Vec<_> = output
+            // Write HTML immediately — don't buffer
+            if let Err(e) = fs::write(out_file, &output.html) {
+                io_errors.push(format!("Unable to write file {}: {e}", out_file.display()));
+            } else if !is_json {
+                println!(
+                    "Compiled HTML written to {} successfully",
+                    out_file.display()
+                );
+            }
+
+            let file_diags: Vec<_> = output
                 .diagnostics
                 .into_iter()
                 .map(|d| d.with_file_path(file.display().to_string()))
                 .collect();
 
-            results.push(CompileResult {
-                diagnostics: FileDiagnostics {
-                    diagnostics,
+            // Only retain source if there are diagnostics to render
+            if !file_diags.is_empty() {
+                diagnostics.push(FileDiagnostics {
+                    diagnostics: file_diags,
                     source: content,
-                },
-                out_file,
-                html: Some(output.html),
-            });
+                });
+            }
         }
-        Err(diagnostics) => {
-            let diagnostics: Vec<_> = diagnostics
+        Err(errs) => {
+            let file_diags: Vec<_> = errs
                 .into_iter()
                 .map(|d| d.with_file_path(file.display().to_string()))
                 .collect();
 
-            results.push(CompileResult {
-                diagnostics: FileDiagnostics {
-                    diagnostics,
-                    source: content,
-                },
-                out_file,
-                html: None,
+            diagnostics.push(FileDiagnostics {
+                diagnostics: file_diags,
+                source: content,
             });
         }
     }
@@ -134,7 +117,12 @@ fn collect_compile_file(
     Ok(())
 }
 
-fn collect_compile_dir(dir: &PathBuf, results: &mut Vec<CompileResult>) -> Result<(), String> {
+fn compile_dir(
+    dir: &PathBuf,
+    is_json: bool,
+    diagnostics: &mut Vec<FileDiagnostics>,
+    io_errors: &mut Vec<String>,
+) -> Result<(), String> {
     for entry in
         fs::read_dir(dir).map_err(|e| format!("Unable to read directory {}: {e}", dir.display()))?
     {
@@ -152,9 +140,9 @@ fn collect_compile_dir(dir: &PathBuf, results: &mut Vec<CompileResult>) -> Resul
         let path = entry.path();
 
         if path.is_dir() {
-            collect_compile_dir(&path, results)?;
+            compile_dir(&path, is_json, diagnostics, io_errors)?;
         } else if path.is_file() && path.extension().is_some_and(|ext| ext == "hsml") {
-            collect_compile_file(&path, None, results)?;
+            compile_file(&path, None, is_json, diagnostics, io_errors)?;
         }
     }
 
