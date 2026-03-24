@@ -17,19 +17,27 @@ pub fn exec_check(matches: &ArgMatches) -> Result<(), String> {
     let path = &path;
 
     let mut results: Vec<FileDiagnostics> = Vec::new();
+    let mut io_errors: Vec<String> = Vec::new();
 
     if path.is_dir() {
-        collect_hsml_files_in_dir(path, &mut results)?;
+        if let Err(e) = collect_hsml_files_in_dir(path, &mut results) {
+            io_errors.push(e);
+        }
     } else if path.is_file() {
-        collect_file(path, &mut results)?;
+        if let Err(e) = collect_file(path, &mut results) {
+            io_errors.push(e);
+        }
     } else {
         return Err("Path must be a file or directory".to_string());
     }
 
+    // Always render diagnostics before reporting IO errors
     let refs: Vec<&FileDiagnostics> = results.iter().collect();
     render_diagnostics(&refs, format);
 
-    if has_errors(&refs) {
+    if !io_errors.is_empty() {
+        Err(io_errors.join("\n"))
+    } else if has_errors(&refs) {
         Err(String::new())
     } else {
         Ok(())

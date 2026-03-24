@@ -30,11 +30,16 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
     }
 
     let mut results: Vec<CompileResult> = Vec::new();
+    let mut io_errors: Vec<String> = Vec::new();
 
     if path.is_dir() {
-        collect_compile_dir(path, &mut results)?;
+        if let Err(e) = collect_compile_dir(path, &mut results) {
+            io_errors.push(e);
+        }
     } else if path.is_file() {
-        collect_compile_file(path, out, &mut results)?;
+        if let Err(e) = collect_compile_file(path, out, &mut results) {
+            io_errors.push(e);
+        }
     } else {
         return Err("Path must be a file or directory".to_string());
     }
@@ -42,10 +47,12 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
     // Write HTML for successful compilations
     for result in &results {
         if let Some(html) = &result.html {
-            fs::write(&result.out_file, html)
-                .map_err(|e| format!("Unable to write file {}: {e}", result.out_file.display()))?;
-
-            if !is_json {
+            if let Err(e) = fs::write(&result.out_file, html) {
+                io_errors.push(format!(
+                    "Unable to write file {}: {e}",
+                    result.out_file.display()
+                ));
+            } else if !is_json {
                 println!(
                     "Compiled HTML written to {} successfully",
                     result.out_file.display()
@@ -54,11 +61,13 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
         }
     }
 
-    // Render diagnostics using shared logic
+    // Always render diagnostics before reporting errors
     let file_diagnostics: Vec<&FileDiagnostics> = results.iter().map(|r| &r.diagnostics).collect();
     render_diagnostics(&file_diagnostics, format);
 
-    if has_errors(&file_diagnostics) {
+    if !io_errors.is_empty() {
+        Err(io_errors.join("\n"))
+    } else if has_errors(&file_diagnostics) {
         Err(String::new())
     } else {
         Ok(())
