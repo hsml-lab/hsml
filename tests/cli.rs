@@ -281,6 +281,11 @@ fn compile_json_format_suppresses_status_messages() {
         !stdout.contains("Compiling"),
         "JSON mode should not print status messages"
     );
+
+    // Clean run should emit empty JSON array
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert_eq!(stderr.trim(), "[]");
+
     assert!(dir.path().join("test.html").exists());
 }
 
@@ -426,6 +431,22 @@ fn check_with_json_format() {
         .assert()
         .success()
         .stderr(predicates::str::contains(r#""severity":"warning""#));
+}
+
+#[test]
+fn check_json_emits_empty_array_for_clean_run() {
+    let dir = TempDir::new().unwrap();
+    let input = dir.path().join("clean.hsml");
+
+    fs::write(&input, "h1 Hello\n").unwrap();
+
+    let output = cmd()
+        .args(["check", input.to_str().unwrap(), "--report-format", "json"])
+        .output()
+        .unwrap();
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert_eq!(stderr.trim(), "[]");
 }
 
 #[test]
