@@ -1,13 +1,9 @@
 use std::{env, fs, path::PathBuf};
 
 use clap::ArgMatches;
-use hsml::{
-    check_content,
-    diagnostic::{
-        Severity,
-        format::{DiagnosticFormatter, default::DefaultFormatter, json::JsonFormatter},
-    },
-};
+use hsml::check_content;
+
+use super::diagnostics::{FileDiagnostics, has_errors, render_diagnostics};
 
 pub fn exec_check(matches: &ArgMatches) -> Result<(), String> {
     let format = matches
@@ -20,27 +16,35 @@ pub fn exec_check(matches: &ArgMatches) -> Result<(), String> {
     };
     let path = &path;
 
+    let mut results: Vec<FileDiagnostics> = Vec::new();
+    let mut io_errors: Vec<String> = Vec::new();
+
     if path.is_dir() {
-        check_hsml_files_in_dir(path, format)
+        if let Err(e) = collect_hsml_files_in_dir(path, &mut results) {
+            io_errors.push(e);
+        }
     } else if path.is_file() {
-        check_file(path, format)
+        if let Err(e) = collect_file(path, &mut results) {
+            io_errors.push(e);
+        }
     } else {
-        Err("Path must be a file or directory".to_string())
+        return Err("Path must be a file or directory".to_string());
+    }
+
+    // Always render diagnostics before reporting IO errors
+    let refs: Vec<&FileDiagnostics> = results.iter().collect();
+    render_diagnostics(&refs, format);
+
+    if !io_errors.is_empty() {
+        Err(io_errors.join("\n"))
+    } else if has_errors(&refs) {
+        Err(String::new())
+    } else {
+        Ok(())
     }
 }
 
-fn format_diagnostics(
-    diagnostics: &[hsml::diagnostic::Diagnostic],
-    source: &str,
-    format: Option<&str>,
-) -> String {
-    match format {
-        Some("json") => JsonFormatter.format(diagnostics, Some(source)),
-        _ => DefaultFormatter.format(diagnostics, Some(source)),
-    }
-}
-
-fn check_file(file: &PathBuf, format: Option<&str>) -> Result<(), String> {
+fn collect_file(file: &PathBuf, results: &mut Vec<FileDiagnostics>) -> Result<(), String> {
     if !file.exists() {
         return Err("File does not exist".to_string());
     }
@@ -61,21 +65,18 @@ fn check_file(file: &PathBuf, format: Option<&str>) -> Result<(), String> {
         .map(|d| d.with_file_path(file.display().to_string()))
         .collect();
 
-    if !diagnostics.is_empty() {
-        let has_errors = diagnostics.iter().any(|d| d.severity == Severity::Error);
-        eprint!("{}", format_diagnostics(&diagnostics, &content, format));
-
-        if has_errors {
-            return Err(String::new());
-        }
-    }
+    results.push(FileDiagnostics {
+        diagnostics,
+        source: content,
+    });
 
     Ok(())
 }
 
-fn check_hsml_files_in_dir(dir: &PathBuf, format: Option<&str>) -> Result<(), String> {
-    let mut has_diagnostic_errors = false;
-
+fn collect_hsml_files_in_dir(
+    dir: &PathBuf,
+    results: &mut Vec<FileDiagnostics>,
+) -> Result<(), String> {
     for entry in
         fs::read_dir(dir).map_err(|e| format!("Unable to read directory {}: {e}", dir.display()))?
     {
@@ -93,23 +94,11 @@ fn check_hsml_files_in_dir(dir: &PathBuf, format: Option<&str>) -> Result<(), St
         let path = entry.path();
 
         if path.is_dir() {
-            match check_hsml_files_in_dir(&path, format) {
-                Ok(()) => {}
-                Err(e) if e.is_empty() => has_diagnostic_errors = true,
-                Err(e) => return Err(e),
-            }
+            collect_hsml_files_in_dir(&path, results)?;
         } else if path.is_file() && path.extension().is_some_and(|ext| ext == "hsml") {
-            match check_file(&path, format) {
-                Ok(()) => {}
-                Err(e) if e.is_empty() => has_diagnostic_errors = true,
-                Err(e) => return Err(e),
-            }
+            collect_file(&path, results)?;
         }
     }
 
-    if has_diagnostic_errors {
-        Err(String::new())
-    } else {
-        Ok(())
-    }
+    Ok(())
 }
