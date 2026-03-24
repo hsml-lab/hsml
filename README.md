@@ -86,8 +86,35 @@ hsml compile index.hsml -o output.html
 # Compile all .hsml files in a directory
 hsml compile src/
 
+# Check files for errors and warnings without compiling
+hsml check src/
+
 # Get diagnostics as JSON (for CI integration)
 hsml compile index.hsml --report-format json
+hsml check src/ --report-format json
+```
+
+### Ignore patterns
+
+When compiling or checking a directory, HSML automatically skips:
+
+- **Hidden files and directories** (e.g. `.git/`, `.cache/`)
+- **Built-in ignores**: `node_modules/`, `target/`, `dist/`, `build/`, `.hg/`, `.svn/`
+- **`.gitignore` patterns** (works even outside git repositories)
+- **`.hsmlignore` patterns** (same format as `.gitignore`)
+
+You can also pass ignore patterns via CLI:
+
+```sh
+hsml compile src/ --ignore-pattern "vendor/"
+hsml check src/ --ignore-pattern "tmp/" --ignore-pattern "generated/"
+```
+
+To re-include a built-in ignored directory, add a negation to `.hsmlignore`:
+
+```gitignore
+# .hsmlignore
+!build/
 ```
 
 ### WASM / JavaScript
@@ -243,7 +270,8 @@ warning[W002]: Duplicate class 'foo'
 - [x] WASM package for npm
 - [x] Diagnostic system with errors and warnings
 - [x] JSON diagnostic output (`--report-format json`)
-- [ ] `hsml check` — standalone linting command
+- [x] `hsml check` — standalone linting command
+- [x] Ignore support (`.gitignore`, `.hsmlignore`, `--ignore-pattern`)
 - [ ] `hsml fmt` — code formatter
 - [ ] `hsml parse` — AST output as JSON
 - [ ] LSP server for editor integration
