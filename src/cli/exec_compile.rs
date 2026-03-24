@@ -1,18 +1,13 @@
 use std::{env, fs, path::PathBuf};
 
 use clap::ArgMatches;
-use hsml::{
-    compile_content_diagnostics,
-    diagnostic::{
-        Diagnostic,
-        format::{DiagnosticFormatter, default::DefaultFormatter, json::JsonFormatter},
-    },
-};
+use hsml::compile_content_diagnostics;
+
+use super::diagnostics::{FileDiagnostics, has_errors, render_diagnostics};
 
 /// Result of compiling a single file.
-struct CompileFileResult {
-    diagnostics: Vec<Diagnostic>,
-    source: String,
+struct CompileResult {
+    diagnostics: FileDiagnostics,
     out_file: PathBuf,
     html: Option<String>,
 }
@@ -33,7 +28,7 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
         println!("Compiling...");
     }
 
-    let mut results: Vec<CompileFileResult> = Vec::new();
+    let mut results: Vec<CompileResult> = Vec::new();
 
     if path.is_dir() {
         collect_compile_dir(path, &mut results)?;
@@ -44,7 +39,6 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
     }
 
     // Write HTML for successful compilations
-    let mut has_errors = false;
     for result in &results {
         if let Some(html) = &result.html {
             fs::write(&result.out_file, html)
@@ -56,36 +50,14 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
                     result.out_file.display()
                 );
             }
-        } else {
-            has_errors = true;
         }
     }
 
-    // Render diagnostics
-    let all_diagnostics: Vec<&Diagnostic> =
-        results.iter().flat_map(|r| r.diagnostics.iter()).collect();
+    // Render diagnostics using shared logic
+    let file_diagnostics: Vec<&FileDiagnostics> = results.iter().map(|r| &r.diagnostics).collect();
+    render_diagnostics(&file_diagnostics, format);
 
-    if !all_diagnostics.is_empty() {
-        match format {
-            Some("json") => {
-                let owned: Vec<_> = all_diagnostics.into_iter().cloned().collect();
-                let output = JsonFormatter.format(&owned, None);
-                eprintln!("{output}");
-            }
-            _ => {
-                for result in &results {
-                    if !result.diagnostics.is_empty() {
-                        eprint!(
-                            "{}",
-                            DefaultFormatter.format(&result.diagnostics, Some(&result.source))
-                        );
-                    }
-                }
-            }
-        }
-    }
-
-    if has_errors {
+    if has_errors(&file_diagnostics) {
         Err(String::new())
     } else {
         Ok(())
@@ -95,7 +67,7 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
 fn collect_compile_file(
     file: &PathBuf,
     out_file: Option<&PathBuf>,
-    results: &mut Vec<CompileFileResult>,
+    results: &mut Vec<CompileResult>,
 ) -> Result<(), String> {
     if !file.exists() {
         return Err("File does not exist".to_string());
@@ -123,9 +95,11 @@ fn collect_compile_file(
                 .map(|d| d.with_file_path(file.display().to_string()))
                 .collect();
 
-            results.push(CompileFileResult {
-                diagnostics,
-                source: content,
+            results.push(CompileResult {
+                diagnostics: FileDiagnostics {
+                    diagnostics,
+                    source: content,
+                },
                 out_file,
                 html: Some(output.html),
             });
@@ -136,9 +110,11 @@ fn collect_compile_file(
                 .map(|d| d.with_file_path(file.display().to_string()))
                 .collect();
 
-            results.push(CompileFileResult {
-                diagnostics,
-                source: content,
+            results.push(CompileResult {
+                diagnostics: FileDiagnostics {
+                    diagnostics,
+                    source: content,
+                },
                 out_file,
                 html: None,
             });
@@ -148,7 +124,7 @@ fn collect_compile_file(
     Ok(())
 }
 
-fn collect_compile_dir(dir: &PathBuf, results: &mut Vec<CompileFileResult>) -> Result<(), String> {
+fn collect_compile_dir(dir: &PathBuf, results: &mut Vec<CompileResult>) -> Result<(), String> {
     for entry in
         fs::read_dir(dir).map_err(|e| format!("Unable to read directory {}: {e}", dir.display()))?
     {
