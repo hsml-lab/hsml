@@ -72,8 +72,9 @@ pub fn walk_hsml_files(dir: &Path, ignore_patterns: &[String]) -> Result<WalkRes
     for entry in builder.build() {
         match entry {
             Ok(entry) => {
+                let is_file = entry.file_type().map(|ft| ft.is_file()).unwrap_or(false);
                 let path = entry.path();
-                if path.is_file() && path.extension().is_some_and(|ext| ext == "hsml") {
+                if is_file && path.extension().is_some_and(|ext| ext == "hsml") {
                     files.push(path.to_path_buf());
                 }
             }

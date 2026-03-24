@@ -771,3 +771,36 @@ fn compile_hsmlignore_can_reinclude_builtin_ignores() {
         "build/ should be re-included via .hsmlignore !build/"
     );
 }
+
+#[test]
+fn check_skips_hidden_directories() {
+    let dir = TempDir::new().unwrap();
+
+    fs::write(dir.path().join("index.hsml"), "h1 Hello\n").unwrap();
+
+    let hidden = dir.path().join(".hidden");
+    fs::create_dir(&hidden).unwrap();
+    fs::write(hidden.join("bad.hsml"), "@@@invalid\n").unwrap();
+
+    cmd()
+        .args(["check", dir.path().to_str().unwrap()])
+        .assert()
+        .success();
+}
+
+#[test]
+fn check_hsmlignore_can_reinclude_builtin_ignores() {
+    let dir = TempDir::new().unwrap();
+
+    fs::write(dir.path().join(".hsmlignore"), "!build/\n").unwrap();
+    fs::write(dir.path().join("index.hsml"), "h1 Hello\n").unwrap();
+
+    let build = dir.path().join("build");
+    fs::create_dir(&build).unwrap();
+    fs::write(build.join("page.hsml"), "h2 Built\n").unwrap();
+
+    cmd()
+        .args(["check", dir.path().to_str().unwrap()])
+        .assert()
+        .success();
+}
