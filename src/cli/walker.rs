@@ -18,6 +18,12 @@ const BUILTIN_IGNORES: &[&str] = &[
     ".svn/",
 ];
 
+/// Collected `.hsml` file paths with any IO errors encountered during traversal.
+pub struct WalkResult {
+    pub files: Vec<PathBuf>,
+    pub errors: Vec<String>,
+}
+
 /// Walk a directory and collect all `.hsml` file paths, respecting ignore rules.
 ///
 /// Automatically respects:
@@ -27,7 +33,10 @@ const BUILTIN_IGNORES: &[&str] = &[
 /// - `--ignore-pattern` globs passed via CLI
 ///
 /// Hidden files/directories are skipped by default.
-pub fn walk_hsml_files(dir: &Path, ignore_patterns: &[String]) -> Result<Vec<PathBuf>, String> {
+///
+/// IO errors during traversal are collected but do not prevent other files
+/// from being returned.
+pub fn walk_hsml_files(dir: &Path, ignore_patterns: &[String]) -> Result<WalkResult, String> {
     let mut builder = WalkBuilder::new(dir);
     builder
         .add_custom_ignore_filename(".hsmlignore")
@@ -70,9 +79,5 @@ pub fn walk_hsml_files(dir: &Path, ignore_patterns: &[String]) -> Result<Vec<Pat
         }
     }
 
-    if !errors.is_empty() {
-        return Err(errors.join("\n"));
-    }
-
-    Ok(files)
+    Ok(WalkResult { files, errors })
 }

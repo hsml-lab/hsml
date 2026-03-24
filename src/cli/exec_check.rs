@@ -30,8 +30,9 @@ pub fn exec_check(matches: &ArgMatches) -> Result<(), String> {
 
     if path.is_dir() {
         match walk_hsml_files(path, &ignore_patterns) {
-            Ok(files) => {
-                for file in &files {
+            Ok(result) => {
+                io_errors.extend(result.errors);
+                for file in &result.files {
                     if let Err(e) = collect_file(file, &mut results) {
                         io_errors.push(e);
                     }

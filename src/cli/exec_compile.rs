@@ -36,8 +36,9 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
 
     if path.is_dir() {
         match walk_hsml_files(path, &ignore_patterns) {
-            Ok(files) => {
-                for file in &files {
+            Ok(result) => {
+                io_errors.extend(result.errors);
+                for file in &result.files {
                     if let Err(e) =
                         compile_file(file, None, is_json, &mut diagnostics, &mut io_errors)
                     {
