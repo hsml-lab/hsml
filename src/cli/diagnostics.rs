@@ -1,3 +1,7 @@
+//! CLI-specific diagnostic output helpers.
+//! These write directly to stderr and are not intended for use outside the CLI
+//! (e.g., the LSP server uses its own protocol for diagnostics).
+
 use hsml::diagnostic::{
     Diagnostic, Severity,
     format::{DiagnosticFormatter, default::DefaultFormatter, json::JsonFormatter},
