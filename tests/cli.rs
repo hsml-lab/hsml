@@ -747,3 +747,27 @@ fn compile_skips_hidden_directories() {
         "hidden directories should be skipped"
     );
 }
+
+#[test]
+fn compile_hsmlignore_can_reinclude_builtin_ignores() {
+    let dir = TempDir::new().unwrap();
+
+    // Re-include the `build/` directory which is ignored by default
+    fs::write(dir.path().join(".hsmlignore"), "!build/\n").unwrap();
+    fs::write(dir.path().join("index.hsml"), "h1 Hello\n").unwrap();
+
+    let build = dir.path().join("build");
+    fs::create_dir(&build).unwrap();
+    fs::write(build.join("page.hsml"), "h2 Built\n").unwrap();
+
+    cmd()
+        .args(["compile", dir.path().to_str().unwrap()])
+        .assert()
+        .success();
+
+    assert!(dir.path().join("index.html").exists());
+    assert!(
+        build.join("page.html").exists(),
+        "build/ should be re-included via .hsmlignore !build/"
+    );
+}
