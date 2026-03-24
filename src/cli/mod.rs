@@ -8,6 +8,7 @@ pub mod exec_compile;
 pub mod exec_format;
 pub mod exec_lsp;
 pub mod exec_parse;
+pub(crate) mod walker;
 
 pub fn cli() -> Command {
     command!()
@@ -28,6 +29,10 @@ pub fn cli() -> Command {
                     arg!(report_format: --"report-format" <FORMAT> "Report format for diagnostics")
                         .value_parser(["default", "json"])
                         .default_value("default"),
+                )
+                .arg(
+                    arg!(ignore_pattern: --"ignore-pattern" <PATTERN> "Glob pattern for files/directories to ignore")
+                        .action(clap::ArgAction::Append),
                 ),
         )
         .subcommand(
@@ -46,6 +51,10 @@ pub fn cli() -> Command {
                     arg!(report_format: --"report-format" <FORMAT> "Report format for diagnostics")
                         .value_parser(["default", "json"])
                         .default_value("default"),
+                )
+                .arg(
+                    arg!(ignore_pattern: --"ignore-pattern" <PATTERN> "Glob pattern for files/directories to ignore")
+                        .action(clap::ArgAction::Append),
                 ),
         )
         .subcommand(Command::new("lsp").about("Run Language Server Protocol"))

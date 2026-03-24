@@ -526,3 +526,224 @@ fn check_directory_skips_symlinks() {
         .assert()
         .success();
 }
+
+// --- Ignore patterns ---
+
+#[test]
+fn compile_ignores_node_modules() {
+    let dir = TempDir::new().unwrap();
+
+    fs::write(dir.path().join("index.hsml"), "h1 Hello\n").unwrap();
+
+    let nm = dir.path().join("node_modules").join("pkg");
+    fs::create_dir_all(&nm).unwrap();
+    fs::write(nm.join("lib.hsml"), "h2 Ignored\n").unwrap();
+
+    cmd()
+        .args(["compile", dir.path().to_str().unwrap()])
+        .assert()
+        .success();
+
+    assert!(dir.path().join("index.html").exists());
+    assert!(
+        !nm.join("lib.html").exists(),
+        "node_modules should be ignored"
+    );
+}
+
+#[test]
+fn check_ignores_node_modules() {
+    let dir = TempDir::new().unwrap();
+
+    fs::write(dir.path().join("index.hsml"), "h1 Hello\n").unwrap();
+
+    let nm = dir.path().join("node_modules").join("pkg");
+    fs::create_dir_all(&nm).unwrap();
+    // Invalid hsml that would cause an error if not ignored
+    fs::write(nm.join("bad.hsml"), "@@@invalid\n").unwrap();
+
+    cmd()
+        .args(["check", dir.path().to_str().unwrap()])
+        .assert()
+        .success();
+}
+
+#[test]
+fn compile_respects_gitignore() {
+    let dir = TempDir::new().unwrap();
+
+    fs::write(dir.path().join(".gitignore"), "ignored/\n").unwrap();
+    fs::write(dir.path().join("index.hsml"), "h1 Hello\n").unwrap();
+
+    let ignored = dir.path().join("ignored");
+    fs::create_dir(&ignored).unwrap();
+    fs::write(ignored.join("skip.hsml"), "h2 Skipped\n").unwrap();
+
+    cmd()
+        .args(["compile", dir.path().to_str().unwrap()])
+        .assert()
+        .success();
+
+    assert!(dir.path().join("index.html").exists());
+    assert!(
+        !ignored.join("skip.html").exists(),
+        ".gitignore patterns should be respected"
+    );
+}
+
+#[test]
+fn check_respects_gitignore() {
+    let dir = TempDir::new().unwrap();
+
+    fs::write(dir.path().join(".gitignore"), "ignored/\n").unwrap();
+    fs::write(dir.path().join("index.hsml"), "h1 Hello\n").unwrap();
+
+    let ignored = dir.path().join("ignored");
+    fs::create_dir(&ignored).unwrap();
+    fs::write(ignored.join("bad.hsml"), "@@@invalid\n").unwrap();
+
+    cmd()
+        .args(["check", dir.path().to_str().unwrap()])
+        .assert()
+        .success();
+}
+
+#[test]
+fn compile_respects_hsmlignore() {
+    let dir = TempDir::new().unwrap();
+
+    fs::write(dir.path().join(".hsmlignore"), "vendor/\n").unwrap();
+    fs::write(dir.path().join("index.hsml"), "h1 Hello\n").unwrap();
+
+    let vendor = dir.path().join("vendor");
+    fs::create_dir(&vendor).unwrap();
+    fs::write(vendor.join("lib.hsml"), "h2 Vendor\n").unwrap();
+
+    cmd()
+        .args(["compile", dir.path().to_str().unwrap()])
+        .assert()
+        .success();
+
+    assert!(dir.path().join("index.html").exists());
+    assert!(
+        !vendor.join("lib.html").exists(),
+        ".hsmlignore patterns should be respected"
+    );
+}
+
+#[test]
+fn check_respects_hsmlignore() {
+    let dir = TempDir::new().unwrap();
+
+    fs::write(dir.path().join(".hsmlignore"), "vendor/\n").unwrap();
+    fs::write(dir.path().join("index.hsml"), "h1 Hello\n").unwrap();
+
+    let vendor = dir.path().join("vendor");
+    fs::create_dir(&vendor).unwrap();
+    fs::write(vendor.join("bad.hsml"), "@@@invalid\n").unwrap();
+
+    cmd()
+        .args(["check", dir.path().to_str().unwrap()])
+        .assert()
+        .success();
+}
+
+#[test]
+fn compile_respects_ignore_pattern_flag() {
+    let dir = TempDir::new().unwrap();
+
+    fs::write(dir.path().join("index.hsml"), "h1 Hello\n").unwrap();
+
+    let skip = dir.path().join("skip");
+    fs::create_dir(&skip).unwrap();
+    fs::write(skip.join("file.hsml"), "h2 Skipped\n").unwrap();
+
+    cmd()
+        .args([
+            "compile",
+            dir.path().to_str().unwrap(),
+            "--ignore-pattern",
+            "skip/",
+        ])
+        .assert()
+        .success();
+
+    assert!(dir.path().join("index.html").exists());
+    assert!(
+        !skip.join("file.html").exists(),
+        "--ignore-pattern should exclude matching paths"
+    );
+}
+
+#[test]
+fn check_respects_ignore_pattern_flag() {
+    let dir = TempDir::new().unwrap();
+
+    fs::write(dir.path().join("index.hsml"), "h1 Hello\n").unwrap();
+
+    let skip = dir.path().join("skip");
+    fs::create_dir(&skip).unwrap();
+    fs::write(skip.join("bad.hsml"), "@@@invalid\n").unwrap();
+
+    cmd()
+        .args([
+            "check",
+            dir.path().to_str().unwrap(),
+            "--ignore-pattern",
+            "skip/",
+        ])
+        .assert()
+        .success();
+}
+
+#[test]
+fn compile_ignore_pattern_supports_multiple_patterns() {
+    let dir = TempDir::new().unwrap();
+
+    fs::write(dir.path().join("index.hsml"), "h1 Hello\n").unwrap();
+
+    let a = dir.path().join("a");
+    let b = dir.path().join("b");
+    fs::create_dir(&a).unwrap();
+    fs::create_dir(&b).unwrap();
+    fs::write(a.join("file.hsml"), "h2 A\n").unwrap();
+    fs::write(b.join("file.hsml"), "h2 B\n").unwrap();
+
+    cmd()
+        .args([
+            "compile",
+            dir.path().to_str().unwrap(),
+            "--ignore-pattern",
+            "a/",
+            "--ignore-pattern",
+            "b/",
+        ])
+        .assert()
+        .success();
+
+    assert!(dir.path().join("index.html").exists());
+    assert!(!a.join("file.html").exists(), "dir a should be ignored");
+    assert!(!b.join("file.html").exists(), "dir b should be ignored");
+}
+
+#[test]
+fn compile_skips_hidden_directories() {
+    let dir = TempDir::new().unwrap();
+
+    fs::write(dir.path().join("index.hsml"), "h1 Hello\n").unwrap();
+
+    let hidden = dir.path().join(".hidden");
+    fs::create_dir(&hidden).unwrap();
+    fs::write(hidden.join("secret.hsml"), "h2 Hidden\n").unwrap();
+
+    cmd()
+        .args(["compile", dir.path().to_str().unwrap()])
+        .assert()
+        .success();
+
+    assert!(dir.path().join("index.html").exists());
+    assert!(
+        !hidden.join("secret.html").exists(),
+        "hidden directories should be skipped"
+    );
+}

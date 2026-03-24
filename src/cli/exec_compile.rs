@@ -7,6 +7,7 @@ use clap::ArgMatches;
 use hsml::compile_content_diagnostics;
 
 use super::diagnostics::{FileDiagnostics, has_errors, render_diagnostics};
+use super::walker::walk_hsml_files;
 
 pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
     let out = matches.get_one::<PathBuf>("output");
@@ -14,6 +15,11 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
         .get_one::<String>("report_format")
         .map(|s| s.as_str());
     let is_json = format == Some("json");
+
+    let ignore_patterns: Vec<String> = matches
+        .get_many::<String>("ignore_pattern")
+        .map(|vals| vals.cloned().collect())
+        .unwrap_or_default();
 
     let path = match matches.get_one::<PathBuf>("path") {
         Some(p) => p.clone(),
@@ -29,7 +35,18 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
     let mut io_errors: Vec<String> = Vec::new();
 
     if path.is_dir() {
-        compile_dir(path, is_json, &mut diagnostics, &mut io_errors);
+        match walk_hsml_files(path, &ignore_patterns) {
+            Ok(files) => {
+                for file in &files {
+                    if let Err(e) =
+                        compile_file(file, None, is_json, &mut diagnostics, &mut io_errors)
+                    {
+                        io_errors.push(e);
+                    }
+                }
+            }
+            Err(e) => io_errors.push(e),
+        }
     } else if path.is_file() {
         if let Err(e) = compile_file(path, out, is_json, &mut diagnostics, &mut io_errors) {
             io_errors.push(e);
@@ -115,58 +132,4 @@ fn compile_file(
     }
 
     Ok(())
-}
-
-fn compile_dir(
-    dir: &Path,
-    is_json: bool,
-    diagnostics: &mut Vec<FileDiagnostics>,
-    io_errors: &mut Vec<String>,
-) {
-    let entries = match fs::read_dir(dir) {
-        Ok(entries) => entries,
-        Err(e) => {
-            io_errors.push(format!("Unable to read directory {}: {e}", dir.display()));
-            return;
-        }
-    };
-
-    for entry in entries {
-        let entry = match entry {
-            Ok(entry) => entry,
-            Err(e) => {
-                io_errors.push(format!(
-                    "Unable to read directory entry in {}: {e}",
-                    dir.display()
-                ));
-                continue;
-            }
-        };
-
-        // Skip symlinks to prevent infinite recursion from circular links
-        let file_type = match entry.file_type() {
-            Ok(ft) => ft,
-            Err(e) => {
-                io_errors.push(format!(
-                    "Unable to read file type in {}: {e}",
-                    dir.display()
-                ));
-                continue;
-            }
-        };
-        if file_type.is_symlink() {
-            continue;
-        }
-
-        let path = entry.path();
-
-        if path.is_dir() {
-            compile_dir(&path, is_json, diagnostics, io_errors);
-        } else if path.is_file()
-            && path.extension().is_some_and(|ext| ext == "hsml")
-            && let Err(e) = compile_file(&path, None, is_json, diagnostics, io_errors)
-        {
-            io_errors.push(e);
-        }
-    }
 }
