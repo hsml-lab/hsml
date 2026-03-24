@@ -749,6 +749,28 @@ fn compile_skips_hidden_directories() {
 }
 
 #[test]
+fn compile_builtin_ignores_target_directory() {
+    let dir = TempDir::new().unwrap();
+
+    fs::write(dir.path().join("index.hsml"), "h1 Hello\n").unwrap();
+
+    let target = dir.path().join("target");
+    fs::create_dir(&target).unwrap();
+    fs::write(target.join("out.hsml"), "h2 Target\n").unwrap();
+
+    cmd()
+        .args(["compile", dir.path().to_str().unwrap()])
+        .assert()
+        .success();
+
+    assert!(dir.path().join("index.html").exists());
+    assert!(
+        !target.join("out.html").exists(),
+        "target/ should be ignored by default"
+    );
+}
+
+#[test]
 fn compile_hsmlignore_can_reinclude_builtin_ignores() {
     let dir = TempDir::new().unwrap();
 
@@ -781,6 +803,22 @@ fn check_skips_hidden_directories() {
     let hidden = dir.path().join(".hidden");
     fs::create_dir(&hidden).unwrap();
     fs::write(hidden.join("bad.hsml"), "@@@invalid\n").unwrap();
+
+    cmd()
+        .args(["check", dir.path().to_str().unwrap()])
+        .assert()
+        .success();
+}
+
+#[test]
+fn check_builtin_ignores_target_directory() {
+    let dir = TempDir::new().unwrap();
+
+    fs::write(dir.path().join("index.hsml"), "h1 Hello\n").unwrap();
+
+    let target = dir.path().join("target");
+    fs::create_dir(&target).unwrap();
+    fs::write(target.join("bad.hsml"), "@@@invalid\n").unwrap();
 
     cmd()
         .args(["check", dir.path().to_str().unwrap()])

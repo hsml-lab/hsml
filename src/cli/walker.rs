@@ -2,12 +2,14 @@
 //! Uses the `ignore` crate to respect `.gitignore`, `.hsmlignore`,
 //! and `--ignore-pattern` flags while walking directories for `.hsml` files.
 
+use std::collections::HashSet;
+use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 
 use ignore::WalkBuilder;
 use ignore::overrides::OverrideBuilder;
 
-/// Directories that are always skipped during traversal.
+/// Directory names that are always skipped during traversal.
 /// These can be re-included via `.hsmlignore` (e.g. `!build/`).
 const BUILTIN_IGNORES: &[&str] = &["node_modules", "target", "dist", "build", ".hg", ".svn"];
 
@@ -27,11 +29,8 @@ pub struct WalkResult {
 ///
 /// Hidden files/directories are skipped by default.
 ///
-/// Precedence (highest to lowest):
-/// 1. `--ignore-pattern` flags (overrides, cannot be re-included)
-/// 2. `.hsmlignore` files (can re-include built-in ignores with `!pattern`)
-/// 3. `.gitignore` files
-/// 4. Built-in ignores
+/// Built-in ignores can be re-included via `.hsmlignore` using `!pattern`
+/// (e.g. `!build/` to re-include the `build` directory).
 ///
 /// IO errors during traversal are collected but do not prevent other files
 /// from being returned.
@@ -42,17 +41,6 @@ pub fn walk_hsml_files(dir: &Path, ignore_patterns: &[String]) -> Result<WalkRes
         .require_git(false)
         .follow_links(false);
 
-    // Built-in ignores are loaded from a temporary file so they sit at a lower
-    // priority than `.hsmlignore`. This lets users re-include them with `!pattern`.
-    let builtin_content = BUILTIN_IGNORES.join("\n");
-    let builtin_path = std::env::temp_dir().join("hsml-builtin-ignore");
-    std::fs::write(&builtin_path, &builtin_content)
-        .map_err(|e| format!("Failed to write built-in ignore rules: {e}"))?;
-    if let Some(err) = builder.add_ignore(&builtin_path) {
-        return Err(format!("Failed to load built-in ignore rules: {err}"));
-    }
-
-    // --ignore-pattern flags are overrides (highest priority, cannot be re-included)
     if !ignore_patterns.is_empty() {
         let mut overrides = OverrideBuilder::new(dir);
         for pattern in ignore_patterns {
@@ -66,6 +54,8 @@ pub fn walk_hsml_files(dir: &Path, ignore_patterns: &[String]) -> Result<WalkRes
         builder.overrides(overrides);
     }
 
+    let reincluded = load_reinclude_patterns(dir);
+
     let mut files = Vec::new();
     let mut errors = Vec::new();
 
@@ -74,7 +64,10 @@ pub fn walk_hsml_files(dir: &Path, ignore_patterns: &[String]) -> Result<WalkRes
             Ok(entry) => {
                 let is_file = entry.file_type().map(|ft| ft.is_file()).unwrap_or(false);
                 let path = entry.path();
-                if is_file && path.extension().is_some_and(|ext| ext == "hsml") {
+                if is_file
+                    && path.extension().is_some_and(|ext| ext == "hsml")
+                    && !is_builtin_ignored(path, &reincluded)
+                {
                     files.push(path.to_path_buf());
                 }
             }
@@ -85,4 +78,29 @@ pub fn walk_hsml_files(dir: &Path, ignore_patterns: &[String]) -> Result<WalkRes
     }
 
     Ok(WalkResult { files, errors })
+}
+
+/// Parse `.hsmlignore` in the root directory for re-include patterns (`!pattern`).
+/// Returns the set of directory names that should NOT be treated as built-in ignores.
+fn load_reinclude_patterns(dir: &Path) -> HashSet<String> {
+    let Ok(content) = std::fs::read_to_string(dir.join(".hsmlignore")) else {
+        return HashSet::new();
+    };
+    content
+        .lines()
+        .filter_map(|line| line.strip_prefix('!'))
+        .map(|name| name.trim_end_matches('/').to_string())
+        .collect()
+}
+
+/// Check if any path component matches a built-in ignored directory name,
+/// unless that name has been re-included via `.hsmlignore`.
+fn is_builtin_ignored(path: &Path, reincluded: &HashSet<String>) -> bool {
+    path.ancestors().any(|ancestor| {
+        ancestor.file_name().is_some_and(|name| {
+            BUILTIN_IGNORES
+                .iter()
+                .any(|&ig| name == OsStr::new(ig) && !reincluded.contains(ig))
+        })
+    })
 }
