@@ -1,4 +1,7 @@
-use std::{env, fs, path::PathBuf};
+use std::{
+    env, fs,
+    path::{Path, PathBuf},
+};
 
 use clap::ArgMatches;
 use hsml::compile_content_diagnostics;
@@ -48,7 +51,7 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
 }
 
 fn compile_file(
-    file: &PathBuf,
+    file: &Path,
     out_file: Option<&PathBuf>,
     is_json: bool,
     diagnostics: &mut Vec<FileDiagnostics>,
@@ -115,7 +118,7 @@ fn compile_file(
 }
 
 fn compile_dir(
-    dir: &PathBuf,
+    dir: &Path,
     is_json: bool,
     diagnostics: &mut Vec<FileDiagnostics>,
     io_errors: &mut Vec<String>,
