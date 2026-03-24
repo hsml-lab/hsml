@@ -32,12 +32,11 @@ pub fn exec_check(matches: &ArgMatches) -> Result<(), String> {
     }
 
     // Always render diagnostics before reporting IO errors
-    let refs: Vec<&FileDiagnostics> = results.iter().collect();
-    render_diagnostics(&refs, format);
+    render_diagnostics(&results, format);
 
     if !io_errors.is_empty() {
         Err(io_errors.join("\n"))
-    } else if has_errors(&refs) {
+    } else if has_errors(&results) {
         Err(String::new())
     } else {
         Ok(())

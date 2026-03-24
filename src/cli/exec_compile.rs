@@ -26,9 +26,7 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
     let mut io_errors: Vec<String> = Vec::new();
 
     if path.is_dir() {
-        if let Err(e) = compile_dir(path, is_json, &mut diagnostics, &mut io_errors) {
-            io_errors.push(e);
-        }
+        compile_dir(path, is_json, &mut diagnostics, &mut io_errors);
     } else if path.is_file() {
         if let Err(e) = compile_file(path, out, is_json, &mut diagnostics, &mut io_errors) {
             io_errors.push(e);
@@ -38,12 +36,11 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
     }
 
     // Always render diagnostics before reporting errors
-    let refs: Vec<&FileDiagnostics> = diagnostics.iter().collect();
-    render_diagnostics(&refs, format);
+    render_diagnostics(&diagnostics, format);
 
     if !io_errors.is_empty() {
         Err(io_errors.join("\n"))
-    } else if has_errors(&refs) {
+    } else if has_errors(&diagnostics) {
         Err(String::new())
     } else {
         Ok(())
@@ -122,17 +119,38 @@ fn compile_dir(
     is_json: bool,
     diagnostics: &mut Vec<FileDiagnostics>,
     io_errors: &mut Vec<String>,
-) -> Result<(), String> {
-    for entry in
-        fs::read_dir(dir).map_err(|e| format!("Unable to read directory {}: {e}", dir.display()))?
-    {
-        let entry = entry
-            .map_err(|e| format!("Unable to read directory entry in {}: {e}", dir.display()))?;
+) {
+    let entries = match fs::read_dir(dir) {
+        Ok(entries) => entries,
+        Err(e) => {
+            io_errors.push(format!("Unable to read directory {}: {e}", dir.display()));
+            return;
+        }
+    };
+
+    for entry in entries {
+        let entry = match entry {
+            Ok(entry) => entry,
+            Err(e) => {
+                io_errors.push(format!(
+                    "Unable to read directory entry in {}: {e}",
+                    dir.display()
+                ));
+                continue;
+            }
+        };
 
         // Skip symlinks to prevent infinite recursion from circular links
-        let file_type = entry
-            .file_type()
-            .map_err(|e| format!("Unable to read file type in {}: {e}", dir.display()))?;
+        let file_type = match entry.file_type() {
+            Ok(ft) => ft,
+            Err(e) => {
+                io_errors.push(format!(
+                    "Unable to read file type in {}: {e}",
+                    dir.display()
+                ));
+                continue;
+            }
+        };
         if file_type.is_symlink() {
             continue;
         }
@@ -140,11 +158,12 @@ fn compile_dir(
         let path = entry.path();
 
         if path.is_dir() {
-            compile_dir(&path, is_json, diagnostics, io_errors)?;
-        } else if path.is_file() && path.extension().is_some_and(|ext| ext == "hsml") {
-            compile_file(&path, None, is_json, diagnostics, io_errors)?;
+            compile_dir(&path, is_json, diagnostics, io_errors);
+        } else if path.is_file()
+            && path.extension().is_some_and(|ext| ext == "hsml")
+            && let Err(e) = compile_file(&path, None, is_json, diagnostics, io_errors)
+        {
+            io_errors.push(e);
         }
     }
-
-    Ok(())
 }
