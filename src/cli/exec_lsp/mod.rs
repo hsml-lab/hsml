@@ -25,15 +25,17 @@ struct Backend {
 }
 
 impl Backend {
-    async fn publish_diagnostics(&self, uri: Url, version: i32, source: &str) {
-        // Fast-path: skip parsing if a newer version already arrived
-        let is_current = self
-            .documents
+    fn is_current_version(&self, uri: &Url, version: i32) -> bool {
+        self.documents
             .lock()
             .unwrap()
-            .get(&uri)
-            .is_some_and(|(v, _)| *v == version);
-        if !is_current {
+            .get(uri)
+            .is_some_and(|(v, _)| *v == version)
+    }
+
+    async fn publish_diagnostics(&self, uri: Url, version: i32, source: &str) {
+        // Fast-path: skip parsing if a newer version already arrived
+        if !self.is_current_version(&uri, version) {
             return;
         }
 
@@ -41,15 +43,8 @@ impl Backend {
         let lsp_diagnostics: Vec<LspDiagnostic> =
             diagnostics.iter().map(to_lsp_diagnostic).collect();
 
-        // Drop stale diagnostics if the document has been updated since
-        let is_current = self
-            .documents
-            .lock()
-            .unwrap()
-            .get(&uri)
-            .is_some_and(|(v, _)| *v == version);
-
-        if !is_current {
+        // Re-check after parsing in case a newer version arrived during validation
+        if !self.is_current_version(&uri, version) {
             return;
         }
 
