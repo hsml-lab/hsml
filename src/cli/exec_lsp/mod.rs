@@ -21,6 +21,8 @@ fn position_to_lsp(pos: &hsml::common::Position) -> Position {
     Position::new(pos.line.saturating_sub(1), pos.column.saturating_sub(1))
 }
 
+mod html_tags;
+
 #[cfg(test)]
 mod tests;
 
@@ -175,47 +177,103 @@ impl LanguageServer for Backend {
         let uri = &params.text_document_position_params.text_document.uri;
         let pos = params.text_document_position_params.position;
 
-        let diagnostics = self.diagnostics.lock().unwrap();
-        let Some(file_diagnostics) = diagnostics.get(uri) else {
+        // Check diagnostics at hover position
+        let diagnostic_hover = {
+            let diagnostics = self.diagnostics.lock().unwrap();
+            if let Some(file_diagnostics) = diagnostics.get(uri) {
+                let hover_diags: Vec<_> = file_diagnostics
+                    .iter()
+                    .filter(|d| d.range.start <= pos && pos <= d.range.end)
+                    .collect();
+
+                if !hover_diags.is_empty() {
+                    let mut parts = Vec::new();
+                    for d in &hover_diags {
+                        let severity = match d.severity {
+                            Some(DiagnosticSeverity::ERROR) => "error",
+                            Some(DiagnosticSeverity::WARNING) => "warning",
+                            _ => "diagnostic",
+                        };
+
+                        let code_str = match &d.code {
+                            Some(NumberOrString::String(c)) => {
+                                let desc = error_code_description(c).unwrap_or(&d.message);
+                                format!("**{severity}[{c}]**: {desc}")
+                            }
+                            _ => format!("**{severity}**: {}", d.message),
+                        };
+
+                        parts.push(code_str);
+                    }
+                    Some(parts.join("\n\n"))
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        };
+
+        if let Some(value) = diagnostic_hover {
+            return Ok(Some(Hover {
+                contents: HoverContents::Markup(MarkupContent {
+                    kind: MarkupKind::Markdown,
+                    value,
+                }),
+                range: None,
+            }));
+        }
+
+        // Check for HTML tag documentation at hover position
+        let documents = self.documents.lock().unwrap();
+        let Some((_, source)) = documents.get(uri) else {
             return Ok(None);
         };
 
-        // Find diagnostics at the hover position
-        let hover_diags: Vec<_> = file_diagnostics
-            .iter()
-            .filter(|d| d.range.start <= pos && pos <= d.range.end)
-            .collect();
+        let tag_hover = extract_tag_at_position(source, pos);
 
-        if hover_diags.is_empty() {
-            return Ok(None);
+        if let Some(tag) = tag_hover {
+            if let Some(info) = html_tags::lookup(&tag) {
+                let value = format!("{}\n\n[MDN Reference]({})", info.description, info.mdn_url);
+                return Ok(Some(Hover {
+                    contents: HoverContents::Markup(MarkupContent {
+                        kind: MarkupKind::Markdown,
+                        value,
+                    }),
+                    range: None,
+                }));
+            }
         }
 
-        let mut parts = Vec::new();
-        for d in &hover_diags {
-            let severity = match d.severity {
-                Some(DiagnosticSeverity::ERROR) => "error",
-                Some(DiagnosticSeverity::WARNING) => "warning",
-                _ => "diagnostic",
-            };
+        Ok(None)
+    }
+}
 
-            let code_str = match &d.code {
-                Some(NumberOrString::String(c)) => {
-                    let desc = error_code_description(c).unwrap_or(&d.message);
-                    format!("**{severity}[{c}]**: {desc}")
-                }
-                _ => format!("**{severity}**: {}", d.message),
-            };
+/// Extract the tag name at a given cursor position from HSML source.
+/// In HSML, the tag name is the first word on the line (after indentation),
+/// before any `.`, `#`, `(`, or space.
+fn extract_tag_at_position(source: &str, pos: Position) -> Option<String> {
+    let line = source.lines().nth(pos.line as usize)?;
+    let trimmed = line.trim_start();
+    let indent = line.len() - trimmed.len();
 
-            parts.push(code_str);
-        }
+    // Cursor must be within the tag name portion of the line
+    let tag_name: String = trimmed
+        .chars()
+        .take_while(|c| c.is_ascii_alphanumeric())
+        .collect();
 
-        Ok(Some(Hover {
-            contents: HoverContents::Markup(MarkupContent {
-                kind: MarkupKind::Markdown,
-                value: parts.join("\n\n"),
-            }),
-            range: None,
-        }))
+    if tag_name.is_empty() {
+        return None;
+    }
+
+    let tag_start = indent as u32;
+    let tag_end = tag_start + tag_name.len() as u32;
+
+    if pos.character >= tag_start && pos.character < tag_end {
+        Some(tag_name)
+    } else {
+        None
     }
 }
 
