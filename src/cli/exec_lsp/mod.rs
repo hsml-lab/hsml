@@ -279,7 +279,7 @@ fn extract_tag_at_position(source: &str, pos: Position) -> Option<String> {
     let tag_end = tag_start + tag_name.len() as u32;
 
     if pos.character >= tag_start && pos.character < tag_end {
-        Some(tag_name)
+        Some(tag_name.to_ascii_lowercase())
     } else {
         None
     }

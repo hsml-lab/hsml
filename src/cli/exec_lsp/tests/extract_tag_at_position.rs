@@ -69,6 +69,15 @@ fn it_should_extract_hyphenated_tag() {
 }
 
 #[test]
+fn it_should_normalize_tag_to_lowercase() {
+    let source = "DIV Hello\n";
+    assert_eq!(
+        extract_tag_at_position(source, Position::new(0, 0)),
+        Some("div".to_string())
+    );
+}
+
+#[test]
 fn it_should_return_none_for_class_only_line() {
     // Lines starting with . or # have no tag name
     let source = ".container\n";
