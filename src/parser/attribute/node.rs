@@ -1,6 +1,6 @@
 use nom::bytes::complete::{tag, take_till};
 
-use crate::common::Location;
+use crate::common::{Location, Position};
 use crate::parser::{
     HsmlNode, HsmlProcessContext, HsmlResult, Span, comment::node::comment_dev_node,
 };
@@ -31,7 +31,10 @@ impl AttributeNode {
         Self {
             key: key.into(),
             value: value.map(|v| v.into()),
-            location: Location { line: 0, column: 0 },
+            location: Location {
+                start: Position { line: 0, column: 0 },
+                end: Position { line: 0, column: 0 },
+            },
         }
     }
 }
@@ -40,12 +43,20 @@ pub fn attribute_node<'a>(
     input: Span<'a>,
     context: &mut HsmlProcessContext,
 ) -> HsmlResult<'a, AttributeNode> {
-    let location = Location {
+    let start = Position {
         line: input.location_line(),
         column: input.get_column() as u32,
     };
 
     let (input, attribute) = process_attribute(input, context)?;
+
+    let location = Location {
+        start,
+        end: Position {
+            line: input.location_line(),
+            column: input.get_column() as u32,
+        },
+    };
 
     let attribute_str = *attribute.fragment();
     let equal_sign_index = attribute_str.find('=').unwrap_or(attribute_str.len());

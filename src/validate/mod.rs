@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use crate::common::Location;
+use crate::common::{Location, Position};
 use crate::diagnostic::{Diagnostic, Severity};
 use crate::parser::attribute::node::AttributeNode;
 use crate::parser::error::ErrorCode;
@@ -31,13 +31,20 @@ fn validate_mixed_indentation(source: &str, diagnostics: &mut Vec<Diagnostic>) {
         let indent: &str = &line[..line.len() - line.trim_start().len()];
 
         if indent.contains('\t') && indent.contains(' ') {
+            let line_num = (line_idx + 1) as u32;
             diagnostics.push(Diagnostic {
                 severity: Severity::Warning,
                 message: ErrorCode::MixedIndentation.message().to_string(),
                 code: Some(ErrorCode::MixedIndentation.code().to_string()),
                 location: Some(Location {
-                    line: (line_idx + 1) as u32,
-                    column: 1,
+                    start: Position {
+                        line: line_num,
+                        column: 1,
+                    },
+                    end: Position {
+                        line: line_num,
+                        column: indent.len() as u32 + 1,
+                    },
                 }),
                 file_path: None,
             });
@@ -62,11 +69,12 @@ fn validate_tag(tag: &TagNode, diagnostics: &mut Vec<Diagnostic>) {
     // Check for duplicate ids (first wins, rest are warned)
     if tag.ids.len() > 1 {
         for id in &tag.ids[1..] {
+            let has_location = id.location.is_valid();
             diagnostics.push(Diagnostic {
                 severity: Severity::Warning,
                 message: format!("Duplicate id '{}' is not allowed", id.id),
                 code: Some(ErrorCode::DuplicateId.code().to_string()),
-                location: if id.location.line > 0 && id.location.column > 0 {
+                location: if has_location {
                     Some(id.location.clone())
                 } else {
                     None
@@ -81,11 +89,12 @@ fn validate_tag(tag: &TagNode, diagnostics: &mut Vec<Diagnostic>) {
         let mut seen: HashSet<&str> = HashSet::new();
         for class in classes {
             if seen.contains(class.name.as_str()) {
+                let has_location = class.location.is_valid();
                 diagnostics.push(Diagnostic {
                     severity: Severity::Warning,
                     message: format!("{} '{}'", ErrorCode::DuplicateClass.message(), class.name),
                     code: Some(ErrorCode::DuplicateClass.code().to_string()),
-                    location: if class.location.line > 0 && class.location.column > 0 {
+                    location: if has_location {
                         Some(class.location.clone())
                     } else {
                         None
@@ -107,11 +116,12 @@ fn validate_tag(tag: &TagNode, diagnostics: &mut Vec<Diagnostic>) {
                     continue;
                 }
                 if !seen.insert(key.as_str()) {
+                    let has_location = location.is_valid();
                     diagnostics.push(Diagnostic {
                         severity: Severity::Warning,
                         message: format!("{} '{key}'", ErrorCode::DuplicateAttribute.message()),
                         code: Some(ErrorCode::DuplicateAttribute.code().to_string()),
-                        location: if location.line > 0 && location.column > 0 {
+                        location: if has_location {
                             Some(location.clone())
                         } else {
                             None

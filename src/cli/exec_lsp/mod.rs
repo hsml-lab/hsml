@@ -17,6 +17,10 @@ use tower_lsp::{
 use hsml::diagnostic::{Diagnostic, Severity};
 use hsml::parser::error::ErrorCode;
 
+fn position_to_lsp(pos: &hsml::common::Position) -> Position {
+    Position::new(pos.line.saturating_sub(1), pos.column.saturating_sub(1))
+}
+
 #[cfg(test)]
 mod tests;
 
@@ -74,12 +78,7 @@ fn to_lsp_diagnostic(d: &Diagnostic) -> LspDiagnostic {
     let range = d
         .location
         .as_ref()
-        .map(|loc| {
-            let line = loc.line.saturating_sub(1);
-            let col = loc.column.saturating_sub(1);
-            let pos = Position::new(line, col);
-            Range::new(pos, pos)
-        })
+        .map(|loc| Range::new(position_to_lsp(&loc.start), position_to_lsp(&loc.end)))
         .unwrap_or_default();
 
     let severity = Some(match d.severity {

@@ -1,4 +1,4 @@
-use crate::diagnostic::{Diagnostic, Location, Severity};
+use crate::diagnostic::{Diagnostic, Location, Position, Severity};
 use crate::parser::Span;
 use crate::parser::error::{ErrorCode, HsmlError};
 
@@ -11,7 +11,14 @@ fn it_should_convert_hsml_error_with_code() {
     assert_eq!(diag.severity, Severity::Warning);
     assert_eq!(diag.message, "Duplicate attribute 'id' is not allowed");
     assert_eq!(diag.code, Some(ErrorCode::DuplicateId.code().to_string()));
-    assert_eq!(diag.location, Some(Location { line: 1, column: 1 }));
+    let pos = Position { line: 1, column: 1 };
+    assert_eq!(
+        diag.location,
+        Some(Location {
+            start: pos,
+            end: pos,
+        })
+    );
     assert_eq!(diag.file_path, None);
 }
 

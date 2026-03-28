@@ -1,6 +1,6 @@
 use std::hash::{Hash, Hasher};
 
-use crate::common::Location;
+use crate::common::{Location, Position};
 use crate::parser::{HsmlResult, Span};
 
 use super::process::process_class;
@@ -32,9 +32,13 @@ impl ClassNode {
     /// Useful in tests where location is not relevant.
     #[doc(hidden)]
     pub fn new_without_location(name: impl Into<String>) -> Self {
+        let zero = Position { line: 0, column: 0 };
         Self {
             name: name.into(),
-            location: Location { line: 0, column: 0 },
+            location: Location {
+                start: zero,
+                end: zero,
+            },
         }
     }
 }
@@ -47,8 +51,14 @@ pub fn class_node(input: Span<'_>) -> HsmlResult<'_, ClassNode> {
         ClassNode {
             name: class_name.to_string(),
             location: Location {
-                line: input.location_line(),
-                column: input.get_column() as u32,
+                start: Position {
+                    line: input.location_line(),
+                    column: input.get_column() as u32,
+                },
+                end: Position {
+                    line: rest.location_line(),
+                    column: rest.get_column() as u32,
+                },
             },
         },
     ))

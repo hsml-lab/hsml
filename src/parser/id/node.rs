@@ -1,6 +1,6 @@
 use std::hash::{Hash, Hasher};
 
-use crate::common::Location;
+use crate::common::{Location, Position};
 use crate::parser::{HsmlResult, Span};
 
 use super::process::process_id;
@@ -31,9 +31,13 @@ impl IdNode {
     /// Useful in tests where location is not relevant.
     #[doc(hidden)]
     pub fn new_without_location(id: impl Into<String>) -> Self {
+        let zero = Position { line: 0, column: 0 };
         Self {
             id: id.into(),
-            location: Location { line: 0, column: 0 },
+            location: Location {
+                start: zero,
+                end: zero,
+            },
         }
     }
 }
@@ -46,8 +50,14 @@ pub fn id_node(input: Span<'_>) -> HsmlResult<'_, IdNode> {
         IdNode {
             id: id.to_string(),
             location: Location {
-                line: input.location_line(),
-                column: input.get_column() as u32,
+                start: Position {
+                    line: input.location_line(),
+                    column: input.get_column() as u32,
+                },
+                end: Position {
+                    line: rest.location_line(),
+                    column: rest.get_column() as u32,
+                },
             },
         },
     ))

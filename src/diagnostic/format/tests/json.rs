@@ -1,6 +1,6 @@
 use crate::diagnostic::format::DiagnosticFormatter;
 use crate::diagnostic::format::json::JsonFormatter;
-use crate::diagnostic::{Diagnostic, Location, Severity};
+use crate::diagnostic::{Diagnostic, Location, Position, Severity};
 use crate::parser::error::ErrorCode;
 
 #[test]
@@ -9,7 +9,10 @@ fn it_should_format_single_diagnostic() {
         severity: Severity::Warning,
         message: "Duplicate attribute 'id' is not allowed".to_string(),
         code: Some(ErrorCode::DuplicateId.code().to_string()),
-        location: Some(Location { line: 3, column: 5 }),
+        location: Some(Location {
+            start: Position { line: 3, column: 5 },
+            end: Position { line: 3, column: 5 },
+        }),
         file_path: Some("example.hsml".to_string()),
     };
 
@@ -17,7 +20,7 @@ fn it_should_format_single_diagnostic() {
 
     assert_eq!(
         output,
-        r#"[{"severity":"warning","message":"Duplicate attribute 'id' is not allowed","code":"W001","location":{"line":3,"column":5},"filePath":"example.hsml"}]"#
+        r#"[{"severity":"warning","message":"Duplicate attribute 'id' is not allowed","code":"W001","location":{"start":{"line":3,"column":5},"end":{"line":3,"column":5}},"filePath":"example.hsml"}]"#
     );
 }
 
