@@ -47,9 +47,14 @@ jobs:
           sed -i 's/compileContentWithDiagnostics(source: string): any/compileContentWithDiagnostics(source: string): CompileResult/' pkg/hsml.d.ts
           {
             echo ''
-            echo 'export interface Location {'
+            echo 'export interface Position {'
             echo '  line: number;'
             echo '  column: number;'
+            echo '}'
+            echo ''
+            echo 'export interface Location {'
+            echo '  start: Position;'
+            echo '  end: Position;'
             echo '}'
             echo ''
             echo 'export interface Diagnostic {'

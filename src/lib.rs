@@ -48,8 +48,14 @@ pub fn check_content(source: &str) -> Vec<diagnostic::Diagnostic> {
             message: "Unconsumed input".to_string(),
             code: None,
             location: Some(diagnostic::Location {
-                line: rest.location_line(),
-                column: rest.get_column() as u32,
+                start: diagnostic::Position {
+                    line: rest.location_line(),
+                    column: rest.get_column() as u32,
+                },
+                end: diagnostic::Position {
+                    line: rest.location_line(),
+                    column: rest.get_column() as u32,
+                },
             }),
             file_path: None,
         }];
@@ -74,8 +80,14 @@ pub fn compile_content_diagnostics(
             message: "Unconsumed input".to_string(),
             code: None,
             location: Some(diagnostic::Location {
-                line: rest.location_line(),
-                column: rest.get_column() as u32,
+                start: diagnostic::Position {
+                    line: rest.location_line(),
+                    column: rest.get_column() as u32,
+                },
+                end: diagnostic::Position {
+                    line: rest.location_line(),
+                    column: rest.get_column() as u32,
+                },
             }),
             file_path: None,
         }]);

@@ -1,4 +1,4 @@
-use crate::diagnostic::{Location, Severity};
+use crate::diagnostic::{Position, Severity};
 use crate::parser::Span;
 use crate::parser::error::ErrorCode;
 use crate::parser::parse::parse;
@@ -19,8 +19,8 @@ fn it_should_warn_on_duplicate_class() {
         Some(ErrorCode::DuplicateClass.code().to_string())
     );
     assert_eq!(
-        diagnostics[0].location,
-        Some(Location {
+        diagnostics[0].location.as_ref().map(|l| &l.start),
+        Some(&Position {
             line: 1,
             column: 12
         })
@@ -47,8 +47,8 @@ fn it_should_warn_on_duplicate_class_in_child() {
     assert_eq!(diagnostics.len(), 1);
     assert_eq!(diagnostics[0].message, "Duplicate class 'foo'");
     assert_eq!(
-        diagnostics[0].location,
-        Some(Location { line: 2, column: 9 })
+        diagnostics[0].location.as_ref().map(|l| &l.start),
+        Some(&Position { line: 2, column: 9 })
     );
 }
 
@@ -62,13 +62,13 @@ fn it_should_warn_on_multiple_duplicates() {
     assert_eq!(diagnostics.len(), 2);
     assert_eq!(diagnostics[0].message, "Duplicate class 'a'");
     assert_eq!(
-        diagnostics[0].location,
-        Some(Location { line: 1, column: 7 })
+        diagnostics[0].location.as_ref().map(|l| &l.start),
+        Some(&Position { line: 1, column: 7 })
     );
     assert_eq!(diagnostics[1].message, "Duplicate class 'b'");
     assert_eq!(
-        diagnostics[1].location,
-        Some(Location { line: 1, column: 9 })
+        diagnostics[1].location.as_ref().map(|l| &l.start),
+        Some(&Position { line: 1, column: 9 })
     );
 }
 
@@ -93,8 +93,8 @@ fn it_should_warn_on_correct_location_with_same_class_in_different_tags() {
     assert_eq!(diagnostics.len(), 1);
     assert_eq!(diagnostics[0].message, "Duplicate class 'foo'");
     assert_eq!(
-        diagnostics[0].location,
-        Some(Location { line: 2, column: 7 })
+        diagnostics[0].location.as_ref().map(|l| &l.start),
+        Some(&Position { line: 2, column: 7 })
     );
 }
 
@@ -116,8 +116,8 @@ fn it_should_warn_on_mixed_indentation() {
         Some(ErrorCode::MixedIndentation.code().to_string())
     );
     assert_eq!(
-        diagnostics[0].location,
-        Some(Location { line: 2, column: 1 })
+        diagnostics[0].location.as_ref().map(|l| &l.start),
+        Some(&Position { line: 2, column: 1 })
     );
 }
 
@@ -196,8 +196,8 @@ fn it_should_warn_on_duplicate_id() {
     assert_eq!(id_warnings[0].severity, Severity::Warning);
     assert_eq!(id_warnings[0].message, "Duplicate id 'b' is not allowed");
     assert_eq!(
-        id_warnings[0].location,
-        Some(Location { line: 1, column: 6 })
+        id_warnings[0].location.as_ref().map(|l| &l.start),
+        Some(&Position { line: 1, column: 6 })
     );
 }
 
@@ -226,8 +226,8 @@ fn it_should_warn_on_duplicate_attribute() {
     assert_eq!(attr_warnings[0].severity, Severity::Warning);
     assert_eq!(attr_warnings[0].message, "Duplicate attribute 'src'");
     assert_eq!(
-        attr_warnings[0].location,
-        Some(Location {
+        attr_warnings[0].location.as_ref().map(|l| &l.start),
+        Some(&Position {
             line: 1,
             column: 13
         })

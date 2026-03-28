@@ -1,6 +1,6 @@
 use crate::diagnostic::format::DiagnosticFormatter;
 use crate::diagnostic::format::default::DefaultFormatter;
-use crate::diagnostic::{Diagnostic, Location, Severity};
+use crate::diagnostic::{Diagnostic, Location, Position, Severity};
 use crate::parser::error::ErrorCode;
 
 #[test]
@@ -9,7 +9,10 @@ fn it_should_format_warning_with_source_context() {
         severity: Severity::Warning,
         message: "Duplicate attribute 'id' is not allowed".to_string(),
         code: Some(ErrorCode::DuplicateId.code().to_string()),
-        location: Some(Location { line: 1, column: 8 }),
+        location: Some(Location {
+            start: Position { line: 1, column: 8 },
+            end: Position { line: 1, column: 8 },
+        }),
         file_path: Some("example.hsml".to_string()),
     };
 
@@ -34,7 +37,10 @@ fn it_should_format_error_without_code() {
         severity: Severity::Error,
         message: "parse error".to_string(),
         code: None,
-        location: Some(Location { line: 1, column: 1 }),
+        location: Some(Location {
+            start: Position { line: 1, column: 1 },
+            end: Position { line: 1, column: 1 },
+        }),
         file_path: None,
     };
 
@@ -75,8 +81,14 @@ fn it_should_format_warning() {
         message: "Duplicate class 'text-red'".to_string(),
         code: Some(ErrorCode::DuplicateClass.code().to_string()),
         location: Some(Location {
-            line: 1,
-            column: 12,
+            start: Position {
+                line: 1,
+                column: 12,
+            },
+            end: Position {
+                line: 1,
+                column: 12,
+            },
         }),
         file_path: Some("test.hsml".to_string()),
     };

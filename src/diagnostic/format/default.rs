@@ -38,21 +38,24 @@ impl DiagnosticFormatter for DefaultFormatter {
             // Location
             if let Some(ref loc) = diag.location {
                 let file = diag.file_path.as_deref().unwrap_or("<input>");
-                output.push_str(&format!(" --> {file}:{}:{}\n", loc.line, loc.column));
+                output.push_str(&format!(
+                    " --> {file}:{}:{}\n",
+                    loc.start.line, loc.start.column
+                ));
 
                 // Source context
                 if let Some(source) = source
-                    && let Some(line_idx) = loc.line.checked_sub(1)
+                    && let Some(line_idx) = loc.start.line.checked_sub(1)
                     && let Some(source_line) = source.lines().nth(line_idx as usize)
                 {
-                    let line_num = loc.line.to_string();
+                    let line_num = loc.start.line.to_string();
                     let padding = " ".repeat(line_num.len());
 
                     output.push_str(&format!("{padding} |\n"));
                     output.push_str(&format!("{line_num} | {source_line}\n"));
 
-                    if loc.column > 0 {
-                        let caret_padding = " ".repeat((loc.column - 1) as usize);
+                    if loc.start.column > 0 {
+                        let caret_padding = " ".repeat((loc.start.column - 1) as usize);
                         output.push_str(&format!("{padding} | {caret_padding}^\n"));
                     }
                 }

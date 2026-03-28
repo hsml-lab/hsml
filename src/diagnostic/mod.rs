@@ -1,6 +1,6 @@
 pub mod format;
 
-pub use crate::common::Location;
+pub use crate::common::{Location, Position};
 use crate::parser::error::{self, HsmlError};
 use serde::Serialize;
 
@@ -67,6 +67,10 @@ impl From<&error::Severity> for Severity {
 
 impl<'a> From<&HsmlError<'a>> for Diagnostic {
     fn from(e: &HsmlError<'a>) -> Self {
+        let pos = Position {
+            line: e.line(),
+            column: e.column() as u32,
+        };
         Diagnostic {
             severity: Severity::from(&e.severity),
             message: e
@@ -75,8 +79,8 @@ impl<'a> From<&HsmlError<'a>> for Diagnostic {
                 .unwrap_or_else(|| "parse error".to_string()),
             code: e.code().map(String::from),
             location: Some(Location {
-                line: e.line(),
-                column: e.column() as u32,
+                start: pos.clone(),
+                end: pos,
             }),
             file_path: None,
         }
