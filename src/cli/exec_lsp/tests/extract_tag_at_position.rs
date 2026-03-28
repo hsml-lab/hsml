@@ -60,6 +60,15 @@ fn it_should_return_none_when_cursor_on_text() {
 }
 
 #[test]
+fn it_should_extract_hyphenated_tag() {
+    let source = "my-element Hello\n";
+    assert_eq!(
+        extract_tag_at_position(source, Position::new(0, 4)),
+        Some("my-element".to_string())
+    );
+}
+
+#[test]
 fn it_should_return_none_for_class_only_line() {
     // Lines starting with . or # have no tag name
     let source = ".container\n";

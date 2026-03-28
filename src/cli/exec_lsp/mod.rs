@@ -183,7 +183,15 @@ impl LanguageServer for Backend {
             if let Some(file_diagnostics) = diagnostics.get(uri) {
                 let hover_diags: Vec<_> = file_diagnostics
                     .iter()
-                    .filter(|d| d.range.start <= pos && pos <= d.range.end)
+                    .filter(|d| {
+                        if d.range.start == d.range.end {
+                            // Zero-width (point) diagnostic: match at exact position
+                            d.range.start == pos
+                        } else {
+                            // Span diagnostic: start inclusive, end exclusive
+                            d.range.start <= pos && pos < d.range.end
+                        }
+                    })
                     .collect();
 
                 if !hover_diags.is_empty() {
@@ -260,7 +268,7 @@ fn extract_tag_at_position(source: &str, pos: Position) -> Option<String> {
     // Cursor must be within the tag name portion of the line
     let tag_name: String = trimmed
         .chars()
-        .take_while(|c| c.is_ascii_alphanumeric())
+        .take_while(|c| c.is_ascii_alphanumeric() || *c == '-')
         .collect();
 
     if tag_name.is_empty() {
