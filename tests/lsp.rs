@@ -223,3 +223,76 @@ fn lsp_diagnostics_include_warning_codes() {
 
     lsp.shutdown();
 }
+
+#[test]
+fn lsp_hover_returns_diagnostic_info_at_error_position() {
+    let mut lsp = LspProcess::new();
+    initialize(&mut lsp);
+
+    // Open file with parse error at line 1, column 1
+    send(
+        lsp.stdin(),
+        r#"{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///hover.hsml","languageId":"hsml","version":1,"text":"@@@invalid\n"}}}"#,
+    );
+    let _ = read_until(&mut lsp, "publishDiagnostics");
+
+    // Hover at position (0,0) — where the error is
+    send(
+        lsp.stdin(),
+        r#"{"jsonrpc":"2.0","id":2,"method":"textDocument/hover","params":{"textDocument":{"uri":"file:///hover.hsml"},"position":{"line":0,"character":0}}}"#,
+    );
+
+    let msg = read_until(&mut lsp, "\"id\":2");
+    assert!(msg.contains("error"));
+
+    lsp.shutdown();
+}
+
+#[test]
+fn lsp_hover_returns_null_at_clean_position() {
+    let mut lsp = LspProcess::new();
+    initialize(&mut lsp);
+
+    // Open valid file
+    send(
+        lsp.stdin(),
+        r#"{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///clean.hsml","languageId":"hsml","version":1,"text":"h1 Hello\n"}}}"#,
+    );
+    let _ = read_until(&mut lsp, "publishDiagnostics");
+
+    // Hover at position (0,0) — no diagnostics
+    send(
+        lsp.stdin(),
+        r#"{"jsonrpc":"2.0","id":2,"method":"textDocument/hover","params":{"textDocument":{"uri":"file:///clean.hsml"},"position":{"line":0,"character":0}}}"#,
+    );
+
+    let msg = read_until(&mut lsp, "\"id\":2");
+    assert!(msg.contains("\"result\":null"));
+
+    lsp.shutdown();
+}
+
+#[test]
+fn lsp_hover_shows_warning_code_description() {
+    let mut lsp = LspProcess::new();
+    initialize(&mut lsp);
+
+    // Open file with duplicate class warning at column 8
+    send(
+        lsp.stdin(),
+        r#"{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///warn.hsml","languageId":"hsml","version":1,"text":"h1.foo.foo Hello\n"}}}"#,
+    );
+    let _ = read_until(&mut lsp, "publishDiagnostics");
+
+    // Hover at the warning position (0-based: line 0, char 6)
+    send(
+        lsp.stdin(),
+        r#"{"jsonrpc":"2.0","id":2,"method":"textDocument/hover","params":{"textDocument":{"uri":"file:///warn.hsml"},"position":{"line":0,"character":6}}}"#,
+    );
+
+    let msg = read_until(&mut lsp, "\"id\":2");
+    assert!(msg.contains("W002"));
+    assert!(msg.contains("Duplicate class"));
+
+    lsp.shutdown();
+}
