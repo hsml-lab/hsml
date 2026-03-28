@@ -1,9 +1,10 @@
 name: Publish
 
 on:
-  push:
-    tags:
-      - 'v*'
+  workflow_run:
+    workflows: ['Release']
+    types:
+      - completed
 
 permissions:
   contents: read
@@ -14,10 +15,13 @@ env:
 jobs:
   publish-crate:
     name: Publish to crates.io
+    if: github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Publish to crates.io
         run: cargo publish
@@ -34,6 +38,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Install wasm-pack
         run: cargo install wasm-pack@0.14.0
