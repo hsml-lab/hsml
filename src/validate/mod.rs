@@ -69,7 +69,7 @@ fn validate_tag(tag: &TagNode, diagnostics: &mut Vec<Diagnostic>) {
     // Check for duplicate ids (first wins, rest are warned)
     if tag.ids.len() > 1 {
         for id in &tag.ids[1..] {
-            let has_location = id.location.start.line > 0 && id.location.start.column > 0;
+            let has_location = id.location.is_valid();
             diagnostics.push(Diagnostic {
                 severity: Severity::Warning,
                 message: format!("Duplicate id '{}' is not allowed", id.id),
@@ -89,7 +89,7 @@ fn validate_tag(tag: &TagNode, diagnostics: &mut Vec<Diagnostic>) {
         let mut seen: HashSet<&str> = HashSet::new();
         for class in classes {
             if seen.contains(class.name.as_str()) {
-                let has_location = class.location.start.line > 0 && class.location.start.column > 0;
+                let has_location = class.location.is_valid();
                 diagnostics.push(Diagnostic {
                     severity: Severity::Warning,
                     message: format!("{} '{}'", ErrorCode::DuplicateClass.message(), class.name),
@@ -116,7 +116,7 @@ fn validate_tag(tag: &TagNode, diagnostics: &mut Vec<Diagnostic>) {
                     continue;
                 }
                 if !seen.insert(key.as_str()) {
-                    let has_location = location.start.line > 0 && location.start.column > 0;
+                    let has_location = location.is_valid();
                     diagnostics.push(Diagnostic {
                         severity: Severity::Warning,
                         message: format!("{} '{key}'", ErrorCode::DuplicateAttribute.message()),

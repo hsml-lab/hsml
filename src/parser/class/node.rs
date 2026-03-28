@@ -36,7 +36,7 @@ impl ClassNode {
         Self {
             name: name.into(),
             location: Location {
-                start: zero.clone(),
+                start: zero,
                 end: zero,
             },
         }

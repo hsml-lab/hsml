@@ -79,7 +79,7 @@ impl<'a> From<&HsmlError<'a>> for Diagnostic {
                 .unwrap_or_else(|| "parse error".to_string()),
             code: e.code().map(String::from),
             location: Some(Location {
-                start: pos.clone(),
+                start: pos,
                 end: pos,
             }),
             file_path: None,

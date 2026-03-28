@@ -35,7 +35,7 @@ impl IdNode {
         Self {
             id: id.into(),
             location: Location {
-                start: zero.clone(),
+                start: zero,
                 end: zero,
             },
         }

@@ -15,7 +15,7 @@ fn it_should_convert_hsml_error_with_code() {
     assert_eq!(
         diag.location,
         Some(Location {
-            start: pos.clone(),
+            start: pos,
             end: pos,
         })
     );
