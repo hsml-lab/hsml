@@ -21,16 +21,29 @@ mod tests;
 #[derive(Debug)]
 struct Backend {
     client: Client,
-    documents: Mutex<HashMap<Url, String>>,
+    documents: Mutex<HashMap<Url, (i32, String)>>,
 }
 
 impl Backend {
-    async fn publish_diagnostics(&self, uri: Url, source: &str) {
+    async fn publish_diagnostics(&self, uri: Url, version: i32, source: &str) {
         let diagnostics = hsml::check_content(source);
         let lsp_diagnostics: Vec<LspDiagnostic> =
             diagnostics.iter().map(to_lsp_diagnostic).collect();
+
+        // Drop stale diagnostics if the document has been updated since
+        let is_current = self
+            .documents
+            .lock()
+            .unwrap()
+            .get(&uri)
+            .is_some_and(|(v, _)| *v == version);
+
+        if !is_current {
+            return;
+        }
+
         self.client
-            .publish_diagnostics(uri, lsp_diagnostics, None)
+            .publish_diagnostics(uri, lsp_diagnostics, Some(version))
             .await;
     }
 }
@@ -99,18 +112,20 @@ impl LanguageServer for Backend {
 
     async fn did_open(&self, params: DidOpenTextDocumentParams) {
         let uri = params.text_document.uri.clone();
+        let version = params.text_document.version;
         let text = params.text_document.text.clone();
 
         self.documents
             .lock()
             .unwrap()
-            .insert(uri.clone(), text.clone());
+            .insert(uri.clone(), (version, text.clone()));
 
-        self.publish_diagnostics(uri, &text).await;
+        self.publish_diagnostics(uri, version, &text).await;
     }
 
     async fn did_change(&self, params: DidChangeTextDocumentParams) {
         let uri = params.text_document.uri.clone();
+        let version = params.text_document.version;
 
         if let Some(change) = params.content_changes.into_iter().last() {
             let text = change.text;
@@ -118,9 +133,9 @@ impl LanguageServer for Backend {
             self.documents
                 .lock()
                 .unwrap()
-                .insert(uri.clone(), text.clone());
+                .insert(uri.clone(), (version, text.clone()));
 
-            self.publish_diagnostics(uri, &text).await;
+            self.publish_diagnostics(uri, version, &text).await;
         }
     }
 
