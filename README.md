@@ -274,7 +274,7 @@ warning[W002]: Duplicate class 'foo'
 - [x] Ignore support (`.gitignore`, `.hsmlignore`, `--ignore-pattern`)
 - [ ] `hsml fmt` — code formatter
 - [ ] `hsml parse` — AST output as JSON
-- [ ] LSP server for editor integration
+- [x] LSP server with diagnostics and hover
 - [ ] GitHub/GitLab CI diagnostic formatters
 
 ## Contributing
