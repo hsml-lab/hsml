@@ -26,6 +26,17 @@ struct Backend {
 
 impl Backend {
     async fn publish_diagnostics(&self, uri: Url, version: i32, source: &str) {
+        // Fast-path: skip parsing if a newer version already arrived
+        let is_current = self
+            .documents
+            .lock()
+            .unwrap()
+            .get(&uri)
+            .is_some_and(|(v, _)| *v == version);
+        if !is_current {
+            return;
+        }
+
         let diagnostics = hsml::check_content(source);
         let lsp_diagnostics: Vec<LspDiagnostic> =
             diagnostics.iter().map(to_lsp_diagnostic).collect();
