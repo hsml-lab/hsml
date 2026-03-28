@@ -25,6 +25,13 @@ fn it_should_warn_on_duplicate_class() {
             column: 12
         })
     );
+    assert_eq!(
+        diagnostics[0].location.as_ref().map(|l| &l.end),
+        Some(&Position {
+            line: 1,
+            column: 21
+        })
+    );
 }
 
 #[test]
@@ -50,6 +57,13 @@ fn it_should_warn_on_duplicate_class_in_child() {
         diagnostics[0].location.as_ref().map(|l| &l.start),
         Some(&Position { line: 2, column: 9 })
     );
+    assert_eq!(
+        diagnostics[0].location.as_ref().map(|l| &l.end),
+        Some(&Position {
+            line: 2,
+            column: 13
+        })
+    );
 }
 
 #[test]
@@ -65,10 +79,21 @@ fn it_should_warn_on_multiple_duplicates() {
         diagnostics[0].location.as_ref().map(|l| &l.start),
         Some(&Position { line: 1, column: 7 })
     );
+    assert_eq!(
+        diagnostics[0].location.as_ref().map(|l| &l.end),
+        Some(&Position { line: 1, column: 9 })
+    );
     assert_eq!(diagnostics[1].message, "Duplicate class 'b'");
     assert_eq!(
         diagnostics[1].location.as_ref().map(|l| &l.start),
         Some(&Position { line: 1, column: 9 })
+    );
+    assert_eq!(
+        diagnostics[1].location.as_ref().map(|l| &l.end),
+        Some(&Position {
+            line: 1,
+            column: 11
+        })
     );
 }
 
@@ -96,6 +121,13 @@ fn it_should_warn_on_correct_location_with_same_class_in_different_tags() {
         diagnostics[0].location.as_ref().map(|l| &l.start),
         Some(&Position { line: 2, column: 7 })
     );
+    assert_eq!(
+        diagnostics[0].location.as_ref().map(|l| &l.end),
+        Some(&Position {
+            line: 2,
+            column: 11
+        })
+    );
 }
 
 #[test]
@@ -118,6 +150,10 @@ fn it_should_warn_on_mixed_indentation() {
     assert_eq!(
         diagnostics[0].location.as_ref().map(|l| &l.start),
         Some(&Position { line: 2, column: 1 })
+    );
+    assert_eq!(
+        diagnostics[0].location.as_ref().map(|l| &l.end),
+        Some(&Position { line: 2, column: 3 })
     );
 }
 
@@ -199,6 +235,10 @@ fn it_should_warn_on_duplicate_id() {
         id_warnings[0].location.as_ref().map(|l| &l.start),
         Some(&Position { line: 1, column: 6 })
     );
+    assert_eq!(
+        id_warnings[0].location.as_ref().map(|l| &l.end),
+        Some(&Position { line: 1, column: 8 })
+    );
 }
 
 #[test]
@@ -230,6 +270,13 @@ fn it_should_warn_on_duplicate_attribute() {
         Some(&Position {
             line: 1,
             column: 13
+        })
+    );
+    assert_eq!(
+        attr_warnings[0].location.as_ref().map(|l| &l.end),
+        Some(&Position {
+            line: 1,
+            column: 20
         })
     );
 }
