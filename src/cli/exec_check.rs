@@ -63,7 +63,7 @@ pub fn exec_check(matches: &ArgMatches) -> Result<(), String> {
     }
 
     // Always render diagnostics before reporting IO errors
-    render_diagnostics(&results, format);
+    render_diagnostics(&results, format, no_color);
 
     if debug {
         print_summary(

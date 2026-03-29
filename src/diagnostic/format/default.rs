@@ -1,7 +1,7 @@
 use super::{Diagnostic, DiagnosticFormatter};
 use crate::diagnostic::Severity;
 
-/// Pretty terminal formatter with source context.
+/// Pretty terminal formatter with source context (no colors).
 ///
 /// Output format:
 /// ```text
@@ -13,55 +13,120 @@ use crate::diagnostic::Severity;
 /// ```
 pub struct DefaultFormatter;
 
-impl DiagnosticFormatter for DefaultFormatter {
-    fn format(&self, diagnostics: &[Diagnostic], source: Option<&str>) -> String {
-        let mut output = String::new();
+/// Pretty terminal formatter with ANSI colors.
+pub struct DefaultColorFormatter;
 
-        for (i, diag) in diagnostics.iter().enumerate() {
-            if i > 0 {
-                output.push('\n');
-            }
+struct Colors {
+    red: &'static str,
+    yellow: &'static str,
+    blue: &'static str,
+    bold: &'static str,
+    dim: &'static str,
+    reset: &'static str,
+}
 
-            // Severity + optional code + message
-            let severity = match diag.severity {
-                Severity::Error => "error",
-                Severity::Warning => "warning",
-            };
+const NO_COLORS: Colors = Colors {
+    red: "",
+    yellow: "",
+    blue: "",
+    bold: "",
+    dim: "",
+    reset: "",
+};
 
-            if let Some(ref code) = diag.code {
-                output.push_str(&format!("{severity}[{code}]: {}", diag.message));
-            } else {
-                output.push_str(&format!("{severity}: {}", diag.message));
-            }
+const ANSI_COLORS: Colors = Colors {
+    red: "\x1b[31m",
+    yellow: "\x1b[33m",
+    blue: "\x1b[34m",
+    bold: "\x1b[1m",
+    dim: "\x1b[2m",
+    reset: "\x1b[0m",
+};
+
+fn format_diagnostics(diagnostics: &[Diagnostic], source: Option<&str>, c: &Colors) -> String {
+    let mut output = String::new();
+
+    for (i, diag) in diagnostics.iter().enumerate() {
+        if i > 0 {
             output.push('\n');
+        }
 
-            // Location
-            if let Some(ref loc) = diag.location {
-                let file = diag.file_path.as_deref().unwrap_or("<input>");
+        // Severity + optional code + message
+        let (severity_label, severity_color) = match diag.severity {
+            Severity::Error => ("error", c.red),
+            Severity::Warning => ("warning", c.yellow),
+        };
+
+        if let Some(ref code) = diag.code {
+            output.push_str(&format!(
+                "{c_bold}{severity_color}{severity_label}[{code}]{reset}: {}",
+                diag.message,
+                c_bold = c.bold,
+                reset = c.reset,
+            ));
+        } else {
+            output.push_str(&format!(
+                "{c_bold}{severity_color}{severity_label}{reset}: {}",
+                diag.message,
+                c_bold = c.bold,
+                reset = c.reset,
+            ));
+        }
+        output.push('\n');
+
+        // Location
+        if let Some(ref loc) = diag.location {
+            let file = diag.file_path.as_deref().unwrap_or("<input>");
+            output.push_str(&format!(
+                " {dim}-->{reset} {file}:{}:{}\n",
+                loc.start.line,
+                loc.start.column,
+                dim = c.dim,
+                reset = c.reset,
+            ));
+
+            // Source context
+            if let Some(source) = source
+                && let Some(line_idx) = loc.start.line.checked_sub(1)
+                && let Some(source_line) = source.lines().nth(line_idx as usize)
+            {
+                let line_num = loc.start.line.to_string();
+                let padding = " ".repeat(line_num.len());
+
                 output.push_str(&format!(
-                    " --> {file}:{}:{}\n",
-                    loc.start.line, loc.start.column
+                    "{blue}{padding} |{reset}\n",
+                    blue = c.blue,
+                    reset = c.reset,
+                ));
+                output.push_str(&format!(
+                    "{blue}{line_num} |{reset} {source_line}\n",
+                    blue = c.blue,
+                    reset = c.reset,
                 ));
 
-                // Source context
-                if let Some(source) = source
-                    && let Some(line_idx) = loc.start.line.checked_sub(1)
-                    && let Some(source_line) = source.lines().nth(line_idx as usize)
-                {
-                    let line_num = loc.start.line.to_string();
-                    let padding = " ".repeat(line_num.len());
-
-                    output.push_str(&format!("{padding} |\n"));
-                    output.push_str(&format!("{line_num} | {source_line}\n"));
-
-                    if loc.start.column > 0 {
-                        let caret_padding = " ".repeat((loc.start.column - 1) as usize);
-                        output.push_str(&format!("{padding} | {caret_padding}^\n"));
-                    }
+                if loc.start.column > 0 {
+                    let caret_padding = " ".repeat((loc.start.column - 1) as usize);
+                    output.push_str(&format!(
+                        "{blue}{padding} |{reset} {caret_padding}{severity_color}^{reset}\n",
+                        blue = c.blue,
+                        reset = c.reset,
+                    ));
                 }
             }
         }
+    }
 
-        output
+    output
+}
+
+impl DiagnosticFormatter for DefaultFormatter {
+    fn format(&self, diagnostics: &[Diagnostic], source: Option<&str>) -> String {
+        format_diagnostics(diagnostics, source, &NO_COLORS)
+    }
+}
+
+impl DiagnosticFormatter for DefaultColorFormatter {
+    fn format(&self, diagnostics: &[Diagnostic], source: Option<&str>) -> String {
+        format_diagnostics(diagnostics, source, &ANSI_COLORS)
     }
 }

@@ -77,7 +77,7 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
     }
 
     // Always render diagnostics before reporting errors
-    render_diagnostics(&diagnostics, format);
+    render_diagnostics(&diagnostics, format, no_color);
 
     if debug {
         print_summary(

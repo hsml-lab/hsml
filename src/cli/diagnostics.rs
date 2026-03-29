@@ -6,7 +6,11 @@ use std::time::Duration;
 
 use hsml::diagnostic::{
     Diagnostic, Severity,
-    format::{DiagnosticFormatter, default::DefaultFormatter, json::JsonFormatter},
+    format::{
+        DiagnosticFormatter,
+        default::{DefaultColorFormatter, DefaultFormatter},
+        json::JsonFormatter,
+    },
 };
 
 /// Collected diagnostics from a single file with its source content.
@@ -18,7 +22,7 @@ pub struct FileDiagnostics {
 /// Render collected diagnostics to stderr.
 /// JSON format outputs a single aggregated array (empty `[]` when clean).
 /// Default format renders per-file with source context.
-pub fn render_diagnostics(results: &[FileDiagnostics], format: Option<&str>) {
+pub fn render_diagnostics(results: &[FileDiagnostics], format: Option<&str>, no_color: bool) {
     let all_diagnostics: Vec<&Diagnostic> =
         results.iter().flat_map(|r| r.diagnostics.iter()).collect();
 
@@ -29,11 +33,16 @@ pub fn render_diagnostics(results: &[FileDiagnostics], format: Option<&str>) {
             eprintln!("{output}");
         }
         _ => {
+            let formatter: Box<dyn DiagnosticFormatter> = if no_color {
+                Box::new(DefaultFormatter)
+            } else {
+                Box::new(DefaultColorFormatter)
+            };
             for result in results {
                 if !result.diagnostics.is_empty() {
                     eprint!(
                         "{}",
-                        DefaultFormatter.format(&result.diagnostics, Some(&result.source))
+                        formatter.format(&result.diagnostics, Some(&result.source))
                     );
                 }
             }
