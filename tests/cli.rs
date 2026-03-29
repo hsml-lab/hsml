@@ -295,6 +295,27 @@ fn compile_debug_flag_prints_status_messages() {
 }
 
 #[test]
+fn compile_json_emits_empty_array_for_clean_run() {
+    let dir = TempDir::new().unwrap();
+    let input = dir.path().join("clean.hsml");
+
+    fs::write(&input, "h1 Hello\n").unwrap();
+
+    let output = cmd()
+        .args([
+            "compile",
+            input.to_str().unwrap(),
+            "--report-format",
+            "json",
+        ])
+        .output()
+        .unwrap();
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert_eq!(stderr.trim(), "[]");
+}
+
+#[test]
 fn compile_directory_json_aggregates_all_diagnostics() {
     let dir = TempDir::new().unwrap();
 
