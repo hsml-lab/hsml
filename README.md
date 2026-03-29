@@ -92,6 +92,18 @@ hsml check src/
 # Get diagnostics as JSON (for CI integration)
 hsml compile index.hsml --report-format json
 hsml check src/ --report-format json
+
+# GitHub Actions annotations
+hsml check src/ --report-format github
+
+# GitLab Code Quality report
+hsml check src/ --report-format gitlab
+
+# Debug output with timing
+hsml compile src/ --debug
+
+# Disable colored output
+hsml compile src/ --no-color
 ```
 
 ### Ignore patterns
@@ -277,7 +289,7 @@ warning[W002]: Duplicate class 'foo'
 - [ ] `hsml fmt` — code formatter
 - [ ] `hsml parse` — AST output as JSON
 - [x] LSP server with diagnostics and hover
-- [ ] GitHub/GitLab CI diagnostic formatters
+- [x] GitHub/GitLab CI diagnostic formatters
 
 ## Contributing
 

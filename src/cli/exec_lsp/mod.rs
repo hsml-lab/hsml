@@ -240,17 +240,17 @@ impl LanguageServer for Backend {
 
         let tag_hover = extract_tag_at_position(source, pos);
 
-        if let Some(tag) = tag_hover {
-            if let Some(info) = html_tags::lookup(&tag) {
-                let value = format!("{}\n\n[MDN Reference]({})", info.description, info.mdn_url);
-                return Ok(Some(Hover {
-                    contents: HoverContents::Markup(MarkupContent {
-                        kind: MarkupKind::Markdown,
-                        value,
-                    }),
-                    range: None,
-                }));
-            }
+        if let Some(tag) = tag_hover
+            && let Some(info) = html_tags::lookup(&tag)
+        {
+            let value = format!("{}\n\n[MDN Reference]({})", info.description, info.mdn_url);
+            return Ok(Some(Hover {
+                contents: HoverContents::Markup(MarkupContent {
+                    kind: MarkupKind::Markdown,
+                    value,
+                }),
+                range: None,
+            }));
         }
 
         Ok(None)

@@ -72,7 +72,7 @@ fn it_should_produce_stable_fingerprints() {
         file_path: Some("a.hsml".to_string()),
     };
 
-    let output1 = GitlabFormatter.format(&[diag.clone()], None);
+    let output1 = GitlabFormatter.format(std::slice::from_ref(&diag), None);
     let output2 = GitlabFormatter.format(&[diag], None);
 
     let parsed1: serde_json::Value = serde_json::from_str(&output1).unwrap();
