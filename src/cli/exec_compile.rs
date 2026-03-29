@@ -8,7 +8,7 @@ use clap::ArgMatches;
 use hsml::compile_content_diagnostics;
 
 use super::diagnostics::{
-    FileDiagnostics, format_duration, has_errors, print_summary, render_diagnostics,
+    FileDiagnostics, format_duration, has_errors, print_summary, render_diagnostics, resolve_colors,
 };
 use super::walker::walk_hsml_files;
 
@@ -18,7 +18,7 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
         .get_one::<String>("report_format")
         .map(|s| s.as_str());
     let debug = matches.get_flag("debug");
-    let no_color = matches.get_flag("no_color") || env::var("NO_COLOR").is_ok();
+    let (no_color, dim) = resolve_colors(matches);
 
     let ignore_patterns: Vec<String> = matches
         .get_many::<String>("ignore_pattern")
@@ -34,12 +34,6 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
     let mut diagnostics: Vec<FileDiagnostics> = Vec::new();
     let mut io_errors: Vec<String> = Vec::new();
     let mut file_count: usize = 0;
-
-    let dim = if no_color {
-        ("", "")
-    } else {
-        ("\x1b[2m", "\x1b[0m")
-    };
 
     let total_start = Instant::now();
 
@@ -85,7 +79,6 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
             file_count,
             io_errors.len(),
             total_start.elapsed(),
-            dim,
             no_color,
             "compiled",
         );

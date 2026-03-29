@@ -13,6 +13,21 @@ use hsml::diagnostic::{
     },
 };
 
+/// ANSI escape code pairs for dim text (open, close).
+pub type DimCodes = (&'static str, &'static str);
+
+/// Resolve color settings from CLI matches.
+/// Checks `--no-color` flag and `NO_COLOR` environment variable.
+pub fn resolve_colors(matches: &clap::ArgMatches) -> (bool, DimCodes) {
+    let no_color = matches.get_flag("no_color") || std::env::var("NO_COLOR").is_ok();
+    let dim = if no_color {
+        ("", "")
+    } else {
+        ("\x1b[2m", "\x1b[0m")
+    };
+    (no_color, dim)
+}
+
 /// Collected diagnostics from a single file with its source content.
 pub struct FileDiagnostics {
     pub diagnostics: Vec<Diagnostic>,
@@ -74,10 +89,14 @@ pub fn print_summary(
     file_count: usize,
     io_error_count: usize,
     total_duration: Duration,
-    dim: (&str, &str),
     no_color: bool,
     verb: &str,
 ) {
+    let dim = if no_color {
+        ("", "")
+    } else {
+        ("\x1b[2m", "\x1b[0m")
+    };
     let mut errors = 0;
     let mut warnings = 0;
     for fd in diagnostics {
