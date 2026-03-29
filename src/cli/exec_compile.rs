@@ -1,6 +1,7 @@
 use std::{
     env, fs,
     path::{Path, PathBuf},
+    time::Instant,
 };
 
 use clap::ArgMatches;
@@ -14,7 +15,8 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
     let format = matches
         .get_one::<String>("report_format")
         .map(|s| s.as_str());
-    let is_json = format == Some("json");
+    let debug = matches.get_flag("debug");
+    let no_color = matches.get_flag("no_color") || env::var("NO_COLOR").is_ok();
 
     let ignore_patterns: Vec<String> = matches
         .get_many::<String>("ignore_pattern")
@@ -27,20 +29,31 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
     };
     let path = &path;
 
-    if !is_json {
-        println!("Compiling...");
-    }
-
     let mut diagnostics: Vec<FileDiagnostics> = Vec::new();
     let mut io_errors: Vec<String> = Vec::new();
+
+    let dim = if no_color {
+        ("", "")
+    } else {
+        ("\x1b[2m", "\x1b[0m")
+    };
 
     if path.is_dir() {
         match walk_hsml_files(path, &ignore_patterns) {
             Ok(result) => {
+                if debug {
+                    println!(
+                        "{}Compiling {} file(s) from {}{}",
+                        dim.0,
+                        result.files.len(),
+                        path.display(),
+                        dim.1
+                    );
+                }
                 io_errors.extend(result.errors);
                 for file in &result.files {
                     if let Err(e) =
-                        compile_file(file, None, is_json, &mut diagnostics, &mut io_errors)
+                        compile_file(file, None, debug, dim, &mut diagnostics, &mut io_errors)
                     {
                         io_errors.push(e);
                     }
@@ -49,7 +62,7 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
             Err(e) => io_errors.push(e),
         }
     } else if path.is_file() {
-        if let Err(e) = compile_file(path, out, is_json, &mut diagnostics, &mut io_errors) {
+        if let Err(e) = compile_file(path, out, debug, dim, &mut diagnostics, &mut io_errors) {
             io_errors.push(e);
         }
     } else {
@@ -71,7 +84,8 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
 fn compile_file(
     file: &Path,
     out_file: Option<&PathBuf>,
-    is_json: bool,
+    debug: bool,
+    dim: (&str, &str),
     diagnostics: &mut Vec<FileDiagnostics>,
     io_errors: &mut Vec<String>,
 ) -> Result<(), String> {
@@ -93,16 +107,22 @@ fn compile_file(
     let fallback_out_file = file.with_extension("html");
     let out_file = out_file.unwrap_or(&fallback_out_file);
 
+    let start = Instant::now();
+
     match compile_content_diagnostics(&content) {
         Ok(output) => {
             // Write HTML immediately — don't buffer
             if let Err(e) = fs::write(out_file, &output.html) {
                 io_errors.push(format!("Unable to write file {}: {e}", out_file.display()));
-            } else if !is_json {
-                println!(
-                    "Compiled HTML written to {} successfully",
-                    out_file.display()
-                );
+            } else if debug {
+                let elapsed = start.elapsed();
+                let micros = elapsed.as_micros();
+                let timing = if micros < 1000 {
+                    format!("{micros}µs")
+                } else {
+                    format!("{}ms", elapsed.as_millis())
+                };
+                println!("{}{} {timing}{}", dim.0, out_file.display(), dim.1);
             }
 
             let file_diags: Vec<_> = output

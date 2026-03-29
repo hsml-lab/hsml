@@ -23,7 +23,7 @@ fn compile_single_file_produces_html() {
         .args(["compile", input.to_str().unwrap()])
         .assert()
         .success()
-        .stdout(predicates::str::contains("Compiled HTML written to"));
+        .stdout("");
 
     let html = fs::read_to_string(&output).unwrap();
     assert_eq!(html, "<h1>Hello World</h1>");
@@ -260,9 +260,72 @@ fn compile_directory_skips_symlinks() {
 }
 
 #[test]
-fn compile_json_format_suppresses_status_messages() {
+fn compile_does_not_print_status_messages_by_default() {
     let dir = TempDir::new().unwrap();
     let input = dir.path().join("test.hsml");
+
+    fs::write(&input, "h1 Hello\n").unwrap();
+
+    let output = cmd()
+        .args(["compile", input.to_str().unwrap()])
+        .output()
+        .unwrap();
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.is_empty(), "stdout should be empty by default");
+}
+
+#[test]
+fn compile_debug_flag_prints_status_messages() {
+    let dir = TempDir::new().unwrap();
+    let input = dir.path().join("test.hsml");
+
+    fs::write(&input, "h1 Hello\n").unwrap();
+
+    let output = cmd()
+        .args(["compile", "--debug", "--no-color", input.to_str().unwrap()])
+        .output()
+        .unwrap();
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("ms") || stdout.contains("µs"),
+        "--debug should print timing, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("test.html"),
+        "--debug should print output filename, got: {stdout}"
+    );
+}
+
+#[test]
+fn compile_debug_flag_prints_directory_summary() {
+    let dir = TempDir::new().unwrap();
+
+    fs::write(dir.path().join("a.hsml"), "h1 A\n").unwrap();
+    fs::write(dir.path().join("b.hsml"), "h2 B\n").unwrap();
+
+    let output = cmd()
+        .args([
+            "compile",
+            "--debug",
+            "--no-color",
+            dir.path().to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("Compiling 2 file(s)"),
+        "--debug should print file count for directories, got: {stdout}"
+    );
+}
+
+#[test]
+fn compile_json_emits_empty_array_for_clean_run() {
+    let dir = TempDir::new().unwrap();
+    let input = dir.path().join("clean.hsml");
 
     fs::write(&input, "h1 Hello\n").unwrap();
 
@@ -276,17 +339,8 @@ fn compile_json_format_suppresses_status_messages() {
         .output()
         .unwrap();
 
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(
-        !stdout.contains("Compiling"),
-        "JSON mode should not print status messages"
-    );
-
-    // Clean run should emit empty JSON array
     let stderr = String::from_utf8_lossy(&output.stderr);
     assert_eq!(stderr.trim(), "[]");
-
-    assert!(dir.path().join("test.html").exists());
 }
 
 #[test]

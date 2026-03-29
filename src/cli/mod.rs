@@ -14,6 +14,8 @@ pub fn cli() -> Command {
     command!()
         .about("HSML command line tool")
         .subcommand_required(true)
+        .arg(arg!(debug: --debug "Print debug status messages").global(true))
+        .arg(arg!(no_color: --"no-color" "Disable colored output").global(true))
         .subcommand(
             Command::new("compile")
                 .about("Compiles given .hsml file or directory to .html")
