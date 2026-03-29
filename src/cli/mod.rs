@@ -14,6 +14,7 @@ pub fn cli() -> Command {
     command!()
         .about("HSML command line tool")
         .subcommand_required(true)
+        .arg(arg!(debug: --debug "Print debug status messages").global(true))
         .subcommand(
             Command::new("compile")
                 .about("Compiles given .hsml file or directory to .html")
@@ -33,8 +34,7 @@ pub fn cli() -> Command {
                 .arg(
                     arg!(ignore_pattern: --"ignore-pattern" <PATTERN> "Glob pattern for files/directories to ignore")
                         .action(clap::ArgAction::Append),
-                )
-                .arg(arg!(debug: --debug "Print debug status messages")),
+                ),
         )
         .subcommand(
             Command::new("parse")
