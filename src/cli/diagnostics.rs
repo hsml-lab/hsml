@@ -16,16 +16,20 @@ use hsml::diagnostic::{
 /// ANSI escape code pairs for dim text (open, close).
 pub type DimCodes = (&'static str, &'static str);
 
+/// Get dim ANSI codes based on color setting.
+pub fn dim_codes(no_color: bool) -> DimCodes {
+    if no_color {
+        ("", "")
+    } else {
+        ("\x1b[2m", "\x1b[0m")
+    }
+}
+
 /// Resolve color settings from CLI matches.
 /// Checks `--no-color` flag and `NO_COLOR` environment variable.
 pub fn resolve_colors(matches: &clap::ArgMatches) -> (bool, DimCodes) {
     let no_color = matches.get_flag("no_color") || std::env::var("NO_COLOR").is_ok();
-    let dim = if no_color {
-        ("", "")
-    } else {
-        ("\x1b[2m", "\x1b[0m")
-    };
-    (no_color, dim)
+    (no_color, dim_codes(no_color))
 }
 
 /// Collected diagnostics from a single file with its source content.
@@ -92,11 +96,7 @@ pub fn print_summary(
     no_color: bool,
     verb: &str,
 ) {
-    let dim = if no_color {
-        ("", "")
-    } else {
-        ("\x1b[2m", "\x1b[0m")
-    };
+    let dim = dim_codes(no_color);
     let mut errors = 0;
     let mut warnings = 0;
     for fd in diagnostics {
