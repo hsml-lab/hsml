@@ -249,21 +249,44 @@ fn lsp_hover_returns_diagnostic_info_at_error_position() {
 }
 
 #[test]
-fn lsp_hover_returns_null_at_clean_position() {
+fn lsp_hover_shows_html_tag_documentation() {
     let mut lsp = LspProcess::new();
     initialize(&mut lsp);
 
-    // Open valid file
     send(
         lsp.stdin(),
-        r#"{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///clean.hsml","languageId":"hsml","version":1,"text":"h1 Hello\n"}}}"#,
+        r#"{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///tag.hsml","languageId":"hsml","version":1,"text":"h1 Hello\n"}}}"#,
     );
     let _ = read_until(&mut lsp, "publishDiagnostics");
 
-    // Hover at position (0,0) — no diagnostics
+    // Hover on the tag name "h1"
     send(
         lsp.stdin(),
-        r#"{"jsonrpc":"2.0","id":2,"method":"textDocument/hover","params":{"textDocument":{"uri":"file:///clean.hsml"},"position":{"line":0,"character":0}}}"#,
+        r#"{"jsonrpc":"2.0","id":2,"method":"textDocument/hover","params":{"textDocument":{"uri":"file:///tag.hsml"},"position":{"line":0,"character":0}}}"#,
+    );
+
+    let msg = read_until(&mut lsp, "\"id\":2");
+    assert!(msg.contains("section heading"));
+    assert!(msg.contains("MDN Reference"));
+
+    lsp.shutdown();
+}
+
+#[test]
+fn lsp_hover_returns_null_for_unknown_tag() {
+    let mut lsp = LspProcess::new();
+    initialize(&mut lsp);
+
+    send(
+        lsp.stdin(),
+        r#"{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///custom.hsml","languageId":"hsml","version":1,"text":"mycomponent Hello\n"}}}"#,
+    );
+    let _ = read_until(&mut lsp, "publishDiagnostics");
+
+    // Hover on unknown tag
+    send(
+        lsp.stdin(),
+        r#"{"jsonrpc":"2.0","id":2,"method":"textDocument/hover","params":{"textDocument":{"uri":"file:///custom.hsml"},"position":{"line":0,"character":0}}}"#,
     );
 
     let msg = read_until(&mut lsp, "\"id\":2");
