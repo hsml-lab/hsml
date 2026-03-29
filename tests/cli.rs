@@ -6,7 +6,9 @@ use assert_cmd::Command;
 use tempfile::TempDir;
 
 fn cmd() -> Command {
-    Command::cargo_bin("hsml").unwrap()
+    let mut cmd = Command::cargo_bin("hsml").unwrap();
+    cmd.env("NO_COLOR", "1");
+    cmd
 }
 
 // --- Compile single file ---

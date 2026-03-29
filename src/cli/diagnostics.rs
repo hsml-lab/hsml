@@ -6,8 +6,31 @@ use std::time::Duration;
 
 use hsml::diagnostic::{
     Diagnostic, Severity,
-    format::{DiagnosticFormatter, default::DefaultFormatter, json::JsonFormatter},
+    format::{
+        DiagnosticFormatter,
+        default::{DefaultColorFormatter, DefaultFormatter},
+        json::JsonFormatter,
+    },
 };
+
+/// ANSI escape code pairs for dim text (open, close).
+pub type DimCodes = (&'static str, &'static str);
+
+/// Get dim ANSI codes based on color setting.
+pub fn dim_codes(no_color: bool) -> DimCodes {
+    if no_color {
+        ("", "")
+    } else {
+        ("\x1b[2m", "\x1b[0m")
+    }
+}
+
+/// Resolve color settings from CLI matches.
+/// Checks `--no-color` flag and `NO_COLOR` environment variable.
+pub fn resolve_colors(matches: &clap::ArgMatches) -> (bool, DimCodes) {
+    let no_color = matches.get_flag("no_color") || std::env::var("NO_COLOR").is_ok();
+    (no_color, dim_codes(no_color))
+}
 
 /// Collected diagnostics from a single file with its source content.
 pub struct FileDiagnostics {
@@ -18,7 +41,7 @@ pub struct FileDiagnostics {
 /// Render collected diagnostics to stderr.
 /// JSON format outputs a single aggregated array (empty `[]` when clean).
 /// Default format renders per-file with source context.
-pub fn render_diagnostics(results: &[FileDiagnostics], format: Option<&str>) {
+pub fn render_diagnostics(results: &[FileDiagnostics], format: Option<&str>, no_color: bool) {
     let all_diagnostics: Vec<&Diagnostic> =
         results.iter().flat_map(|r| r.diagnostics.iter()).collect();
 
@@ -29,11 +52,16 @@ pub fn render_diagnostics(results: &[FileDiagnostics], format: Option<&str>) {
             eprintln!("{output}");
         }
         _ => {
+            let formatter: Box<dyn DiagnosticFormatter> = if no_color {
+                Box::new(DefaultFormatter)
+            } else {
+                Box::new(DefaultColorFormatter)
+            };
             for result in results {
                 if !result.diagnostics.is_empty() {
                     eprint!(
                         "{}",
-                        DefaultFormatter.format(&result.diagnostics, Some(&result.source))
+                        formatter.format(&result.diagnostics, Some(&result.source))
                     );
                 }
             }
@@ -65,10 +93,10 @@ pub fn print_summary(
     file_count: usize,
     io_error_count: usize,
     total_duration: Duration,
-    dim: (&str, &str),
     no_color: bool,
     verb: &str,
 ) {
+    let dim = dim_codes(no_color);
     let mut errors = 0;
     let mut warnings = 0;
     for fd in diagnostics {
