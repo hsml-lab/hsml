@@ -78,8 +78,35 @@ fn it_should_produce_stable_fingerprints() {
     let parsed1: serde_json::Value = serde_json::from_str(&output1).unwrap();
     let parsed2: serde_json::Value = serde_json::from_str(&output2).unwrap();
 
+    // Fingerprints must be identical across runs
     assert_eq!(
         parsed1.as_array().unwrap()[0]["fingerprint"],
         parsed2.as_array().unwrap()[0]["fingerprint"]
+    );
+}
+
+#[test]
+fn it_should_produce_deterministic_fnv1a_fingerprint() {
+    // Pins the FNV-1a hash output to detect accidental algorithm changes
+    let diag = Diagnostic {
+        severity: Severity::Warning,
+        message: "Duplicate class 'foo'".to_string(),
+        code: Some(ErrorCode::DuplicateClass.code().to_string()),
+        location: Some(Location {
+            start: Position { line: 1, column: 7 },
+            end: Position {
+                line: 1,
+                column: 11,
+            },
+        }),
+        file_path: Some("example.hsml".to_string()),
+    };
+
+    let output = GitlabFormatter.format(&[diag], None);
+    let parsed: serde_json::Value = serde_json::from_str(&output).unwrap();
+
+    assert_eq!(
+        parsed.as_array().unwrap()[0]["fingerprint"],
+        "3b3deaac0f93890d"
     );
 }
