@@ -320,6 +320,79 @@ fn compile_debug_flag_prints_directory_summary() {
         stdout.contains("Compiling 2 file(s)"),
         "--debug should print file count for directories, got: {stdout}"
     );
+    assert!(
+        stdout.contains("2 files compiled in"),
+        "--debug should print summary, got: {stdout}"
+    );
+}
+
+#[test]
+fn compile_debug_summary_shows_checkmark_for_clean_run() {
+    let dir = TempDir::new().unwrap();
+
+    fs::write(dir.path().join("test.hsml"), "h1 Hello\n").unwrap();
+
+    let output = cmd()
+        .args([
+            "compile",
+            "--debug",
+            "--no-color",
+            dir.path().to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("✓"),
+        "clean compile should show checkmark, got: {stdout}"
+    );
+}
+
+#[test]
+fn compile_debug_summary_shows_warnings() {
+    let dir = TempDir::new().unwrap();
+
+    fs::write(dir.path().join("warn.hsml"), "h1.foo.foo Hello\n").unwrap();
+
+    let output = cmd()
+        .args([
+            "compile",
+            "--debug",
+            "--no-color",
+            dir.path().to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("✓") && stdout.contains("1 warning"),
+        "compile with warnings should show checkmark and warning count, got: {stdout}"
+    );
+}
+
+#[test]
+fn compile_debug_summary_shows_cross_for_errors() {
+    let dir = TempDir::new().unwrap();
+
+    fs::write(dir.path().join("bad.hsml"), "@@@invalid\n").unwrap();
+
+    let output = cmd()
+        .args([
+            "compile",
+            "--debug",
+            "--no-color",
+            dir.path().to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("✗") && stdout.contains("1 error"),
+        "compile with errors should show cross and error count, got: {stdout}"
+    );
 }
 
 #[test]
