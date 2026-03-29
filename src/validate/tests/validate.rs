@@ -350,6 +350,51 @@ fn it_should_warn_on_duplicate_data_attributes() {
     assert_eq!(attr_warnings[0].message, "Duplicate attribute 'data-x'");
 }
 
+// Empty attribute parentheses warnings
+
+#[test]
+fn it_should_warn_on_empty_attribute_parentheses() {
+    let source = "div()\n";
+    let (_, ast) = parse(Span::new(source)).unwrap();
+
+    let diagnostics = validate(&ast, source);
+
+    let empty_warnings: Vec<_> = diagnostics
+        .iter()
+        .filter(|d| d.code == Some(ErrorCode::EmptyAttributes.code().to_string()))
+        .collect();
+    assert_eq!(empty_warnings.len(), 1);
+    assert_eq!(empty_warnings[0].message, "Empty attribute parentheses");
+}
+
+#[test]
+fn it_should_not_warn_on_parentheses_with_attributes() {
+    let source = "div(class=\"test\")\n";
+    let (_, ast) = parse(Span::new(source)).unwrap();
+
+    let diagnostics = validate(&ast, source);
+
+    let empty_warnings: Vec<_> = diagnostics
+        .iter()
+        .filter(|d| d.code == Some(ErrorCode::EmptyAttributes.code().to_string()))
+        .collect();
+    assert_eq!(empty_warnings.len(), 0);
+}
+
+#[test]
+fn it_should_warn_on_parentheses_with_only_comments() {
+    let source = "div(\n  // just a comment\n)\n";
+    let (_, ast) = parse(Span::new(source)).unwrap();
+
+    let diagnostics = validate(&ast, source);
+
+    let empty_warnings: Vec<_> = diagnostics
+        .iter()
+        .filter(|d| d.code == Some(ErrorCode::EmptyAttributes.code().to_string()))
+        .collect();
+    assert_eq!(empty_warnings.len(), 1);
+}
+
 // Void element content warnings
 
 #[test]

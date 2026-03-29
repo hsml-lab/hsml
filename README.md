@@ -262,6 +262,7 @@ warning[W002]: Duplicate class 'foo'
 | W003 | Mixed tabs and spaces in indentation     |
 | W004 | Duplicate attribute                      |
 | W005 | Void element cannot have content         |
+| W006 | Empty attribute parentheses              |
 
 ## Roadmap
 

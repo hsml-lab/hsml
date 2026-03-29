@@ -81,6 +81,22 @@ fn validate_tag(tag: &TagNode, diagnostics: &mut Vec<Diagnostic>) {
         });
     }
 
+    // Check for empty attribute parentheses
+    if let Some(attributes) = &tag.attributes {
+        let has_real_attributes = attributes
+            .iter()
+            .any(|n| matches!(n, HsmlNode::Attribute(_)));
+        if !has_real_attributes {
+            diagnostics.push(Diagnostic {
+                severity: Severity::Warning,
+                message: ErrorCode::EmptyAttributes.message().to_string(),
+                code: Some(ErrorCode::EmptyAttributes.code().to_string()),
+                location: None,
+                file_path: None,
+            });
+        }
+    }
+
     // Check for duplicate ids (first wins, rest are warned)
     if tag.ids.len() > 1 {
         for id in &tag.ids[1..] {
