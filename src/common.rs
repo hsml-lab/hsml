@@ -16,6 +16,18 @@ pub struct Location {
     pub end: Position,
 }
 
+/// HTML void elements that cannot have children and must not have a closing tag.
+/// See: https://developer.mozilla.org/en-US/docs/Glossary/Void_element
+pub const VOID_ELEMENTS: &[&str] = &[
+    "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track",
+    "wbr",
+];
+
+/// Check if a tag name is an HTML void element.
+pub fn is_void_element(tag: &str) -> bool {
+    VOID_ELEMENTS.contains(&tag)
+}
+
 impl Location {
     /// Returns true if this location represents a valid source position
     /// (not a sentinel value from `new_without_location`).
