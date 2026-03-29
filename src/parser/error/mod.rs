@@ -23,7 +23,7 @@ pub enum ErrorCode {
     /// E006: Invalid attribute key. (since 0.2.0)
     InvalidAttributeKey,
 
-    // Warnings (W001-W004)
+    // Warnings (W001-W005)
     /// W001: Duplicate attribute 'id' is not allowed. (since 0.2.0)
     DuplicateId,
     /// W002: Duplicate class. (since 0.2.0)
@@ -32,6 +32,8 @@ pub enum ErrorCode {
     MixedIndentation,
     /// W004: Duplicate attribute. (since 0.2.0)
     DuplicateAttribute,
+    /// W005: Void element cannot have children or text content. (since 0.5.0)
+    VoidElementContent,
 }
 
 impl ErrorCode {
@@ -48,6 +50,7 @@ impl ErrorCode {
         Self::DuplicateClass,
         Self::MixedIndentation,
         Self::DuplicateAttribute,
+        Self::VoidElementContent,
     ];
 
     /// Machine-readable error code (e.g., "E001").
@@ -63,6 +66,7 @@ impl ErrorCode {
             Self::DuplicateClass => "W002",
             Self::MixedIndentation => "W003",
             Self::DuplicateAttribute => "W004",
+            Self::VoidElementContent => "W005",
         }
     }
 
@@ -79,6 +83,7 @@ impl ErrorCode {
             Self::DuplicateClass => "Duplicate class",
             Self::MixedIndentation => "Mixed tabs and spaces in indentation",
             Self::DuplicateAttribute => "Duplicate attribute",
+            Self::VoidElementContent => "Void element cannot have content",
         }
     }
 
@@ -95,6 +100,7 @@ impl ErrorCode {
             Self::DuplicateClass => Severity::Warning,
             Self::MixedIndentation => Severity::Warning,
             Self::DuplicateAttribute => Severity::Warning,
+            Self::VoidElementContent => Severity::Warning,
         }
     }
 }

@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use crate::common::{Location, Position};
+use crate::common::{Location, Position, is_void_element};
 use crate::diagnostic::{Diagnostic, Severity};
 use crate::parser::attribute::node::AttributeNode;
 use crate::parser::error::ErrorCode;
@@ -66,6 +66,21 @@ fn validate_node(node: &HsmlNode, diagnostics: &mut Vec<Diagnostic>) {
 }
 
 fn validate_tag(tag: &TagNode, diagnostics: &mut Vec<Diagnostic>) {
+    // Check for void elements with content
+    if is_void_element(&tag.tag) && (tag.text.is_some() || tag.children.is_some()) {
+        diagnostics.push(Diagnostic {
+            severity: Severity::Warning,
+            message: format!(
+                "{} '<{}>'",
+                ErrorCode::VoidElementContent.message(),
+                tag.tag
+            ),
+            code: Some(ErrorCode::VoidElementContent.code().to_string()),
+            location: None,
+            file_path: None,
+        });
+    }
+
     // Check for duplicate ids (first wins, rest are warned)
     if tag.ids.len() > 1 {
         for id in &tag.ids[1..] {

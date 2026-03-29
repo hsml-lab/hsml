@@ -1,3 +1,4 @@
+use crate::common::is_void_element;
 use crate::parser::{
     HsmlNode, RootNode, attribute::node::AttributeNode, comment::node::CommentNode,
     doctype::node::DoctypeNode, tag::node::TagNode,
@@ -6,17 +7,6 @@ use crate::parser::{
 /// Options for configuring the HSML-to-HTML compiler.
 #[derive(Default)]
 pub struct HsmlCompileOptions {}
-
-/// HTML void elements that cannot have children and must not have a closing tag.
-/// See: https://developer.mozilla.org/en-US/docs/Glossary/Void_element
-const VOID_ELEMENTS: &[&str] = &[
-    "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track",
-    "wbr",
-];
-
-fn is_void_element(tag: &str) -> bool {
-    VOID_ELEMENTS.contains(&tag)
-}
 
 fn compile_tag_node(tag_node: &TagNode, _options: &HsmlCompileOptions) -> Result<String, String> {
     let mut html_content = String::new();

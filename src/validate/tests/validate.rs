@@ -349,3 +349,69 @@ fn it_should_warn_on_duplicate_data_attributes() {
     assert_eq!(attr_warnings.len(), 1);
     assert_eq!(attr_warnings[0].message, "Duplicate attribute 'data-x'");
 }
+
+// Void element content warnings
+
+#[test]
+fn it_should_warn_on_void_element_with_text() {
+    let source = "br Hello\n";
+    let (_, ast) = parse(Span::new(source)).unwrap();
+
+    let diagnostics = validate(&ast, source);
+
+    let void_warnings: Vec<_> = diagnostics
+        .iter()
+        .filter(|d| d.code == Some(ErrorCode::VoidElementContent.code().to_string()))
+        .collect();
+    assert_eq!(void_warnings.len(), 1);
+    assert_eq!(
+        void_warnings[0].message,
+        "Void element cannot have content '<br>'"
+    );
+}
+
+#[test]
+fn it_should_warn_on_void_element_with_children() {
+    let source = "hr\n  div Hello\n";
+    let (_, ast) = parse(Span::new(source)).unwrap();
+
+    let diagnostics = validate(&ast, source);
+
+    let void_warnings: Vec<_> = diagnostics
+        .iter()
+        .filter(|d| d.code == Some(ErrorCode::VoidElementContent.code().to_string()))
+        .collect();
+    assert_eq!(void_warnings.len(), 1);
+    assert_eq!(
+        void_warnings[0].message,
+        "Void element cannot have content '<hr>'"
+    );
+}
+
+#[test]
+fn it_should_not_warn_on_void_element_without_content() {
+    let source = "br\nimg(alt=\"photo\")\n";
+    let (_, ast) = parse(Span::new(source)).unwrap();
+
+    let diagnostics = validate(&ast, source);
+
+    let void_warnings: Vec<_> = diagnostics
+        .iter()
+        .filter(|d| d.code == Some(ErrorCode::VoidElementContent.code().to_string()))
+        .collect();
+    assert_eq!(void_warnings.len(), 0);
+}
+
+#[test]
+fn it_should_not_warn_on_non_void_element_without_content() {
+    let source = "div\n";
+    let (_, ast) = parse(Span::new(source)).unwrap();
+
+    let diagnostics = validate(&ast, source);
+
+    let void_warnings: Vec<_> = diagnostics
+        .iter()
+        .filter(|d| d.code == Some(ErrorCode::VoidElementContent.code().to_string()))
+        .collect();
+    assert_eq!(void_warnings.len(), 0);
+}
