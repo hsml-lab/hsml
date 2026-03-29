@@ -19,16 +19,16 @@ fn it_should_compile_empty_ast() {
 #[test]
 fn it_should_compile_simple_tag() {
     let ast = RootNode {
-        nodes: vec![HsmlNode::Tag(TagNode {
-            tag: String::from("h1"),
-            ids: vec![],
-            classes: None,
-            attributes: None,
-            text: Some(TextNode {
+        nodes: vec![HsmlNode::Tag(TagNode::without_location(
+            "h1",
+            vec![],
+            None,
+            None,
+            Some(TextNode {
                 text: String::from("Hello World"),
             }),
-            children: None,
-        })],
+            None,
+        ))],
     };
 
     let html_content = compile(&ast, &HsmlCompileOptions::default()).unwrap();
@@ -39,16 +39,16 @@ fn it_should_compile_simple_tag() {
 #[test]
 fn it_should_compile_content_with_id() {
     let ast = RootNode {
-        nodes: vec![HsmlNode::Tag(TagNode {
-            tag: String::from("h1"),
-            ids: vec![IdNode::new_without_location("title")],
-            classes: None,
-            attributes: None,
-            text: Some(TextNode {
+        nodes: vec![HsmlNode::Tag(TagNode::without_location(
+            "h1",
+            vec![IdNode::new_without_location("title")],
+            None,
+            None,
+            Some(TextNode {
                 text: String::from("Hello World"),
             }),
-            children: None,
-        })],
+            None,
+        ))],
     };
 
     let html_content = compile(&ast, &HsmlCompileOptions::default()).unwrap();
@@ -350,16 +350,16 @@ fn it_should_error_on_unsupported_root_node_type() {
 #[test]
 fn it_should_error_on_unsupported_child_node_type() {
     let ast = RootNode {
-        nodes: vec![HsmlNode::Tag(TagNode {
-            tag: String::from("div"),
-            ids: vec![],
-            classes: None,
-            attributes: None,
-            text: Some(TextNode {
+        nodes: vec![HsmlNode::Tag(TagNode::without_location(
+            "div",
+            vec![],
+            None,
+            None,
+            Some(TextNode {
                 text: String::from("hello"),
             }),
-            children: Some(vec![HsmlNode::Id(IdNode::new_without_location("stray"))]),
-        })],
+            Some(vec![HsmlNode::Id(IdNode::new_without_location("stray"))]),
+        ))],
     };
 
     let result = compile(&ast, &HsmlCompileOptions::default());
@@ -373,16 +373,16 @@ fn it_should_error_on_unsupported_child_node_type() {
 #[test]
 fn it_should_error_on_unsupported_attribute_node_type() {
     let ast = RootNode {
-        nodes: vec![HsmlNode::Tag(TagNode {
-            tag: String::from("span"),
-            ids: vec![],
-            classes: None,
-            attributes: Some(vec![HsmlNode::Class(ClassNode::new_without_location(
+        nodes: vec![HsmlNode::Tag(TagNode::without_location(
+            "span",
+            vec![],
+            None,
+            Some(vec![HsmlNode::Class(ClassNode::new_without_location(
                 "stray",
             ))]),
-            text: None,
-            children: None,
-        })],
+            None,
+            None,
+        ))],
     };
 
     let result = compile(&ast, &HsmlCompileOptions::default());

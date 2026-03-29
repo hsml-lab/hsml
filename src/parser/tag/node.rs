@@ -1,5 +1,6 @@
 use nom::bytes::complete::{take_till, take_till1};
 
+use crate::common::{Location, Position};
 use crate::parser::{
     HsmlNode, HsmlProcessContext, HsmlResult, Span, attribute,
     class::node::{ClassNode, class_node},
@@ -9,9 +10,11 @@ use crate::parser::{
     text::{self, node::TextNode},
 };
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 pub struct TagNode {
     pub tag: String,
+    /// Source location of the tag name.
+    pub location: Location,
     /// All id selectors on this tag. Only the first is used in compilation;
     /// duplicates are reported as warnings by the validator.
     pub ids: Vec<IdNode>,
@@ -21,15 +24,72 @@ pub struct TagNode {
     pub children: Option<Vec<HsmlNode>>,
 }
 
+impl TagNode {
+    /// Create a TagNode without a meaningful source location.
+    /// Useful in tests where location is not relevant.
+    #[doc(hidden)]
+    pub fn without_location(
+        tag: impl Into<String>,
+        ids: Vec<IdNode>,
+        classes: Option<Vec<ClassNode>>,
+        attributes: Option<Vec<HsmlNode>>,
+        text: Option<TextNode>,
+        children: Option<Vec<HsmlNode>>,
+    ) -> Self {
+        let zero = Position { line: 0, column: 0 };
+        Self {
+            tag: tag.into(),
+            location: Location {
+                start: zero,
+                end: zero,
+            },
+            ids,
+            classes,
+            attributes,
+            text,
+            children,
+        }
+    }
+}
+
+// PartialEq excludes location so that tests comparing parsed ASTs
+// don't need to specify exact location values for every tag.
+impl PartialEq for TagNode {
+    fn eq(&self, other: &Self) -> bool {
+        self.tag == other.tag
+            && self.ids == other.ids
+            && self.classes == other.classes
+            && self.attributes == other.attributes
+            && self.text == other.text
+            && self.children == other.children
+    }
+}
+
 pub fn tag_node<'a>(input: Span<'a>, context: &mut HsmlProcessContext) -> HsmlResult<'a, TagNode> {
     // tag node starts with a tag name or a dot/hash
     // if it starts with a dot/hash, the tag name is div
 
+    let tag_start = Position {
+        line: input.location_line(),
+        column: input.get_column() as u32,
+    };
+
     let (mut input, tag_name) = if input.starts_with('.') || input.starts_with('#') {
+        // Implicit div — location is the dot/hash position (zero-width)
         (input, "div")
     } else {
         let (rest, name) = process_tag(input)?;
         (rest, *name.fragment())
+    };
+
+    let tag_end = Position {
+        line: input.location_line(),
+        column: input.get_column() as u32,
+    };
+
+    let tag_location = Location {
+        start: tag_start,
+        end: tag_end,
     };
 
     // if the next char is a dot, we have a id node
@@ -171,6 +231,7 @@ pub fn tag_node<'a>(input: Span<'a>, context: &mut HsmlProcessContext) -> HsmlRe
         input,
         TagNode {
             tag: tag_name.to_string(),
+            location: tag_location,
             ids: id_nodes,
             classes: (!class_nodes.is_empty()).then_some(class_nodes),
             attributes: attribute_nodes,

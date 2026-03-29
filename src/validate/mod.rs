@@ -76,7 +76,11 @@ fn validate_tag(tag: &TagNode, diagnostics: &mut Vec<Diagnostic>) {
                 tag.tag
             ),
             code: Some(ErrorCode::VoidElementContent.code().to_string()),
-            location: None,
+            location: if tag.location.is_valid() {
+                Some(tag.location.clone())
+            } else {
+                None
+            },
             file_path: None,
         });
     }
@@ -91,7 +95,11 @@ fn validate_tag(tag: &TagNode, diagnostics: &mut Vec<Diagnostic>) {
                 severity: Severity::Warning,
                 message: ErrorCode::EmptyAttributes.message().to_string(),
                 code: Some(ErrorCode::EmptyAttributes.code().to_string()),
-                location: None,
+                location: if tag.location.is_valid() {
+                    Some(tag.location.clone())
+                } else {
+                    None
+                },
                 file_path: None,
             });
         }

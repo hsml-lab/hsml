@@ -28,23 +28,23 @@ fn it_should_return_tag_node_with_piped_text() {
 
     assert_eq!(
         tag,
-        TagNode {
-            tag: String::from("p"),
-            ids: vec![],
-            classes: Some(vec![
+        TagNode::without_location(
+            "p",
+            vec![],
+            Some(vec![
                 ClassNode::new_without_location("text-lg"),
                 ClassNode::new_without_location("font-medium"),
             ]),
-            attributes: None,
-            text: Some(TextNode {
+            None,
+            Some(TextNode {
                 text: String::from(
                     r#""Tailwind CSS is the only framework that I've seen scale
 on large teams. It's easy to customize, adapts to any design,
 and the build size is tiny.""#
                 ),
             }),
-            children: None,
-        }
+            None,
+        )
     );
 
     assert_eq!(*rest.fragment(), "\n    figcaption.font-medium");
@@ -131,14 +131,7 @@ fn it_should_break_when_indentation_does_not_start_with_parent_indent() {
 
     assert_eq!(
         tag,
-        TagNode {
-            tag: String::from("div"),
-            ids: vec![],
-            classes: None,
-            attributes: None,
-            text: None,
-            children: None,
-        }
+        TagNode::without_location("div", vec![], None, None, None, None)
     );
 
     assert_eq!(*rest.fragment(), "\n  span");

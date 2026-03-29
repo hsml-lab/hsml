@@ -21,34 +21,34 @@ fn it_should_parse() {
         root_node,
         RootNode {
             nodes: vec![
-                HsmlNode::Tag(TagNode {
-                    tag: String::from("h1"),
-                    ids: vec![],
-                    classes: Some(vec![ClassNode::new_without_location("text-red")]),
-                    attributes: None,
-                    text: Some(TextNode {
+                HsmlNode::Tag(TagNode::without_location(
+                    "h1",
+                    vec![],
+                    Some(vec![ClassNode::new_without_location("text-red")]),
+                    None,
+                    Some(TextNode {
                         text: String::from("Vite CJS Faker Demo"),
                     }),
-                    children: None,
-                }),
-                HsmlNode::Tag(TagNode {
-                    tag: String::from("div"),
-                    ids: vec![],
-                    classes: Some(vec![ClassNode::new_without_location("card")]),
-                    attributes: None,
-                    text: None,
-                    children: Some(vec![
-                        HsmlNode::Tag(TagNode {
-                            tag: String::from("div"),
-                            ids: vec![],
-                            classes: Some(vec![ClassNode::new_without_location("card__image")]),
-                            attributes: None,
-                            text: None,
-                            children: Some(vec![HsmlNode::Tag(TagNode {
-                                tag: String::from("img"),
-                                ids: vec![],
-                                classes: None,
-                                attributes: Some(vec![
+                    None,
+                )),
+                HsmlNode::Tag(TagNode::without_location(
+                    "div",
+                    vec![],
+                    Some(vec![ClassNode::new_without_location("card")]),
+                    None,
+                    None,
+                    Some(vec![
+                        HsmlNode::Tag(TagNode::without_location(
+                            "div",
+                            vec![],
+                            Some(vec![ClassNode::new_without_location("card__image")]),
+                            None,
+                            None,
+                            Some(vec![HsmlNode::Tag(TagNode::without_location(
+                                "img",
+                                vec![],
+                                None,
+                                Some(vec![
                                     HsmlNode::Attribute(AttributeNode::new_without_location(
                                         ":src",
                                         Some("natureImageUrl"),
@@ -58,21 +58,21 @@ fn it_should_parse() {
                                         Some("'Background image for ' + fullName"),
                                     )),
                                 ]),
-                                text: None,
-                                children: None,
-                            })]),
-                        }),
-                        HsmlNode::Tag(TagNode {
-                            tag: String::from("div"),
-                            ids: vec![],
-                            classes: Some(vec![ClassNode::new_without_location("card__profile")]),
-                            attributes: None,
-                            text: None,
-                            children: Some(vec![HsmlNode::Tag(TagNode {
-                                tag: String::from("img"),
-                                ids: vec![],
-                                classes: None,
-                                attributes: Some(vec![
+                                None,
+                                None,
+                            ))]),
+                        )),
+                        HsmlNode::Tag(TagNode::without_location(
+                            "div",
+                            vec![],
+                            Some(vec![ClassNode::new_without_location("card__profile")]),
+                            None,
+                            None,
+                            Some(vec![HsmlNode::Tag(TagNode::without_location(
+                                "img",
+                                vec![],
+                                None,
+                                Some(vec![
                                     HsmlNode::Attribute(AttributeNode::new_without_location(
                                         ":src",
                                         Some("avatarUrl"),
@@ -82,22 +82,22 @@ fn it_should_parse() {
                                         Some("'Avatar image of ' + fullName"),
                                     )),
                                 ]),
-                                text: None,
-                                children: None,
-                            })]),
-                        }),
-                        HsmlNode::Tag(TagNode {
-                            tag: String::from("div"),
-                            ids: vec![],
-                            classes: Some(vec![ClassNode::new_without_location("card__body")]),
-                            attributes: None,
-                            text: Some(TextNode {
+                                None,
+                                None,
+                            ))]),
+                        )),
+                        HsmlNode::Tag(TagNode::without_location(
+                            "div",
+                            vec![],
+                            Some(vec![ClassNode::new_without_location("card__body")]),
+                            None,
+                            Some(TextNode {
                                 text: String::from("{{ fullName }}"),
                             }),
-                            children: None,
-                        })
+                            None,
+                        ))
                     ]),
-                }),
+                )),
             ],
         }
     );
@@ -137,36 +137,36 @@ div
                     text: String::from(" this is a root native comment (will get rendered)"),
                     is_dev: false,
                 }),
-                HsmlNode::Tag(TagNode {
-                    tag: String::from("div"),
-                    ids: vec![],
-                    classes: None,
-                    attributes: None,
-                    text: None,
-                    children: Some(vec![
+                HsmlNode::Tag(TagNode::without_location(
+                    "div",
+                    vec![],
+                    None,
+                    None,
+                    None,
+                    Some(vec![
                         HsmlNode::Comment(CommentNode {
                             text: String::from(" this is a child comment"),
                             is_dev: true,
                         }),
-                        HsmlNode::Tag(TagNode {
-                            tag: String::from("p"),
-                            ids: vec![],
-                            classes: None,
-                            attributes: None,
-                            text: Some(TextNode {
+                        HsmlNode::Tag(TagNode::without_location(
+                            "p",
+                            vec![],
+                            None,
+                            None,
+                            Some(TextNode {
                                 text: String::from("another tag")
                             }),
-                            children: None,
-                        }),
+                            None,
+                        )),
                         HsmlNode::Comment(CommentNode {
                             text: String::from(" this is a child comment that gets rendered"),
                             is_dev: false,
                         }),
-                        HsmlNode::Tag(TagNode {
-                            tag: String::from("img"),
-                            ids: vec![],
-                            classes: None,
-                            attributes: Some(vec![
+                        HsmlNode::Tag(TagNode::without_location(
+                            "img",
+                            vec![],
+                            None,
+                            Some(vec![
                                 HsmlNode::Comment(CommentNode {
                                     text: String::from(" supports attribute inline comments"),
                                     is_dev: true,
@@ -192,11 +192,11 @@ div
                                     Some("512"),
                                 )),
                             ]),
-                            text: None,
-                            children: None,
-                        }),
+                            None,
+                            None,
+                        )),
                     ])
-                })
+                ))
             ]
         }
     );
@@ -219,14 +219,14 @@ fn it_should_parse_wrapped_attributes() {
     assert_eq!(
         root_node,
         RootNode {
-            nodes: vec![HsmlNode::Tag(TagNode {
-                tag: String::from("img"),
-                ids: vec![],
-                classes: Some(vec![
+            nodes: vec![HsmlNode::Tag(TagNode::without_location(
+                "img",
+                vec![],
+                Some(vec![
                     ClassNode::new_without_location("rounded-full"),
                     ClassNode::new_without_location("mx-auto"),
                 ]),
-                attributes: Some(vec![
+                Some(vec![
                     HsmlNode::Attribute(AttributeNode::new_without_location(
                         "src",
                         Some("/fancy-avatar.jpg"),
@@ -240,9 +240,9 @@ fn it_should_parse_wrapped_attributes() {
                         AttributeNode::new_without_location("height", Some("512"),)
                     ),
                 ]),
-                text: None,
-                children: None,
-            })],
+                None,
+                None,
+            ))],
         }
     );
 
@@ -260,17 +260,17 @@ fn it_should_parse_tag_with_multiple_ids() {
     assert_eq!(
         root_node,
         RootNode {
-            nodes: vec![HsmlNode::Tag(TagNode {
-                tag: String::from("div"),
-                ids: vec![
+            nodes: vec![HsmlNode::Tag(TagNode::without_location(
+                "div",
+                vec![
                     IdNode::new_without_location("id1"),
                     IdNode::new_without_location("id2"),
                 ],
-                classes: None,
-                attributes: None,
-                text: None,
-                children: None,
-            })],
+                None,
+                None,
+                None,
+                None,
+            ))],
         }
     );
 
