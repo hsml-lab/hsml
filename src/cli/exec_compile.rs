@@ -7,7 +7,9 @@ use std::{
 use clap::ArgMatches;
 use hsml::compile_content_diagnostics;
 
-use super::diagnostics::{FileDiagnostics, has_errors, render_diagnostics};
+use super::diagnostics::{
+    FileDiagnostics, format_duration, has_errors, print_summary, render_diagnostics,
+};
 use super::walker::walk_hsml_files;
 
 pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
@@ -31,12 +33,15 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
 
     let mut diagnostics: Vec<FileDiagnostics> = Vec::new();
     let mut io_errors: Vec<String> = Vec::new();
+    let mut file_count: usize = 0;
 
     let dim = if no_color {
         ("", "")
     } else {
         ("\x1b[2m", "\x1b[0m")
     };
+
+    let total_start = Instant::now();
 
     if path.is_dir() {
         match walk_hsml_files(path, &ignore_patterns) {
@@ -51,6 +56,7 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
                     );
                 }
                 io_errors.extend(result.errors);
+                file_count = result.files.len();
                 for file in &result.files {
                     if let Err(e) =
                         compile_file(file, None, debug, dim, &mut diagnostics, &mut io_errors)
@@ -62,6 +68,7 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
             Err(e) => io_errors.push(e),
         }
     } else if path.is_file() {
+        file_count = 1;
         if let Err(e) = compile_file(path, out, debug, dim, &mut diagnostics, &mut io_errors) {
             io_errors.push(e);
         }
@@ -71,6 +78,18 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
 
     // Always render diagnostics before reporting errors
     render_diagnostics(&diagnostics, format);
+
+    if debug {
+        print_summary(
+            &diagnostics,
+            file_count,
+            io_errors.len(),
+            total_start.elapsed(),
+            dim,
+            no_color,
+            "compiled",
+        );
+    }
 
     if !io_errors.is_empty() {
         Err(io_errors.join("\n"))
@@ -115,13 +134,7 @@ fn compile_file(
             if let Err(e) = fs::write(out_file, &output.html) {
                 io_errors.push(format!("Unable to write file {}: {e}", out_file.display()));
             } else if debug {
-                let elapsed = start.elapsed();
-                let micros = elapsed.as_micros();
-                let timing = if micros < 1000 {
-                    format!("{micros}µs")
-                } else {
-                    format!("{}ms", elapsed.as_millis())
-                };
+                let timing = format_duration(start.elapsed());
                 println!("{}{} {timing}{}", dim.0, out_file.display(), dim.1);
             }
 
