@@ -59,6 +59,14 @@ fn is_mergeable_attribute(key: &str) -> bool {
     key == "class" || key == ":class" || key == ":style"
 }
 
+fn valid_location(location: &Location) -> Option<Location> {
+    if location.is_valid() {
+        Some(location.clone())
+    } else {
+        None
+    }
+}
+
 fn validate_node(node: &HsmlNode, diagnostics: &mut Vec<Diagnostic>) {
     if let HsmlNode::Tag(tag) = node {
         validate_tag(tag, diagnostics);
@@ -76,7 +84,7 @@ fn validate_tag(tag: &TagNode, diagnostics: &mut Vec<Diagnostic>) {
                 tag.tag
             ),
             code: Some(ErrorCode::VoidElementContent.code().to_string()),
-            location: None,
+            location: valid_location(&tag.location),
             file_path: None,
         });
     }
@@ -91,7 +99,11 @@ fn validate_tag(tag: &TagNode, diagnostics: &mut Vec<Diagnostic>) {
                 severity: Severity::Warning,
                 message: ErrorCode::EmptyAttributes.message().to_string(),
                 code: Some(ErrorCode::EmptyAttributes.code().to_string()),
-                location: None,
+                location: if tag.location.is_valid() {
+                    Some(tag.location.clone())
+                } else {
+                    None
+                },
                 file_path: None,
             });
         }
@@ -100,16 +112,11 @@ fn validate_tag(tag: &TagNode, diagnostics: &mut Vec<Diagnostic>) {
     // Check for duplicate ids (first wins, rest are warned)
     if tag.ids.len() > 1 {
         for id in &tag.ids[1..] {
-            let has_location = id.location.is_valid();
             diagnostics.push(Diagnostic {
                 severity: Severity::Warning,
                 message: format!("Duplicate id '{}' is not allowed", id.id),
                 code: Some(ErrorCode::DuplicateId.code().to_string()),
-                location: if has_location {
-                    Some(id.location.clone())
-                } else {
-                    None
-                },
+                location: valid_location(&id.location),
                 file_path: None,
             });
         }
@@ -120,16 +127,11 @@ fn validate_tag(tag: &TagNode, diagnostics: &mut Vec<Diagnostic>) {
         let mut seen: HashSet<&str> = HashSet::new();
         for class in classes {
             if seen.contains(class.name.as_str()) {
-                let has_location = class.location.is_valid();
                 diagnostics.push(Diagnostic {
                     severity: Severity::Warning,
                     message: format!("{} '{}'", ErrorCode::DuplicateClass.message(), class.name),
                     code: Some(ErrorCode::DuplicateClass.code().to_string()),
-                    location: if has_location {
-                        Some(class.location.clone())
-                    } else {
-                        None
-                    },
+                    location: valid_location(&class.location),
                     file_path: None,
                 });
             } else {
@@ -147,16 +149,11 @@ fn validate_tag(tag: &TagNode, diagnostics: &mut Vec<Diagnostic>) {
                     continue;
                 }
                 if !seen.insert(key.as_str()) {
-                    let has_location = location.is_valid();
                     diagnostics.push(Diagnostic {
                         severity: Severity::Warning,
                         message: format!("{} '{key}'", ErrorCode::DuplicateAttribute.message()),
                         code: Some(ErrorCode::DuplicateAttribute.code().to_string()),
-                        location: if has_location {
-                            Some(location.clone())
-                        } else {
-                            None
-                        },
+                        location: valid_location(location),
                         file_path: None,
                     });
                 }

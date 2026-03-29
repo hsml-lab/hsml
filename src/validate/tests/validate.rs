@@ -365,6 +365,14 @@ fn it_should_warn_on_empty_attribute_parentheses() {
         .collect();
     assert_eq!(empty_warnings.len(), 1);
     assert_eq!(empty_warnings[0].message, "Empty attribute parentheses");
+    assert_eq!(
+        empty_warnings[0].location.as_ref().map(|l| &l.start),
+        Some(&Position { line: 1, column: 1 })
+    );
+    assert_eq!(
+        empty_warnings[0].location.as_ref().map(|l| &l.end),
+        Some(&Position { line: 1, column: 4 })
+    );
 }
 
 #[test]
@@ -413,6 +421,14 @@ fn it_should_warn_on_void_element_with_text() {
         void_warnings[0].message,
         "Void element cannot have content '<br>'"
     );
+    assert_eq!(
+        void_warnings[0].location.as_ref().map(|l| &l.start),
+        Some(&Position { line: 1, column: 1 })
+    );
+    assert_eq!(
+        void_warnings[0].location.as_ref().map(|l| &l.end),
+        Some(&Position { line: 1, column: 3 })
+    );
 }
 
 #[test]
@@ -430,6 +446,14 @@ fn it_should_warn_on_void_element_with_children() {
     assert_eq!(
         void_warnings[0].message,
         "Void element cannot have content '<hr>'"
+    );
+    assert_eq!(
+        void_warnings[0].location.as_ref().map(|l| &l.start),
+        Some(&Position { line: 1, column: 1 })
+    );
+    assert_eq!(
+        void_warnings[0].location.as_ref().map(|l| &l.end),
+        Some(&Position { line: 1, column: 3 })
     );
 }
 

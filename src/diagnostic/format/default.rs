@@ -106,8 +106,15 @@ fn format_diagnostics(diagnostics: &[Diagnostic], source: Option<&str>, c: &Colo
 
                 if loc.start.column > 0 {
                     let caret_padding = " ".repeat((loc.start.column - 1) as usize);
+                    let caret_len =
+                        if loc.start.line == loc.end.line && loc.end.column > loc.start.column {
+                            (loc.end.column - loc.start.column) as usize
+                        } else {
+                            1
+                        };
+                    let carets = "^".repeat(caret_len);
                     output.push_str(&format!(
-                        "{blue}{padding} |{reset} {caret_padding}{severity_color}^{reset}\n",
+                        "{blue}{padding} |{reset} {caret_padding}{severity_color}{carets}{reset}\n",
                         blue = c.blue,
                         reset = c.reset,
                     ));
