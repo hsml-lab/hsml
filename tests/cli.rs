@@ -283,12 +283,15 @@ fn compile_debug_flag_prints_status_messages() {
     fs::write(&input, "h1 Hello\n").unwrap();
 
     let output = cmd()
-        .args(["compile", "--debug", input.to_str().unwrap()])
+        .args(["compile", "--debug", "--no-color", input.to_str().unwrap()])
         .output()
         .unwrap();
 
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("ms"), "--debug should print timing");
+    assert!(
+        stdout.contains("ms") || stdout.contains("µs"),
+        "--debug should print timing, got: {stdout}"
+    );
 }
 
 #[test]
