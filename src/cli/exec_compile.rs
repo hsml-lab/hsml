@@ -83,6 +83,7 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
         print_summary(
             &diagnostics,
             file_count,
+            io_errors.len(),
             total_start.elapsed(),
             dim,
             no_color,

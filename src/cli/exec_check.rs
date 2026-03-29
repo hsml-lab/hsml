@@ -69,6 +69,7 @@ pub fn exec_check(matches: &ArgMatches) -> Result<(), String> {
         print_summary(
             &results,
             file_count,
+            io_errors.len(),
             total_start.elapsed(),
             dim,
             no_color,

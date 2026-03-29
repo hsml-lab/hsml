@@ -63,6 +63,7 @@ pub fn format_duration(duration: Duration) -> String {
 pub fn print_summary(
     diagnostics: &[FileDiagnostics],
     file_count: usize,
+    io_error_count: usize,
     total_duration: Duration,
     dim: (&str, &str),
     no_color: bool,
@@ -86,9 +87,10 @@ pub fn print_summary(
         &format!("{file_count} files")
     };
 
+    let has_failures = errors > 0 || io_error_count > 0;
     let icon = if no_color {
-        if errors > 0 { "✗" } else { "✓" }
-    } else if errors > 0 {
+        if has_failures { "✗" } else { "✓" }
+    } else if has_failures {
         "\x1b[31m✗\x1b[0m" // red
     } else {
         "\x1b[32m✓\x1b[0m" // green
