@@ -78,7 +78,13 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
     render_diagnostics(&diagnostics, format);
 
     if debug {
-        print_summary(&diagnostics, file_count, total_start.elapsed(), dim);
+        print_summary(
+            &diagnostics,
+            file_count,
+            total_start.elapsed(),
+            dim,
+            no_color,
+        );
     }
 
     if !io_errors.is_empty() {
@@ -104,6 +110,7 @@ fn print_summary(
     file_count: usize,
     total_duration: std::time::Duration,
     dim: (&str, &str),
+    no_color: bool,
 ) {
     let mut errors = 0;
     let mut warnings = 0;
@@ -123,7 +130,13 @@ fn print_summary(
         &format!("{file_count} files")
     };
 
-    let icon = if errors > 0 { "✗" } else { "✓" };
+    let icon = if no_color {
+        if errors > 0 { "✗" } else { "✓" }
+    } else if errors > 0 {
+        "\x1b[31m✗\x1b[0m" // red
+    } else {
+        "\x1b[32m✓\x1b[0m" // green
+    };
 
     let mut diag_parts = Vec::new();
     if errors > 0 {
@@ -140,15 +153,12 @@ fn print_summary(
     }
 
     let summary = if diag_parts.is_empty() {
-        format!("{icon} {files} compiled in {timing}")
+        format!("{files} compiled in {timing}")
     } else {
-        format!(
-            "{icon} {files} compiled in {timing} ({})",
-            diag_parts.join(", ")
-        )
+        format!("{files} compiled in {timing} ({})", diag_parts.join(", "))
     };
 
-    println!("\n{}{summary}{}", dim.0, dim.1);
+    println!("\n{icon} {}{summary}{}", dim.0, dim.1);
 }
 
 fn compile_file(
