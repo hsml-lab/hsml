@@ -4,9 +4,6 @@ pub struct HtmlTagInfo {
     pub mdn_url: &'static str,
 }
 
-// Excluded from coverage: static data table with ~100 HTML tags.
-// The lookup mechanism is tested via integration tests.
-// llvm-cov: ignore-start
 pub fn lookup(tag: &str) -> Option<HtmlTagInfo> {
     let info = match tag {
         // Main root
@@ -433,4 +430,3 @@ pub fn lookup(tag: &str) -> Option<HtmlTagInfo> {
     };
     Some(info)
 }
-// llvm-cov: ignore-stop
