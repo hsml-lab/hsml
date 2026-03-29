@@ -169,9 +169,25 @@ fn it_should_compile_parsed_elk_status_content_component() {
 // Void elements
 
 #[test]
-fn it_should_self_close_void_elements() {
-    assert_eq!(compile_content_core("br\n"), Ok(String::from("<br />")));
-    assert_eq!(compile_content_core("hr\n"), Ok(String::from("<hr />")));
+fn it_should_self_close_all_void_elements() {
+    let void_elements = [
+        "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source",
+        "track", "wbr",
+    ];
+
+    for tag in void_elements {
+        let input = format!("{tag}\n");
+        let expected = format!("<{tag} />");
+        assert_eq!(
+            compile_content_core(&input),
+            Ok(expected),
+            "void element '{tag}' should self-close"
+        );
+    }
+}
+
+#[test]
+fn it_should_self_close_void_elements_with_attributes() {
     assert_eq!(
         compile_content_core("img(src=\"photo.jpg\")\n"),
         Ok(String::from(r#"<img src="photo.jpg" />"#))
