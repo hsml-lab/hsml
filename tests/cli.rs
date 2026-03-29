@@ -290,11 +290,11 @@ fn compile_debug_flag_prints_status_messages() {
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(
         stdout.contains("Compiling"),
-        "--debug should print status messages"
+        "--debug should print compiling message"
     );
     assert!(
         stdout.contains("Compiled HTML written to"),
-        "--debug should print per-file success messages"
+        "--debug should print per-file success message"
     );
 }
 

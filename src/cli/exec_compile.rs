@@ -28,7 +28,7 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
     let path = &path;
 
     if debug {
-        println!("Compiling...");
+        println!("Compiling {}", path.display());
     }
 
     let mut diagnostics: Vec<FileDiagnostics> = Vec::new();
@@ -37,6 +37,9 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
     if path.is_dir() {
         match walk_hsml_files(path, &ignore_patterns) {
             Ok(result) => {
+                if debug {
+                    println!("Found {} .hsml file(s)", result.files.len());
+                }
                 io_errors.extend(result.errors);
                 for file in &result.files {
                     if let Err(e) =
