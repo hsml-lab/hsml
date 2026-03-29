@@ -131,3 +131,34 @@ fn it_should_format_multiple_diagnostics() {
 
     assert_eq!(output, "error: first error\n\nerror: second error\n");
 }
+
+#[test]
+fn it_should_underline_span_range() {
+    let diag = Diagnostic {
+        severity: Severity::Warning,
+        message: "Duplicate class 'foo'".to_string(),
+        code: Some(ErrorCode::DuplicateClass.code().to_string()),
+        location: Some(Location {
+            start: Position { line: 1, column: 7 },
+            end: Position {
+                line: 1,
+                column: 11,
+            },
+        }),
+        file_path: Some("test.hsml".to_string()),
+    };
+
+    let source = "h1.foo.foo Hello";
+    let output = DefaultFormatter.format(&[diag], Some(source));
+
+    assert_eq!(
+        output,
+        "\
+warning[W002]: Duplicate class 'foo'
+ --> test.hsml:1:7
+  |
+1 | h1.foo.foo Hello
+  |       ^^^^
+"
+    );
+}
