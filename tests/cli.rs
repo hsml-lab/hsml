@@ -23,7 +23,7 @@ fn compile_single_file_produces_html() {
         .args(["compile", input.to_str().unwrap()])
         .assert()
         .success()
-        .stdout(predicates::str::contains("Compiled HTML written to"));
+        .stdout("");
 
     let html = fs::read_to_string(&output).unwrap();
     assert_eq!(html, "<h1>Hello World</h1>");
@@ -260,33 +260,42 @@ fn compile_directory_skips_symlinks() {
 }
 
 #[test]
-fn compile_json_format_suppresses_status_messages() {
+fn compile_does_not_print_status_messages_by_default() {
     let dir = TempDir::new().unwrap();
     let input = dir.path().join("test.hsml");
 
     fs::write(&input, "h1 Hello\n").unwrap();
 
     let output = cmd()
-        .args([
-            "compile",
-            input.to_str().unwrap(),
-            "--report-format",
-            "json",
-        ])
+        .args(["compile", input.to_str().unwrap()])
+        .output()
+        .unwrap();
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.is_empty(), "stdout should be empty by default");
+}
+
+#[test]
+fn compile_debug_flag_prints_status_messages() {
+    let dir = TempDir::new().unwrap();
+    let input = dir.path().join("test.hsml");
+
+    fs::write(&input, "h1 Hello\n").unwrap();
+
+    let output = cmd()
+        .args(["compile", "--debug", input.to_str().unwrap()])
         .output()
         .unwrap();
 
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(
-        !stdout.contains("Compiling"),
-        "JSON mode should not print status messages"
+        stdout.contains("Compiling"),
+        "--debug should print status messages"
     );
-
-    // Clean run should emit empty JSON array
-    let stderr = String::from_utf8_lossy(&output.stderr);
-    assert_eq!(stderr.trim(), "[]");
-
-    assert!(dir.path().join("test.html").exists());
+    assert!(
+        stdout.contains("Compiled HTML written to"),
+        "--debug should print per-file success messages"
+    );
 }
 
 #[test]

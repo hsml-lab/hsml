@@ -14,7 +14,7 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
     let format = matches
         .get_one::<String>("report_format")
         .map(|s| s.as_str());
-    let is_json = format == Some("json");
+    let debug = matches.get_flag("debug");
 
     let ignore_patterns: Vec<String> = matches
         .get_many::<String>("ignore_pattern")
@@ -27,7 +27,7 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
     };
     let path = &path;
 
-    if !is_json {
+    if debug {
         println!("Compiling...");
     }
 
@@ -40,7 +40,7 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
                 io_errors.extend(result.errors);
                 for file in &result.files {
                     if let Err(e) =
-                        compile_file(file, None, is_json, &mut diagnostics, &mut io_errors)
+                        compile_file(file, None, debug, &mut diagnostics, &mut io_errors)
                     {
                         io_errors.push(e);
                     }
@@ -49,7 +49,7 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
             Err(e) => io_errors.push(e),
         }
     } else if path.is_file() {
-        if let Err(e) = compile_file(path, out, is_json, &mut diagnostics, &mut io_errors) {
+        if let Err(e) = compile_file(path, out, debug, &mut diagnostics, &mut io_errors) {
             io_errors.push(e);
         }
     } else {
@@ -71,7 +71,7 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
 fn compile_file(
     file: &Path,
     out_file: Option<&PathBuf>,
-    is_json: bool,
+    debug: bool,
     diagnostics: &mut Vec<FileDiagnostics>,
     io_errors: &mut Vec<String>,
 ) -> Result<(), String> {
@@ -98,7 +98,7 @@ fn compile_file(
             // Write HTML immediately — don't buffer
             if let Err(e) = fs::write(out_file, &output.html) {
                 io_errors.push(format!("Unable to write file {}: {e}", out_file.display()));
-            } else if !is_json {
+            } else if debug {
                 println!(
                     "Compiled HTML written to {} successfully",
                     out_file.display()

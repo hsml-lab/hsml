@@ -33,7 +33,8 @@ pub fn cli() -> Command {
                 .arg(
                     arg!(ignore_pattern: --"ignore-pattern" <PATTERN> "Glob pattern for files/directories to ignore")
                         .action(clap::ArgAction::Append),
-                ),
+                )
+                .arg(arg!(debug: --debug "Print debug status messages")),
         )
         .subcommand(
             Command::new("parse")
