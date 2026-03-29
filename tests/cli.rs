@@ -292,6 +292,34 @@ fn compile_debug_flag_prints_status_messages() {
         stdout.contains("ms") || stdout.contains("µs"),
         "--debug should print timing, got: {stdout}"
     );
+    assert!(
+        stdout.contains("test.html"),
+        "--debug should print output filename, got: {stdout}"
+    );
+}
+
+#[test]
+fn compile_debug_flag_prints_directory_summary() {
+    let dir = TempDir::new().unwrap();
+
+    fs::write(dir.path().join("a.hsml"), "h1 A\n").unwrap();
+    fs::write(dir.path().join("b.hsml"), "h2 B\n").unwrap();
+
+    let output = cmd()
+        .args([
+            "compile",
+            "--debug",
+            "--no-color",
+            dir.path().to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("Compiling 2 file(s)"),
+        "--debug should print file count for directories, got: {stdout}"
+    );
 }
 
 #[test]
