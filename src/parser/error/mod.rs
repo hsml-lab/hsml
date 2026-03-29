@@ -23,7 +23,7 @@ pub enum ErrorCode {
     /// E006: Invalid attribute key. (since 0.2.0)
     InvalidAttributeKey,
 
-    // Warnings (W001-W005)
+    // Warnings (W001-W006)
     /// W001: Duplicate attribute 'id' is not allowed. (since 0.2.0)
     DuplicateId,
     /// W002: Duplicate class. (since 0.2.0)
