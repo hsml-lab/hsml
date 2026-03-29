@@ -971,6 +971,53 @@ fn check_hsmlignore_can_reinclude_builtin_ignores() {
 }
 
 #[test]
+fn check_debug_summary_shows_checked() {
+    let dir = TempDir::new().unwrap();
+
+    fs::write(dir.path().join("a.hsml"), "h1 A\n").unwrap();
+    fs::write(dir.path().join("b.hsml"), "h2 B\n").unwrap();
+
+    let output = cmd()
+        .args([
+            "check",
+            "--debug",
+            "--no-color",
+            dir.path().to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("✓") && stdout.contains("2 files checked in"),
+        "check --debug should show summary with 'checked', got: {stdout}"
+    );
+}
+
+#[test]
+fn check_debug_summary_shows_warnings() {
+    let dir = TempDir::new().unwrap();
+
+    fs::write(dir.path().join("warn.hsml"), "h1.foo.foo Hello\n").unwrap();
+
+    let output = cmd()
+        .args([
+            "check",
+            "--debug",
+            "--no-color",
+            dir.path().to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("✓") && stdout.contains("1 warning"),
+        "check with warnings should show warning count, got: {stdout}"
+    );
+}
+
+#[test]
 fn compile_builtin_ignore_does_not_match_parent_dirs() {
     // If the project lives under a path containing a built-in ignore name
     // (e.g. /tmp/.../build/project/), files should NOT be filtered out.
