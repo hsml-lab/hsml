@@ -31,12 +31,15 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
 
     let mut diagnostics: Vec<FileDiagnostics> = Vec::new();
     let mut io_errors: Vec<String> = Vec::new();
+    let mut file_count: usize = 0;
 
     let dim = if no_color {
         ("", "")
     } else {
         ("\x1b[2m", "\x1b[0m")
     };
+
+    let total_start = Instant::now();
 
     if path.is_dir() {
         match walk_hsml_files(path, &ignore_patterns) {
@@ -51,6 +54,7 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
                     );
                 }
                 io_errors.extend(result.errors);
+                file_count = result.files.len();
                 for file in &result.files {
                     if let Err(e) =
                         compile_file(file, None, debug, dim, &mut diagnostics, &mut io_errors)
@@ -62,6 +66,7 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
             Err(e) => io_errors.push(e),
         }
     } else if path.is_file() {
+        file_count = 1;
         if let Err(e) = compile_file(path, out, debug, dim, &mut diagnostics, &mut io_errors) {
             io_errors.push(e);
         }
@@ -72,6 +77,10 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
     // Always render diagnostics before reporting errors
     render_diagnostics(&diagnostics, format);
 
+    if debug {
+        print_summary(&diagnostics, file_count, total_start.elapsed(), dim);
+    }
+
     if !io_errors.is_empty() {
         Err(io_errors.join("\n"))
     } else if has_errors(&diagnostics) {
@@ -79,6 +88,67 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
     } else {
         Ok(())
     }
+}
+
+fn format_duration(duration: std::time::Duration) -> String {
+    let micros = duration.as_micros();
+    if micros < 1000 {
+        format!("{micros}µs")
+    } else {
+        format!("{}ms", duration.as_millis())
+    }
+}
+
+fn print_summary(
+    diagnostics: &[FileDiagnostics],
+    file_count: usize,
+    total_duration: std::time::Duration,
+    dim: (&str, &str),
+) {
+    let mut errors = 0;
+    let mut warnings = 0;
+    for fd in diagnostics {
+        for d in &fd.diagnostics {
+            match d.severity {
+                hsml::diagnostic::Severity::Error => errors += 1,
+                hsml::diagnostic::Severity::Warning => warnings += 1,
+            }
+        }
+    }
+
+    let timing = format_duration(total_duration);
+    let files = if file_count == 1 {
+        "1 file"
+    } else {
+        &format!("{file_count} files")
+    };
+
+    let icon = if errors > 0 { "✗" } else { "✓" };
+
+    let mut diag_parts = Vec::new();
+    if errors > 0 {
+        diag_parts.push(format!(
+            "{errors} error{}",
+            if errors == 1 { "" } else { "s" }
+        ));
+    }
+    if warnings > 0 {
+        diag_parts.push(format!(
+            "{warnings} warning{}",
+            if warnings == 1 { "" } else { "s" }
+        ));
+    }
+
+    let summary = if diag_parts.is_empty() {
+        format!("{icon} {files} compiled in {timing}")
+    } else {
+        format!(
+            "{icon} {files} compiled in {timing} ({})",
+            diag_parts.join(", ")
+        )
+    };
+
+    println!("\n{}{summary}{}", dim.0, dim.1);
 }
 
 fn compile_file(
@@ -115,13 +185,7 @@ fn compile_file(
             if let Err(e) = fs::write(out_file, &output.html) {
                 io_errors.push(format!("Unable to write file {}: {e}", out_file.display()));
             } else if debug {
-                let elapsed = start.elapsed();
-                let micros = elapsed.as_micros();
-                let timing = if micros < 1000 {
-                    format!("{micros}µs")
-                } else {
-                    format!("{}ms", elapsed.as_millis())
-                };
+                let timing = format_duration(start.elapsed());
                 println!("{}{} {timing}{}", dim.0, out_file.display(), dim.1);
             }
 
