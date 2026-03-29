@@ -15,6 +15,13 @@ use crate::diagnostic::Severity;
 /// ```
 pub struct GithubFormatter;
 
+/// Escape special characters for GitHub Actions workflow commands.
+fn escape_message(msg: &str) -> String {
+    msg.replace('%', "%25")
+        .replace('\n', "%0A")
+        .replace('\r', "%0D")
+}
+
 impl DiagnosticFormatter for GithubFormatter {
     fn format(&self, diagnostics: &[Diagnostic], _source: Option<&str>) -> String {
         let mut output = String::new();
@@ -50,7 +57,10 @@ impl DiagnosticFormatter for GithubFormatter {
                 format!(" {}", params.join(","))
             };
 
-            output.push_str(&format!("::{severity}{params_str}::{}\n", diag.message));
+            output.push_str(&format!(
+                "::{severity}{params_str}::{}\n",
+                escape_message(&diag.message)
+            ));
         }
 
         output
