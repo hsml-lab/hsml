@@ -563,6 +563,85 @@ fn check_with_json_format() {
 }
 
 #[test]
+fn check_github_format_outputs_warning_annotation() {
+    let dir = TempDir::new().unwrap();
+    let input = dir.path().join("warn.hsml");
+
+    fs::write(&input, "h1.foo.foo Hello\n").unwrap();
+
+    let output = cmd()
+        .args([
+            "check",
+            input.to_str().unwrap(),
+            "--report-format",
+            "github",
+        ])
+        .output()
+        .unwrap();
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    let path = input.display().to_string();
+    assert_eq!(
+        stderr.trim(),
+        format!(
+            "::warning file={path},line=1,col=7,endLine=1,endColumn=11,title=W002::Duplicate class 'foo'"
+        )
+    );
+}
+
+#[test]
+fn check_github_format_outputs_error_annotation() {
+    let dir = TempDir::new().unwrap();
+    let input = dir.path().join("bad.hsml");
+
+    fs::write(&input, "@@@invalid\n").unwrap();
+
+    let output = cmd()
+        .args([
+            "check",
+            input.to_str().unwrap(),
+            "--report-format",
+            "github",
+        ])
+        .output()
+        .unwrap();
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    let path = input.display().to_string();
+    assert_eq!(
+        stderr.trim(),
+        format!("::error file={path},line=1,col=1::parse error")
+    );
+}
+
+#[test]
+fn compile_github_format_outputs_warning_annotation() {
+    let dir = TempDir::new().unwrap();
+    let input = dir.path().join("warn.hsml");
+
+    fs::write(&input, "h1.foo.foo Hello\n").unwrap();
+
+    let output = cmd()
+        .args([
+            "compile",
+            input.to_str().unwrap(),
+            "--report-format",
+            "github",
+        ])
+        .output()
+        .unwrap();
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    let path = input.display().to_string();
+    assert_eq!(
+        stderr.trim(),
+        format!(
+            "::warning file={path},line=1,col=7,endLine=1,endColumn=11,title=W002::Duplicate class 'foo'"
+        )
+    );
+}
+
+#[test]
 fn check_json_emits_empty_array_for_clean_run() {
     let dir = TempDir::new().unwrap();
     let input = dir.path().join("clean.hsml");
