@@ -25,7 +25,8 @@ pub const VOID_ELEMENTS: &[&str] = &[
 
 /// Check if a tag name is an HTML void element.
 pub fn is_void_element(tag: &str) -> bool {
-    VOID_ELEMENTS.contains(&tag)
+    let lower = tag.to_ascii_lowercase();
+    VOID_ELEMENTS.contains(&lower.as_str())
 }
 
 impl Location {
