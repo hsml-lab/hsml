@@ -73,7 +73,7 @@ fn it_should_compile_parsed_content() {
 
     assert_eq!(
         html_content,
-        r#"<h1 class="text-red">Vite CJS Faker Demo</h1><div class="card"><div class="card__image"><img :src="natureImageUrl" :alt="'Background image for ' + fullName"/></div><div class="card__profile"><img :src="avatarUrl" :alt="'Avatar image of ' + fullName"/></div><div class="card__body">{{ fullName }}</div></div>"#
+        r#"<h1 class="text-red">Vite CJS Faker Demo</h1><div class="card"><div class="card__image"><img :src="natureImageUrl" :alt="'Background image for ' + fullName" /></div><div class="card__profile"><img :src="avatarUrl" :alt="'Avatar image of ' + fullName" /></div><div class="card__body">{{ fullName }}</div></div>"#
     );
     assert_eq!(*rest.fragment(), "");
 }
@@ -109,7 +109,7 @@ figure.md:flex.bg-slate-100.rounded-xl.p-8.md:p-0.dark:bg-slate-800/10
 
     assert_eq!(
         html_content,
-        r#"<!-- test comment on root layer --><figure class="md:flex bg-slate-100 rounded-xl p-8 md:p-0 dark:bg-slate-800/10"><!-- test comment --><img class="w-24 h-24 md:w-48 md:h-auto md:rounded-none rounded-full mx-auto" src="/fancy-avatar.jpg" alt="" width="384" height="512"/><div class="pt-6 md:p-8 text-center md:text-left space-y-4"><blockquote v-if="showBlockquote"><p class="text-lg font-medium">"Tailwind CSS is the only framework that I've seen scale
+        r#"<!-- test comment on root layer --><figure class="md:flex bg-slate-100 rounded-xl p-8 md:p-0 dark:bg-slate-800/10"><!-- test comment --><img class="w-24 h-24 md:w-48 md:h-auto md:rounded-none rounded-full mx-auto" src="/fancy-avatar.jpg" alt="" width="384" height="512" /><div class="pt-6 md:p-8 text-center md:text-left space-y-4"><blockquote v-if="showBlockquote"><p class="text-lg font-medium">"Tailwind CSS is the only framework that I've seen scale
 on large teams. It's easy to customize, adapts to any design,
 and the build size is tiny."</p></blockquote><figcaption class="font-medium"><div class="text-sky-500 dark:text-sky-400">Sarah Dayan</div><div class="text-[#af05c9] dark:text-slate-500">Staff Engineer, Algolia</div></figcaption></div></figure>"#
     );
@@ -161,9 +161,80 @@ fn it_should_compile_parsed_elk_status_content_component() {
         r#"<div class="space-y-3" :class="{
     'pt2 pb0.5 px3.5 bg-dm rounded-4 me--1': isDM,
     'ms--3.5 mt--1 ms--1': isDM && context !== 'details',
-  }"><StatusBody v-if="(!isFiltered && isSensitiveNonSpoiler) || hideAllMedia" :status="status" :newer="newer" :with-action="!isDetails" :class="isDetails ? 'text-xl' : ''"/><StatusSpoiler :enabled="hasSpoilerOrSensitiveMedia || isFiltered" :filter="isFiltered" :sensitive-non-spoiler="isSensitiveNonSpoiler || hideAllMedia" :is-d-m="isDM"><template v-if="spoilerTextPresent" #spoiler><p>{{ status.spoilerText }}</p></template><template v-else-if="filterPhrase" #spoiler><p>{{ `${$t('status.filter_hidden_phrase')}: ${filterPhrase}` }}</p></template><StatusBody v-if="!(isSensitiveNonSpoiler || hideAllMedia)" :status="status" :newer="newer" :with-action="!isDetails" :class="isDetails ? 'text-xl' : ''"/><StatusTranslation :status="status"/><StatusPoll v-if="status.poll" :status="status"/><StatusMedia v-if="status.mediaAttachments?.length" :status="status" :is-preview="isPreview"/><StatusPreviewCard v-if="status.card" :card="status.card" :small-picture-only="status.mediaAttachments?.length > 0"/><StatusCard v-if="status.reblog" :status="status.reblog" border="~ rounded" :actions="false"/><div v-if="isDM"/></StatusSpoiler></div>"#
+  }"><StatusBody v-if="(!isFiltered && isSensitiveNonSpoiler) || hideAllMedia" :status="status" :newer="newer" :with-action="!isDetails" :class="isDetails ? 'text-xl' : ''"></StatusBody><StatusSpoiler :enabled="hasSpoilerOrSensitiveMedia || isFiltered" :filter="isFiltered" :sensitive-non-spoiler="isSensitiveNonSpoiler || hideAllMedia" :is-d-m="isDM"><template v-if="spoilerTextPresent" #spoiler><p>{{ status.spoilerText }}</p></template><template v-else-if="filterPhrase" #spoiler><p>{{ `${$t('status.filter_hidden_phrase')}: ${filterPhrase}` }}</p></template><StatusBody v-if="!(isSensitiveNonSpoiler || hideAllMedia)" :status="status" :newer="newer" :with-action="!isDetails" :class="isDetails ? 'text-xl' : ''"></StatusBody><StatusTranslation :status="status"></StatusTranslation><StatusPoll v-if="status.poll" :status="status"></StatusPoll><StatusMedia v-if="status.mediaAttachments?.length" :status="status" :is-preview="isPreview"></StatusMedia><StatusPreviewCard v-if="status.card" :card="status.card" :small-picture-only="status.mediaAttachments?.length > 0"></StatusPreviewCard><StatusCard v-if="status.reblog" :status="status.reblog" border="~ rounded" :actions="false"></StatusCard><div v-if="isDM"></div></StatusSpoiler></div>"#
     );
     assert_eq!(*rest.fragment(), "");
+}
+
+// Void elements
+
+#[test]
+fn it_should_self_close_all_void_elements() {
+    let void_elements = [
+        "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source",
+        "track", "wbr",
+    ];
+
+    for tag in void_elements {
+        let input = format!("{tag}\n");
+        let expected = format!("<{tag} />");
+        assert_eq!(
+            compile_content_core(&input),
+            Ok(expected),
+            "void element '{tag}' should self-close"
+        );
+    }
+}
+
+#[test]
+fn it_should_self_close_void_elements_with_attributes() {
+    assert_eq!(
+        compile_content_core("img(src=\"photo.jpg\")\n"),
+        Ok(String::from(r#"<img src="photo.jpg" />"#))
+    );
+    assert_eq!(
+        compile_content_core("input(type=\"text\")\n"),
+        Ok(String::from(r#"<input type="text" />"#))
+    );
+    assert_eq!(
+        compile_content_core("meta(charset=\"utf-8\")\n"),
+        Ok(String::from(r#"<meta charset="utf-8" />"#))
+    );
+    assert_eq!(
+        compile_content_core("link(rel=\"stylesheet\" href=\"style.css\")\n"),
+        Ok(String::from(
+            r#"<link rel="stylesheet" href="style.css" />"#
+        ))
+    );
+}
+
+#[test]
+fn it_should_not_self_close_non_void_elements() {
+    assert_eq!(
+        compile_content_core("div\n"),
+        Ok(String::from("<div></div>"))
+    );
+    assert_eq!(
+        compile_content_core("span\n"),
+        Ok(String::from("<span></span>"))
+    );
+    assert_eq!(compile_content_core("p\n"), Ok(String::from("<p></p>")));
+    assert_eq!(
+        compile_content_core("section\n"),
+        Ok(String::from("<section></section>"))
+    );
+}
+
+#[test]
+fn it_should_not_self_close_custom_components() {
+    assert_eq!(
+        compile_content_core("MyComponent\n"),
+        Ok(String::from("<MyComponent></MyComponent>"))
+    );
+    assert_eq!(
+        compile_content_core("StatusBody\n"),
+        Ok(String::from("<StatusBody></StatusBody>"))
+    );
 }
 
 // Tests for compile_content error handling (mirrors lib.rs WASM logic)
@@ -231,7 +302,7 @@ fn compile_content_diagnostics_should_return_diagnostics_for_invalid_input() {
 #[test]
 fn compile_content_diagnostics_should_return_warnings_for_duplicate_id() {
     let output = compile_content_diagnostics("div#a#b\n").unwrap();
-    assert_eq!(output.html, r#"<div id="a"/>"#);
+    assert_eq!(output.html, r#"<div id="a"></div>"#);
     assert_eq!(output.diagnostics.len(), 1);
     assert_eq!(
         output.diagnostics[0].severity,
@@ -343,7 +414,9 @@ fn it_should_compile_doctype_with_tags() {
 
     assert_eq!(
         result,
-        Ok(String::from("<!DOCTYPE html><html><head/><body/></html>"))
+        Ok(String::from(
+            "<!DOCTYPE html><html><head></head><body></body></html>"
+        ))
     );
 }
 
@@ -388,7 +461,7 @@ fn it_should_compile_parsed_elk_main_content_component() {
 
     assert_eq!(
         html_content,
-        r#"<div ref="container" :class="containerClass"><div class="sticky top-0 z10 backdrop-blur native:lg:w-[calc(100vw-5rem)] native:xl:w-[calc(135%+(100vw-1200px)/2)]" pt="[env(safe-area-inset-top,0)]" bg="[rgba(var(--rgb-bg-base),0.7)]"><div class="flex justify-between px5 py2 native:xl:flex" :class="{ 'xl:hidden': $route.name !== 'tag' }" border="b base"><div class="flex gap-3 items-center py2 w-full" :overflow-hidden="!noOverflowHidden ? '' : false"><NuxtLink class="items-center btn-text p-0 xl:hidden" v-if="backOnSmallScreen || back" flex="~ gap1" :aria-label="$t('nav.back')" @click="$router.go(-1)"><div class="rtl-flip" i-ri:arrow-left-line/></NuxtLink><div class="flex w-full native-mac:justify-center native-mac:text-center native-mac:sm:justify-start" :truncate="!noOverflowHidden ? '' : false" data-tauri-drag-region><slot name="title"/></div><div class="sm:hidde nh-7 w-1px"/></div><div class="flex items-center flex-shrink-0 gap-x-2"><slot name="actions"/><PwaBadge class="lg:hidden"/><NavUser v-if="isHydrated"/><NavUserSkeleton v-else/></div></div><slot name="header"><div hidden/></slot></div><PwaInstallPrompt class="lg:hidden"/><div class="m-auto" :class="isHydrated && wideLayout ? 'xl:w-full sm:max-w-600px' : 'sm:max-w-600px md:shrink-0'"><div class="h-6" hidden :class="{ 'xl:block': $route.name !== 'tag' && !$slots.header }"/><slot/></div></div>"#
+        r#"<div ref="container" :class="containerClass"><div class="sticky top-0 z10 backdrop-blur native:lg:w-[calc(100vw-5rem)] native:xl:w-[calc(135%+(100vw-1200px)/2)]" pt="[env(safe-area-inset-top,0)]" bg="[rgba(var(--rgb-bg-base),0.7)]"><div class="flex justify-between px5 py2 native:xl:flex" :class="{ 'xl:hidden': $route.name !== 'tag' }" border="b base"><div class="flex gap-3 items-center py2 w-full" :overflow-hidden="!noOverflowHidden ? '' : false"><NuxtLink class="items-center btn-text p-0 xl:hidden" v-if="backOnSmallScreen || back" flex="~ gap1" :aria-label="$t('nav.back')" @click="$router.go(-1)"><div class="rtl-flip" i-ri:arrow-left-line></div></NuxtLink><div class="flex w-full native-mac:justify-center native-mac:text-center native-mac:sm:justify-start" :truncate="!noOverflowHidden ? '' : false" data-tauri-drag-region><slot name="title"></slot></div><div class="sm:hidde nh-7 w-1px"></div></div><div class="flex items-center flex-shrink-0 gap-x-2"><slot name="actions"></slot><PwaBadge class="lg:hidden"></PwaBadge><NavUser v-if="isHydrated"></NavUser><NavUserSkeleton v-else></NavUserSkeleton></div></div><slot name="header"><div hidden></div></slot></div><PwaInstallPrompt class="lg:hidden"></PwaInstallPrompt><div class="m-auto" :class="isHydrated && wideLayout ? 'xl:w-full sm:max-w-600px' : 'sm:max-w-600px md:shrink-0'"><div class="h-6" hidden :class="{ 'xl:block': $route.name !== 'tag' && !$slots.header }"></div><slot></slot></div></div>"#
     );
     assert_eq!(*rest.fragment(), "");
 }
@@ -439,7 +512,7 @@ fn compile_diagnostics_serialize_duplicate_id_to_json() {
     let json = serde_json::to_value(&output).unwrap();
     let diagnostics = json["diagnostics"].as_array().unwrap();
 
-    assert_eq!(json["html"].as_str(), Some(r#"<div id="a"/>"#));
+    assert_eq!(json["html"].as_str(), Some(r#"<div id="a"></div>"#));
     assert_eq!(diagnostics.len(), 1);
     assert_eq!(diagnostics[0]["severity"].as_str(), Some("warning"));
     assert_eq!(
