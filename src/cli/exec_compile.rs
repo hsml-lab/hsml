@@ -1,6 +1,7 @@
 use std::{
     env, fs,
     path::{Path, PathBuf},
+    time::Instant,
 };
 
 use clap::ArgMatches;
@@ -27,10 +28,6 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
     };
     let path = &path;
 
-    if debug {
-        println!("Compiling {}", path.display());
-    }
-
     let mut diagnostics: Vec<FileDiagnostics> = Vec::new();
     let mut io_errors: Vec<String> = Vec::new();
 
@@ -38,7 +35,11 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
         match walk_hsml_files(path, &ignore_patterns) {
             Ok(result) => {
                 if debug {
-                    println!("Found {} .hsml file(s)", result.files.len());
+                    println!(
+                        "\x1b[2mCompiling {} file(s) from {}\x1b[0m",
+                        result.files.len(),
+                        path.display()
+                    );
                 }
                 io_errors.extend(result.errors);
                 for file in &result.files {
@@ -96,16 +97,23 @@ fn compile_file(
     let fallback_out_file = file.with_extension("html");
     let out_file = out_file.unwrap_or(&fallback_out_file);
 
+    let start = Instant::now();
+
     match compile_content_diagnostics(&content) {
         Ok(output) => {
             // Write HTML immediately — don't buffer
             if let Err(e) = fs::write(out_file, &output.html) {
                 io_errors.push(format!("Unable to write file {}: {e}", out_file.display()));
             } else if debug {
-                println!(
-                    "Compiled HTML written to {} successfully",
-                    out_file.display()
-                );
+                let elapsed = start.elapsed();
+                let micros = elapsed.as_micros();
+                let timing = if micros < 1000 {
+                    format!("{micros}µs")
+                } else {
+                    format!("{}ms", elapsed.as_millis())
+                };
+                // dim = \x1b[2m, reset = \x1b[0m
+                println!("\x1b[2m{} {timing}\x1b[0m", out_file.display());
             }
 
             let file_diags: Vec<_> = output
