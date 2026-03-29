@@ -29,7 +29,7 @@ pub fn cli() -> Command {
                 )
                 .arg(
                     arg!(report_format: --"report-format" <FORMAT> "Report format for diagnostics")
-                        .value_parser(["default", "json", "github"])
+                        .value_parser(["default", "json", "github", "gitlab"])
                         .default_value("default"),
                 )
                 .arg(
@@ -51,7 +51,7 @@ pub fn cli() -> Command {
                 )
                 .arg(
                     arg!(report_format: --"report-format" <FORMAT> "Report format for diagnostics")
-                        .value_parser(["default", "json", "github"])
+                        .value_parser(["default", "json", "github", "gitlab"])
                         .default_value("default"),
                 )
                 .arg(

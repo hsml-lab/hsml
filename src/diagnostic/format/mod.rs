@@ -1,5 +1,6 @@
 pub mod default;
 pub mod github;
+pub mod gitlab;
 pub mod json;
 
 #[cfg(test)]

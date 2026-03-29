@@ -10,6 +10,7 @@ use hsml::diagnostic::{
         DiagnosticFormatter,
         default::{DefaultColorFormatter, DefaultFormatter},
         github::GithubFormatter,
+        gitlab::GitlabFormatter,
         json::JsonFormatter,
     },
 };
@@ -56,6 +57,11 @@ pub fn render_diagnostics(results: &[FileDiagnostics], format: Option<&str>, no_
             let owned: Vec<_> = all_diagnostics.into_iter().cloned().collect();
             let output = GithubFormatter.format(&owned, None);
             eprint!("{output}");
+        }
+        Some("gitlab") => {
+            let owned: Vec<_> = all_diagnostics.into_iter().cloned().collect();
+            let output = GitlabFormatter.format(&owned, None);
+            eprintln!("{output}");
         }
         _ => {
             let formatter: Box<dyn DiagnosticFormatter> = if no_color {
