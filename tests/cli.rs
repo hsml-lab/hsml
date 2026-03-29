@@ -178,11 +178,11 @@ fn compile_directory_recurses_into_subdirs() {
 
     assert_eq!(
         fs::read_to_string(dir.path().join("root.html")).unwrap(),
-        "<div/>"
+        "<div></div>"
     );
     assert_eq!(
         fs::read_to_string(sub.join("nested.html")).unwrap(),
-        "<span/>"
+        "<span></span>"
     );
 }
 

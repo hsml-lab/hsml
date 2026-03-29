@@ -7,6 +7,17 @@ use crate::parser::{
 #[derive(Default)]
 pub struct HsmlCompileOptions {}
 
+/// HTML void elements that cannot have children and must not have a closing tag.
+/// See: https://developer.mozilla.org/en-US/docs/Glossary/Void_element
+const VOID_ELEMENTS: &[&str] = &[
+    "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track",
+    "wbr",
+];
+
+fn is_void_element(tag: &str) -> bool {
+    VOID_ELEMENTS.contains(&tag)
+}
+
 fn compile_tag_node(tag_node: &TagNode, _options: &HsmlCompileOptions) -> Result<String, String> {
     let mut html_content = String::new();
 
@@ -60,13 +71,12 @@ fn compile_tag_node(tag_node: &TagNode, _options: &HsmlCompileOptions) -> Result
         }
     }
 
-    let should_auto_close = tag_node.children.is_none() && tag_node.text.is_none();
-    if should_auto_close {
-        html_content.push_str("/>");
+    if is_void_element(&tag_node.tag) {
+        html_content.push_str(" />");
         return Ok(html_content);
-    } else {
-        html_content.push('>');
     }
+
+    html_content.push('>');
 
     if let Some(text) = &tag_node.text {
         html_content.push_str(&text.text);
