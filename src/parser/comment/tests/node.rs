@@ -1,3 +1,4 @@
+use crate::common::Position;
 use crate::parser::Span;
 use crate::parser::comment::node::{CommentNode, comment_dev_node, comment_native_node};
 
@@ -11,6 +12,28 @@ fn it_should_return_comment_dev_node() {
     );
 
     assert_eq!(*rest.fragment(), "\n");
+}
+
+#[test]
+fn it_should_track_dev_comment_location() {
+    let (_, comment) = comment_dev_node(Span::new("// Hello\n")).unwrap();
+
+    assert_eq!(comment.location.start, Position { line: 1, column: 1 });
+    assert_eq!(comment.location.end, Position { line: 1, column: 9 });
+}
+
+#[test]
+fn it_should_track_native_comment_location() {
+    let (_, comment) = comment_native_node(Span::new("//! Hello\n")).unwrap();
+
+    assert_eq!(comment.location.start, Position { line: 1, column: 1 });
+    assert_eq!(
+        comment.location.end,
+        Position {
+            line: 1,
+            column: 10
+        }
+    );
 }
 
 #[test]
