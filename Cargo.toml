@@ -16,15 +16,13 @@ categories = [
     "parser-implementations",
 ]
 exclude = [
-    "/.claude",
-    "/.github",
-    "/.vscode",
-    "/coverage",
+    ".claude",
+    ".github",
+    ".vscode",
+    "coverage",
+    "examples",
     "CONTRIBUTING.md",
-    "example.hsml",
-    "example2.hsml",
     "finite_state_machine.dot",
-    "notes.md",
 ]
 
 [lib]

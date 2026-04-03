@@ -1,0 +1,48 @@
+<div ref="container" :class="containerClass">
+  <div
+    class="sticky top-0 z-20"
+    pt="[env(safe-area-inset-top,0)]"
+    bg="[rgba(var(--rgb-bg-base),0.7)]"
+    :class="{
+      'backdrop-blur': !getPreferences(userSettings, 'optimizeForLowPerformanceDevice'),
+    }"
+  >
+    <div
+      class="min-h-53px px-2 py-1"
+      flex="~ justify-between"
+      :class="{ 'xl:hidden': $route.name !== 'tag' }"
+      border="b base"
+    >
+      <div class="w-full" flex="~ items-center">
+        <button
+          class="btn-text flex items-center p-3 xl:hidden"
+          v-if="backOnSmallScreen || showBackButton"
+          :aria-label="$t('nav.back')"
+          @click="$router.go(-1)"
+        >
+          <div class="text-lg rtl-flip" i-ri:arrow-left-line></div>
+        </button>
+        <div class="flex w-full"><slot name="title"></slot></div>
+        <div class="sm:hidden h-7 w-1px"></div>
+      </div>
+      <div class="px-3" flex="~ items-center shrink-0 gap-x-2">
+        <slot name="actions"></slot><PwaBadge class="xl:hidden"></PwaBadge
+        ><NavUser v-if="isHydrated"></NavUser
+        ><NavUserSkeleton v-else></NavUserSkeleton>
+      </div>
+    </div>
+    <slot name="header"><div hidden></div></slot>
+  </div>
+  <PwaInstallPrompt class="xl:hidden"></PwaInstallPrompt>
+  <div
+    class="m-auto"
+    :class="isHydrated && wideLayout ? 'xl:w-full sm:max-w-600px' : 'sm:max-w-600px md:shrink-0'"
+  >
+    <div
+      class="h-6"
+      hidden
+      :class="{ 'xl:block': $route.name !== 'tag' && !$slots.header }"
+    ></div>
+    <slot></slot>
+  </div>
+</div>
