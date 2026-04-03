@@ -37,29 +37,28 @@ fn node_end_line(node: &HsmlNode) -> Option<u32> {
     match node {
         HsmlNode::Tag(tag) => {
             let mut last = tag.location.start.line;
-            if let Some(children) = &tag.children {
-                if let Some(child) = children.last() {
-                    if let Some(child_end) = node_end_line(child) {
-                        last = last.max(child_end);
-                    }
-                }
+            if let Some(children) = &tag.children
+                && let Some(child) = children.last()
+                && let Some(child_end) = node_end_line(child)
+            {
+                last = last.max(child_end);
             }
-            if let Some(text) = &tag.text {
-                if text.is_block {
-                    last = last + text.text.lines().count() as u32;
-                }
+            if let Some(text) = &tag.text
+                && text.is_block
+            {
+                last += text.text.lines().count() as u32;
             }
-            if let Some(attrs) = &tag.attributes {
-                if let Some(last_attr) = attrs.last() {
-                    let attr_end = match last_attr {
-                        HsmlNode::Attribute(a) => a.location.end.line,
-                        HsmlNode::Comment(c) => c.location.end.line,
-                        _ => 0,
-                    };
-                    if attr_end > last {
-                        // +1 for the closing ')' on its own line
-                        last = attr_end + 1;
-                    }
+            if let Some(attrs) = &tag.attributes
+                && let Some(last_attr) = attrs.last()
+            {
+                let attr_end = match last_attr {
+                    HsmlNode::Attribute(a) => a.location.end.line,
+                    HsmlNode::Comment(c) => c.location.end.line,
+                    _ => 0,
+                };
+                if attr_end > last {
+                    // +1 for the closing ')' on its own line
+                    last = attr_end + 1;
                 }
             }
             Some(last)
@@ -105,14 +104,12 @@ pub fn format(ast: &RootNode, options: &FormatOptions) -> String {
 fn format_nodes(nodes: &[HsmlNode], depth: usize, options: &FormatOptions, output: &mut String) {
     for (i, node) in nodes.iter().enumerate() {
         // Insert a blank line if there was one between this node and the previous
-        if i > 0 {
-            if let (Some(prev_end), Some(current_start)) =
+        if i > 0
+            && let (Some(prev_end), Some(current_start)) =
                 (node_end_line(&nodes[i - 1]), node_start_line(node))
-            {
-                if current_start > prev_end + 1 {
-                    output.push('\n');
-                }
-            }
+            && current_start > prev_end + 1
+        {
+            output.push('\n');
         }
 
         format_node(node, depth, options, output);
@@ -235,11 +232,11 @@ fn format_tag(tag: &TagNode, depth: usize, options: &FormatOptions, output: &mut
                             if has_more_attrs {
                                 line.push(',');
                             }
-                            if is_trailing {
-                                if let Some(AttrItem::Comment { text: c, .. }) = attr_iter.next() {
-                                    line.push(' ');
-                                    line.push_str(c);
-                                }
+                            if is_trailing
+                                && let Some(AttrItem::Comment { text: c, .. }) = attr_iter.next()
+                            {
+                                line.push(' ');
+                                line.push_str(c);
                             }
                         }
                         AttrItem::Comment { text: s, .. } => {
@@ -259,28 +256,13 @@ fn format_tag(tag: &TagNode, depth: usize, options: &FormatOptions, output: &mut
 
     // Text content
     if let Some(text) = &tag.text {
-        if text.is_block {
-            output.push_str(&format!("{indent}{line}.\n"));
-            let text_indent = " ".repeat((depth + 1) * options.indent_size);
-            let max_width = options.print_width.saturating_sub(text_indent.len());
-            let wrapped = word_wrap(&text.text, max_width);
-            for wrapped_line in wrapped.lines() {
-                output.push_str(&format!("{text_indent}{wrapped_line}\n"));
-            }
+        let use_block =
+            text.is_block || indent.len() + line.len() + 1 + text.text.len() > options.print_width;
+
+        if use_block {
+            write_text_block(output, &indent, &line, &text.text, depth, options);
         } else {
-            // Inline text — expand to block if it exceeds print width
-            let inline_len = indent.len() + line.len() + 1 + text.text.len();
-            if inline_len > options.print_width {
-                output.push_str(&format!("{indent}{line}.\n"));
-                let text_indent = " ".repeat((depth + 1) * options.indent_size);
-                let max_width = options.print_width.saturating_sub(text_indent.len());
-                let wrapped = word_wrap(&text.text, max_width);
-                for wrapped_line in wrapped.lines() {
-                    output.push_str(&format!("{text_indent}{wrapped_line}\n"));
-                }
-            } else {
-                output.push_str(&format!("{indent}{line} {}\n", text.text));
-            }
+            output.push_str(&format!("{indent}{line} {}\n", text.text));
         }
     } else {
         output.push_str(&format!("{indent}{line}\n"));
@@ -289,6 +271,23 @@ fn format_tag(tag: &TagNode, depth: usize, options: &FormatOptions, output: &mut
     // Children
     if let Some(children) = &tag.children {
         format_nodes(children, depth + 1, options, output);
+    }
+}
+
+fn write_text_block(
+    output: &mut String,
+    indent: &str,
+    line: &str,
+    text: &str,
+    depth: usize,
+    options: &FormatOptions,
+) {
+    output.push_str(&format!("{indent}{line}.\n"));
+    let text_indent = " ".repeat((depth + 1) * options.indent_size);
+    let max_width = options.print_width.saturating_sub(text_indent.len());
+    let wrapped = word_wrap(text, max_width);
+    for wrapped_line in wrapped.lines() {
+        output.push_str(&format!("{text_indent}{wrapped_line}\n"));
     }
 }
 

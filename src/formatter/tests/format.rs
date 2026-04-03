@@ -383,3 +383,27 @@ html
 ";
     assert_eq!(fmt(input), expected);
 }
+
+#[test]
+fn it_should_be_idempotent() {
+    let input = "\
+doctype html
+html
+  head
+    meta(charset=\"utf-8\")
+    title My Page
+  body
+    .container#app
+      img.rounded(src=\"/photo.jpg\", alt=\"Photo\")
+
+      p.text-gray Hello World
+      p.text-lg.font-medium.
+        Some long text that spans multiple lines in the source and will be
+        wrapped by the formatter.
+      // dev comment
+      //! native comment
+";
+    let first = fmt(input);
+    let second = fmt(&first);
+    assert_eq!(first, second, "formatting should be idempotent");
+}

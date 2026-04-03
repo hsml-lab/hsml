@@ -8,10 +8,12 @@ use hsml::parser::{Span, parse::parse};
 use super::walker::walk_hsml_files;
 
 pub fn exec_format(matches: &ArgMatches) -> Result<(), String> {
-    let path = matches
-        .get_one::<PathBuf>("path")
-        .cloned()
-        .unwrap_or_else(|| std::env::current_dir().expect("Unable to get current directory"));
+    let path = match matches.get_one::<PathBuf>("path") {
+        Some(p) => p.clone(),
+        None => {
+            std::env::current_dir().map_err(|e| format!("Unable to get current directory: {e}"))?
+        }
+    };
 
     let check = matches.get_flag("check");
 
