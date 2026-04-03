@@ -514,6 +514,84 @@ fn parse_outputs_ast_as_json() {
 }
 
 #[test]
+fn parse_outputs_nested_structure_with_attributes() {
+    let dir = TempDir::new().unwrap();
+    let input = dir.path().join("nested.hsml");
+
+    fs::write(
+        &input,
+        "\
+doctype html
+html
+  head
+    meta(charset=\"utf-8\")
+    title My Page
+  body
+    .container#app
+      img.rounded(src=\"/photo.jpg\" alt=\"Photo\")
+      p.text-gray Hello World
+",
+    )
+    .unwrap();
+
+    let output = cmd()
+        .args(["parse", input.to_str().unwrap()])
+        .output()
+        .unwrap();
+
+    assert!(output.status.success());
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let parsed: serde_json::Value = serde_json::from_str(&stdout).expect("should be valid JSON");
+
+    let nodes = parsed["nodes"].as_array().unwrap();
+    assert_eq!(nodes.len(), 2); // doctype + html
+
+    // Doctype
+    assert_eq!(nodes[0]["type"], "doctype");
+    assert_eq!(nodes[0]["doctype"], "html");
+
+    // html > head > meta
+    let html = &nodes[1];
+    assert_eq!(html["tag"], "html");
+    let head = &html["children"][0];
+    assert_eq!(head["tag"], "head");
+    let meta = &head["children"][0];
+    assert_eq!(meta["tag"], "meta");
+    assert_eq!(meta["attributes"][0]["type"], "attribute");
+    assert_eq!(meta["attributes"][0]["key"], "charset");
+    assert_eq!(meta["attributes"][0]["value"], "utf-8");
+
+    // html > head > title
+    let title = &head["children"][1];
+    assert_eq!(title["tag"], "title");
+    assert_eq!(title["text"]["text"], "My Page");
+
+    // html > body > .container#app
+    let body = &html["children"][1];
+    assert_eq!(body["tag"], "body");
+    let container = &body["children"][0];
+    assert_eq!(container["tag"], "div"); // implicit div
+    assert_eq!(container["ids"][0]["id"], "app");
+    assert_eq!(container["classes"][0]["name"], "container");
+
+    // img with classes and attributes
+    let img = &container["children"][0];
+    assert_eq!(img["tag"], "img");
+    assert_eq!(img["classes"][0]["name"], "rounded");
+    assert_eq!(img["attributes"][0]["key"], "src");
+    assert_eq!(img["attributes"][0]["value"], "/photo.jpg");
+    assert_eq!(img["attributes"][1]["key"], "alt");
+    assert_eq!(img["attributes"][1]["value"], "Photo");
+
+    // p with class and text
+    let p = &container["children"][1];
+    assert_eq!(p["tag"], "p");
+    assert_eq!(p["classes"][0]["name"], "text-gray");
+    assert_eq!(p["text"]["text"], "Hello World");
+}
+
+#[test]
 fn parse_includes_diagnostics() {
     let dir = TempDir::new().unwrap();
     let input = dir.path().join("warn.hsml");
