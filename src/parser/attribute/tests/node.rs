@@ -120,15 +120,9 @@ fn it_should_return_attribute_nodes_with_dev_comments() {
     assert_eq!(
         attribute_nodes,
         vec![
-            HsmlNode::Comment(CommentNode {
-                is_dev: true,
-                text: String::from(" comment 1"),
-            }),
+            HsmlNode::Comment(CommentNode::new_without_location(" comment 1", true)),
             HsmlNode::Attribute(AttributeNode::new_without_location("key", Some("value"))),
-            HsmlNode::Comment(CommentNode {
-                is_dev: true,
-                text: String::from(" comment 2"),
-            }),
+            HsmlNode::Comment(CommentNode::new_without_location(" comment 2", true)),
             HsmlNode::Attribute(AttributeNode::new_without_location(":key2", Some("value2"))),
         ]
     );

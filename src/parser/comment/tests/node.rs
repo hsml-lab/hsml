@@ -7,10 +7,7 @@ fn it_should_return_comment_dev_node() {
 
     assert_eq!(
         comment,
-        CommentNode {
-            text: String::from(" This is a dev comment"),
-            is_dev: true,
-        }
+        CommentNode::new_without_location(" This is a dev comment", true)
     );
 
     assert_eq!(*rest.fragment(), "\n");
@@ -22,10 +19,7 @@ fn it_should_return_comment_native_node() {
 
     assert_eq!(
         comment,
-        CommentNode {
-            text: String::from(" This is a native comment"),
-            is_dev: false,
-        }
+        CommentNode::new_without_location(" This is a native comment", false)
     );
 
     assert_eq!(*rest.fragment(), "\n");

@@ -129,14 +129,14 @@ div
         root_node,
         RootNode {
             nodes: vec![
-                HsmlNode::Comment(CommentNode {
-                    text: String::from(" this is a root dev comment"),
-                    is_dev: true,
-                }),
-                HsmlNode::Comment(CommentNode {
-                    text: String::from(" this is a root native comment (will get rendered)"),
-                    is_dev: false,
-                }),
+                HsmlNode::Comment(CommentNode::new_without_location(
+                    " this is a root dev comment",
+                    true
+                )),
+                HsmlNode::Comment(CommentNode::new_without_location(
+                    " this is a root native comment (will get rendered)",
+                    false
+                )),
                 HsmlNode::Tag(TagNode::without_location(
                     "div",
                     vec![],
@@ -144,10 +144,10 @@ div
                     None,
                     None,
                     Some(vec![
-                        HsmlNode::Comment(CommentNode {
-                            text: String::from(" this is a child comment"),
-                            is_dev: true,
-                        }),
+                        HsmlNode::Comment(CommentNode::new_without_location(
+                            " this is a child comment",
+                            true
+                        )),
                         HsmlNode::Tag(TagNode::without_location(
                             "p",
                             vec![],
@@ -158,19 +158,19 @@ div
                             }),
                             None,
                         )),
-                        HsmlNode::Comment(CommentNode {
-                            text: String::from(" this is a child comment that gets rendered"),
-                            is_dev: false,
-                        }),
+                        HsmlNode::Comment(CommentNode::new_without_location(
+                            " this is a child comment that gets rendered",
+                            false
+                        )),
                         HsmlNode::Tag(TagNode::without_location(
                             "img",
                             vec![],
                             None,
                             Some(vec![
-                                HsmlNode::Comment(CommentNode {
-                                    text: String::from(" supports attribute inline comments"),
-                                    is_dev: true,
-                                }),
+                                HsmlNode::Comment(CommentNode::new_without_location(
+                                    " supports attribute inline comments",
+                                    true
+                                )),
                                 HsmlNode::Attribute(AttributeNode::new_without_location(
                                     "src",
                                     Some("/fancy-avatar.jpg"),
@@ -179,10 +179,10 @@ div
                                     "alt",
                                     Some("Fancy Avatar"),
                                 )),
-                                HsmlNode::Comment(CommentNode {
-                                    text: String::from(" the size of the image"),
-                                    is_dev: true,
-                                }),
+                                HsmlNode::Comment(CommentNode::new_without_location(
+                                    " the size of the image",
+                                    true
+                                )),
                                 HsmlNode::Attribute(AttributeNode::new_without_location(
                                     "width",
                                     Some("384"),
