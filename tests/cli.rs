@@ -510,6 +510,30 @@ fn parse_outputs_ast_as_json() {
     assert_eq!(nodes[0]["tag"], "h1");
     assert_eq!(nodes[0]["text"]["text"], "Hello World");
     assert_eq!(nodes[0]["classes"][0]["name"], "title");
+    assert!(parsed["diagnostics"].as_array().unwrap().is_empty());
+}
+
+#[test]
+fn parse_includes_diagnostics() {
+    let dir = TempDir::new().unwrap();
+    let input = dir.path().join("warn.hsml");
+
+    fs::write(&input, "h1.foo.foo Hello\n").unwrap();
+
+    let output = cmd()
+        .args(["parse", input.to_str().unwrap()])
+        .output()
+        .unwrap();
+
+    assert!(output.status.success());
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let parsed: serde_json::Value = serde_json::from_str(&stdout).expect("should be valid JSON");
+
+    let diagnostics = parsed["diagnostics"].as_array().unwrap();
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(diagnostics[0]["code"], "W002");
+    assert_eq!(diagnostics[0]["severity"], "warning");
 }
 
 #[test]
@@ -546,9 +570,11 @@ fn parse_directory_outputs_array_with_file_paths() {
     let arr = parsed.as_array().unwrap();
     assert_eq!(arr.len(), 2);
     assert!(arr[0]["filePath"].is_string());
-    assert!(arr[0]["ast"]["nodes"].is_array());
+    assert!(arr[0]["nodes"].is_array());
+    assert!(arr[0]["diagnostics"].is_array());
     assert!(arr[1]["filePath"].is_string());
-    assert!(arr[1]["ast"]["nodes"].is_array());
+    assert!(arr[1]["nodes"].is_array());
+    assert!(arr[1]["diagnostics"].is_array());
 }
 
 #[test]
