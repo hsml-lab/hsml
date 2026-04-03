@@ -39,6 +39,11 @@ pub fn exec_parse(matches: &ArgMatches) -> Result<(), String> {
 
     if path.is_dir() {
         let result = walk_hsml_files(path, &ignore_patterns)?;
+
+        for error in &result.errors {
+            eprintln!("{error}");
+        }
+
         let mut file_results = Vec::new();
 
         for file in &result.files {
