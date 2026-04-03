@@ -34,13 +34,13 @@ nom_locate = "5.0.0"
 serde = { version = "1.0.228", features = ["derive"] }
 serde-wasm-bindgen = "0.6.5"
 serde_json = "1.0.149"
-wasm-bindgen = "0.2.115"
+wasm-bindgen = "0.2.117"
 
 # CLI and LSP dependencies are excluded from wasm builds, which only need the parser and compiler
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 clap = { version = "4.6.0", features = ["cargo"] }
 ignore = "0.4.25"
-tokio = { version = "1.50.0", features = ["rt-multi-thread", "io-std"] }
+tokio = { version = "1.51.0", features = ["rt-multi-thread", "io-std"] }
 tower-lsp = "0.20.0"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
@@ -49,5 +49,5 @@ predicates = "=3.1.4"
 tempfile = "=3.27.0"
 
 [dev-dependencies]
-js-sys = "=0.3.92"
-wasm-bindgen-test = "=0.3.65"
+js-sys = "=0.3.94"
+wasm-bindgen-test = "=0.3.67"
