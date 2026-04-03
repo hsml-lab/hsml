@@ -2,7 +2,7 @@ use crate::parser::{HsmlProcessContext, HsmlResult, Span};
 
 use super::process::{process_text, process_text_block};
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, serde::Serialize)]
 pub struct TextNode {
     pub text: String,
 }

@@ -5,7 +5,7 @@ use crate::parser::{HsmlResult, Span};
 
 use super::process::process_id;
 
-#[derive(Debug, Eq)]
+#[derive(Debug, Eq, serde::Serialize)]
 pub struct IdNode {
     pub id: String,
     /// Source location where this id appears.

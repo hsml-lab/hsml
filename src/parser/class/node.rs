@@ -5,7 +5,7 @@ use crate::parser::{HsmlResult, Span};
 
 use super::process::process_class;
 
-#[derive(Debug, Eq)]
+#[derive(Debug, Eq, serde::Serialize)]
 pub struct ClassNode {
     pub name: String,
     /// Source location where this class appears.

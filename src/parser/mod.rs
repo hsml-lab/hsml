@@ -22,14 +22,17 @@ pub mod text;
 /// Convenience alias for parser results using the custom HSML error type.
 pub type HsmlResult<'a, T> = nom::IResult<Span<'a>, T, error::HsmlError<'a>>;
 
+use serde::Serialize;
+
 /// The root of a parsed HSML document, containing all top-level nodes.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct RootNode {
     pub nodes: Vec<HsmlNode>,
 }
 
 /// A single node in the HSML abstract syntax tree.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
+#[serde(tag = "type", rename_all = "camelCase")]
 pub enum HsmlNode {
     Root(RootNode),
     Tag(TagNode),

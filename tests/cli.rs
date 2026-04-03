@@ -488,12 +488,65 @@ fn compile_directory_json_mixes_errors_and_warnings() {
 // --- Unimplemented commands ---
 
 #[test]
-fn parse_command_shows_not_implemented() {
+fn parse_outputs_ast_as_json() {
+    let dir = TempDir::new().unwrap();
+    let input = dir.path().join("test.hsml");
+
+    fs::write(&input, "h1.title Hello World\n").unwrap();
+
+    let output = cmd()
+        .args(["parse", input.to_str().unwrap()])
+        .output()
+        .unwrap();
+
+    assert!(output.status.success());
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let parsed: serde_json::Value = serde_json::from_str(&stdout).expect("should be valid JSON");
+
+    let nodes = parsed["nodes"].as_array().unwrap();
+    assert_eq!(nodes.len(), 1);
+    assert_eq!(nodes[0]["type"], "tag");
+    assert_eq!(nodes[0]["tag"], "h1");
+    assert_eq!(nodes[0]["text"]["text"], "Hello World");
+    assert_eq!(nodes[0]["classes"][0]["name"], "title");
+}
+
+#[test]
+fn parse_fails_on_invalid_file() {
+    let dir = TempDir::new().unwrap();
+    let input = dir.path().join("bad.hsml");
+
+    fs::write(&input, "@@@invalid\n").unwrap();
+
     cmd()
-        .args(["parse"])
+        .args(["parse", input.to_str().unwrap()])
         .assert()
         .failure()
-        .stderr(predicates::str::contains("not yet implemented"));
+        .stderr(predicates::str::contains("Parse error"));
+}
+
+#[test]
+fn parse_fails_on_missing_file() {
+    cmd()
+        .args(["parse", "nonexistent.hsml"])
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains("File does not exist"));
+}
+
+#[test]
+fn parse_fails_on_wrong_extension() {
+    let dir = TempDir::new().unwrap();
+    let input = dir.path().join("test.txt");
+
+    fs::write(&input, "h1 Hello\n").unwrap();
+
+    cmd()
+        .args(["parse", input.to_str().unwrap()])
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains(".hsml extension"));
 }
 
 #[test]

@@ -1,4 +1,5 @@
 use nom::bytes::complete::{take_till, take_till1};
+use serde::Serialize;
 
 use crate::common::{Location, Position};
 use crate::parser::{
@@ -10,7 +11,7 @@ use crate::parser::{
     text::{self, node::TextNode},
 };
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct TagNode {
     pub tag: String,
     /// Source location of the tag name.

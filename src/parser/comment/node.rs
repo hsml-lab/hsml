@@ -1,8 +1,11 @@
+use serde::Serialize;
+
 use crate::parser::{HsmlResult, Span};
 
 use super::process::{process_dev_comment, process_native_comment};
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CommentNode {
     pub text: String,
     pub is_dev: bool,

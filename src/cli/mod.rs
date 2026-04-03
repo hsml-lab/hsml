@@ -39,7 +39,11 @@ pub fn cli() -> Command {
         )
         .subcommand(
             Command::new("parse")
-                .about("Parse given .hsml file and print the AST to stdout as JSON"),
+                .about("Parse given .hsml file and print the AST to stdout as JSON")
+                .arg(
+                    arg!(path: <PATH> "Path to .hsml file")
+                        .value_parser(value_parser!(PathBuf)),
+                ),
         )
         .subcommand(Command::new("fmt").about("Format given .hsml file or directory"))
         .subcommand(
