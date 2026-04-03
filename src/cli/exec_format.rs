@@ -28,16 +28,21 @@ pub fn exec_format(matches: &ArgMatches) -> Result<(), String> {
 
     let options = FormatOptions::default();
     let mut has_diff = false;
+    let mut has_errors = false;
 
     if path.is_dir() {
         let result = walk_hsml_files(&path, &ignore_patterns)?;
 
-        for error in &result.errors {
-            eprintln!("{error}");
+        if !result.errors.is_empty() {
+            has_errors = true;
+            for error in &result.errors {
+                eprintln!("{error}");
+            }
         }
 
         for file in &result.files {
             if let Err(e) = format_file(file, check, &options, &mut has_diff) {
+                has_errors = true;
                 eprintln!("{e}");
             }
         }
@@ -51,7 +56,9 @@ pub fn exec_format(matches: &ArgMatches) -> Result<(), String> {
         return Err("Path must be a file or directory".to_string());
     }
 
-    if check && has_diff {
+    if has_errors {
+        Err("Some files could not be processed".to_string())
+    } else if check && has_diff {
         Err(String::new())
     } else {
         Ok(())
@@ -68,7 +75,16 @@ fn format_file(
         .map_err(|e| format!("Unable to read file {}: {e}", path.display()))?;
 
     let span = Span::new(&content);
-    let (_, ast) = parse(span).map_err(|e| format!("Parse error in {}: {e}", path.display()))?;
+    let (rest, ast) = parse(span).map_err(|e| format!("Parse error in {}: {e}", path.display()))?;
+
+    if !rest.fragment().is_empty() {
+        return Err(format!(
+            "Parse error in {}: unconsumed input at line {}, column {}",
+            path.display(),
+            rest.location_line(),
+            rest.get_column()
+        ));
+    }
 
     let formatted = format(&ast, options);
 

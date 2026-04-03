@@ -88,6 +88,8 @@ div(
 
 #[test]
 fn it_should_keep_trailing_comment_on_same_line() {
+    // The formatter normalizes trailing commas after inline comments:
+    // `alt="", // this is empty,` → `alt="", // this is empty`
     let input = "\
 img(
   src=\"/photo.jpg\",
