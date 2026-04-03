@@ -49,7 +49,19 @@ pub fn cli() -> Command {
                         .action(clap::ArgAction::Append),
                 ),
         )
-        .subcommand(Command::new("fmt").about("Format given .hsml file or directory"))
+        .subcommand(
+            Command::new("fmt")
+                .about("Format given .hsml file or directory")
+                .arg(
+                    arg!(path: [PATH] "Path to .hsml file or directory")
+                        .value_parser(value_parser!(PathBuf)),
+                )
+                .arg(arg!(check: --check "Check formatting without writing changes"))
+                .arg(
+                    arg!(ignore_pattern: --"ignore-pattern" <PATTERN> "Glob pattern for files/directories to ignore")
+                        .action(clap::ArgAction::Append),
+                ),
+        )
         .subcommand(
             Command::new("check")
                 .about("Check given .hsml file or directory for errors and warnings")

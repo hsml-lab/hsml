@@ -286,7 +286,7 @@ warning[W002]: Duplicate class 'foo'
 - [x] JSON diagnostic output (`--report-format json`)
 - [x] `hsml check` — standalone linting command
 - [x] Ignore support (`.gitignore`, `.hsmlignore`, `--ignore-pattern`)
-- [ ] `hsml fmt` — code formatter
+- [x] `hsml fmt` — code formatter
 - [x] `hsml parse` — AST output as JSON
 - [x] LSP server with diagnostics and hover
 - [x] GitHub/GitLab CI diagnostic formatters

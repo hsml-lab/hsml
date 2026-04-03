@@ -26,6 +26,7 @@ fn it_should_compile_simple_tag() {
             None,
             Some(TextNode {
                 text: String::from("Hello World"),
+                is_block: false,
             }),
             None,
         ))],
@@ -46,6 +47,7 @@ fn it_should_compile_content_with_id() {
             None,
             Some(TextNode {
                 text: String::from("Hello World"),
+                is_block: false,
             }),
             None,
         ))],
@@ -338,6 +340,7 @@ fn it_should_error_on_unsupported_root_node_type() {
     let ast = RootNode {
         nodes: vec![HsmlNode::Text(TextNode {
             text: String::from("stray text"),
+            is_block: false,
         })],
     };
 
@@ -357,6 +360,7 @@ fn it_should_error_on_unsupported_child_node_type() {
             None,
             Some(TextNode {
                 text: String::from("hello"),
+                is_block: false,
             }),
             Some(vec![HsmlNode::Id(IdNode::new_without_location("stray"))]),
         ))],

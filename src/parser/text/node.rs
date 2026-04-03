@@ -3,8 +3,11 @@ use crate::parser::{HsmlProcessContext, HsmlResult, Span};
 use super::process::{process_text, process_text_block};
 
 #[derive(Debug, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct TextNode {
     pub text: String,
+    /// Whether this text was written as a block (trailing dot syntax).
+    pub is_block: bool,
 }
 
 pub fn text_block_node<'a>(
@@ -31,7 +34,13 @@ pub fn text_block_node<'a>(
         .collect::<Vec<_>>()
         .join("\n");
 
-    Ok((input, TextNode { text }))
+    Ok((
+        input,
+        TextNode {
+            text,
+            is_block: true,
+        },
+    ))
 }
 
 pub fn text_node(input: Span<'_>) -> HsmlResult<'_, TextNode> {
@@ -41,6 +50,7 @@ pub fn text_node(input: Span<'_>) -> HsmlResult<'_, TextNode> {
         input,
         TextNode {
             text: text.to_string(),
+            is_block: false,
         },
     ))
 }

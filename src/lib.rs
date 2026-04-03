@@ -1,6 +1,7 @@
 pub mod common;
 pub mod compiler;
 pub mod diagnostic;
+pub mod formatter;
 pub mod parser;
 pub mod validate;
 

@@ -721,12 +721,87 @@ fn parse_fails_on_wrong_extension() {
 }
 
 #[test]
-fn fmt_command_shows_not_implemented() {
+fn fmt_formats_file_in_place() {
+    let dir = TempDir::new().unwrap();
+    let input = dir.path().join("test.hsml");
+
+    fs::write(&input, "div\n    h1 Hello\n").unwrap();
+
     cmd()
-        .args(["fmt"])
+        .args(["fmt", input.to_str().unwrap()])
         .assert()
-        .failure()
-        .stderr(predicates::str::contains("not yet implemented"));
+        .success();
+
+    assert_eq!(fs::read_to_string(&input).unwrap(), "div\n  h1 Hello\n");
+}
+
+#[test]
+fn fmt_check_fails_on_unformatted() {
+    let dir = TempDir::new().unwrap();
+    let input = dir.path().join("test.hsml");
+
+    fs::write(&input, "div\n    h1 Hello\n").unwrap();
+
+    cmd()
+        .args(["fmt", "--check", input.to_str().unwrap()])
+        .assert()
+        .failure();
+
+    // File should NOT be modified
+    assert_eq!(fs::read_to_string(&input).unwrap(), "div\n    h1 Hello\n");
+}
+
+#[test]
+fn fmt_check_succeeds_on_formatted() {
+    let dir = TempDir::new().unwrap();
+    let input = dir.path().join("test.hsml");
+
+    fs::write(&input, "div\n  h1 Hello\n").unwrap();
+
+    cmd()
+        .args(["fmt", "--check", input.to_str().unwrap()])
+        .assert()
+        .success();
+}
+
+#[test]
+fn fmt_formats_directory() {
+    let dir = TempDir::new().unwrap();
+
+    fs::write(dir.path().join("a.hsml"), "div\n    h1 A\n").unwrap();
+    fs::write(dir.path().join("b.hsml"), "div\n    h2 B\n").unwrap();
+
+    cmd()
+        .args(["fmt", dir.path().to_str().unwrap()])
+        .assert()
+        .success();
+
+    assert_eq!(
+        fs::read_to_string(dir.path().join("a.hsml")).unwrap(),
+        "div\n  h1 A\n"
+    );
+    assert_eq!(
+        fs::read_to_string(dir.path().join("b.hsml")).unwrap(),
+        "div\n  h2 B\n"
+    );
+}
+
+#[test]
+fn fmt_normalizes_attribute_commas() {
+    let dir = TempDir::new().unwrap();
+    let input = dir.path().join("test.hsml");
+
+    fs::write(&input, "img(src=\"a\"  alt=\"b\")\n").unwrap();
+
+    cmd()
+        .args(["fmt", input.to_str().unwrap()])
+        .assert()
+        .success();
+
+    assert_eq!(
+        fs::read_to_string(&input).unwrap(),
+        "img(src=\"a\", alt=\"b\")\n"
+    );
 }
 
 // --- Check command ---
