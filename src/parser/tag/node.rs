@@ -70,10 +70,7 @@ pub fn tag_node<'a>(input: Span<'a>, context: &mut HsmlProcessContext) -> HsmlRe
     // tag node starts with a tag name or a dot/hash
     // if it starts with a dot/hash, the tag name is div
 
-    let tag_start = Position {
-        line: input.location_line(),
-        column: input.get_column() as u32,
-    };
+    let tag_start_span = input;
 
     let (mut input, tag_name) = if input.starts_with('.') || input.starts_with('#') {
         // Implicit div — location is the dot/hash position (zero-width)
@@ -83,15 +80,7 @@ pub fn tag_node<'a>(input: Span<'a>, context: &mut HsmlProcessContext) -> HsmlRe
         (rest, *name.fragment())
     };
 
-    let tag_end = Position {
-        line: input.location_line(),
-        column: input.get_column() as u32,
-    };
-
-    let tag_location = Location {
-        start: tag_start,
-        end: tag_end,
-    };
+    let tag_location = Location::from_spans(&tag_start_span, &input);
 
     // if the next char is a dot, we have a id node
     // if the next char is a dot, we have a class node

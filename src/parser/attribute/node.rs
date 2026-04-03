@@ -43,20 +43,9 @@ pub fn attribute_node<'a>(
     input: Span<'a>,
     context: &mut HsmlProcessContext,
 ) -> HsmlResult<'a, AttributeNode> {
-    let start = Position {
-        line: input.location_line(),
-        column: input.get_column() as u32,
-    };
-
+    let start_span = input;
     let (input, attribute) = process_attribute(input, context)?;
-
-    let location = Location {
-        start,
-        end: Position {
-            line: input.location_line(),
-            column: input.get_column() as u32,
-        },
-    };
+    let location = Location::from_spans(&start_span, &input);
 
     let attribute_str = *attribute.fragment();
     let equal_sign_index = attribute_str.find('=').unwrap_or(attribute_str.len());

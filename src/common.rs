@@ -9,6 +9,16 @@ pub struct Position {
     pub column: u32,
 }
 
+impl Position {
+    /// Create a Position from a parser span's current location.
+    pub fn from_span(span: &nom_locate::LocatedSpan<&str>) -> Self {
+        Self {
+            line: span.location_line(),
+            column: span.get_column() as u32,
+        }
+    }
+}
+
 /// A span in source code, defined by a start and end position.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Location {
@@ -30,6 +40,17 @@ pub fn is_void_element(tag: &str) -> bool {
 }
 
 impl Location {
+    /// Create a Location from two parser spans (start and end positions).
+    pub fn from_spans(
+        start: &nom_locate::LocatedSpan<&str>,
+        end: &nom_locate::LocatedSpan<&str>,
+    ) -> Self {
+        Self {
+            start: Position::from_span(start),
+            end: Position::from_span(end),
+        }
+    }
+
     /// Returns true if this location represents a valid source position
     /// (not a sentinel value from `new_without_location`).
     pub fn is_valid(&self) -> bool {
