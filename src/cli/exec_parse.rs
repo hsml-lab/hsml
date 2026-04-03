@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 
 use clap::ArgMatches;
 use hsml::diagnostic::Diagnostic;
-use hsml::parser::{RootNode, Span, parse::parse};
+use hsml::parser::{HsmlNode, Span, parse::parse};
 use hsml::validate::validate;
 use serde::Serialize;
 
@@ -12,8 +12,7 @@ use super::walker::walk_hsml_files;
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct ParseResult {
-    #[serde(flatten)]
-    ast: RootNode,
+    nodes: Option<Vec<HsmlNode>>,
     diagnostics: Vec<Diagnostic>,
 }
 
@@ -47,10 +46,9 @@ pub fn exec_parse(matches: &ArgMatches) -> Result<(), String> {
         let mut file_results = Vec::new();
 
         for file in &result.files {
-            let parse_result = parse_file(file)?;
             file_results.push(FileParseResult {
                 file_path: file.display().to_string(),
-                result: parse_result,
+                result: parse_file(file),
             });
         }
 
@@ -62,7 +60,7 @@ pub fn exec_parse(matches: &ArgMatches) -> Result<(), String> {
             .filter(|&ext| ext == "hsml")
             .ok_or("File must have .hsml extension".to_string())?;
 
-        let result = parse_file(path)?;
+        let result = parse_file(path);
         let json = serde_json::to_string_pretty(&result)
             .map_err(|e| format!("Failed to serialize AST: {e}"))?;
         println!("{json}");
@@ -73,17 +71,39 @@ pub fn exec_parse(matches: &ArgMatches) -> Result<(), String> {
     Ok(())
 }
 
-fn parse_file(path: &Path) -> Result<ParseResult, String> {
-    let content = fs::read_to_string(path)
-        .map_err(|e| format!("Unable to read file {}: {e}", path.display()))?;
+fn parse_file(path: &Path) -> ParseResult {
+    let content = match fs::read_to_string(path) {
+        Ok(content) => content,
+        Err(e) => {
+            return ParseResult {
+                nodes: None,
+                diagnostics: vec![Diagnostic::compiler_error(format!(
+                    "Unable to read file {}: {e}",
+                    path.display()
+                ))],
+            };
+        }
+    };
 
     let span = Span::new(&content);
-    let (_, ast) = parse(span).map_err(|e| format!("Parse error in {}: {e}", path.display()))?;
+    let (_, ast) = match parse(span) {
+        Ok(result) => result,
+        Err(e) => {
+            let diag = Diagnostic::from(&e).with_file_path(path.display().to_string());
+            return ParseResult {
+                nodes: None,
+                diagnostics: vec![diag],
+            };
+        }
+    };
 
     let diagnostics: Vec<Diagnostic> = validate(&ast, &content)
         .into_iter()
         .map(|d| d.with_file_path(path.display().to_string()))
         .collect();
 
-    Ok(ParseResult { ast, diagnostics })
+    ParseResult {
+        nodes: Some(ast.nodes),
+        diagnostics,
+    }
 }

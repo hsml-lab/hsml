@@ -615,17 +615,26 @@ fn parse_includes_diagnostics() {
 }
 
 #[test]
-fn parse_fails_on_invalid_file() {
+fn parse_returns_null_nodes_with_error_diagnostic_for_invalid_file() {
     let dir = TempDir::new().unwrap();
     let input = dir.path().join("bad.hsml");
 
     fs::write(&input, "@@@invalid\n").unwrap();
 
-    cmd()
+    let output = cmd()
         .args(["parse", input.to_str().unwrap()])
-        .assert()
-        .failure()
-        .stderr(predicates::str::contains("Parse error"));
+        .output()
+        .unwrap();
+
+    assert!(output.status.success());
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let parsed: serde_json::Value = serde_json::from_str(&stdout).expect("should be valid JSON");
+
+    assert!(parsed["nodes"].is_null());
+    let diagnostics = parsed["diagnostics"].as_array().unwrap();
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(diagnostics[0]["severity"], "error");
 }
 
 #[test]
