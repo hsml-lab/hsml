@@ -50,16 +50,7 @@ pub fn class_node(input: Span<'_>) -> HsmlResult<'_, ClassNode> {
         rest,
         ClassNode {
             name: class_name.to_string(),
-            location: Location {
-                start: Position {
-                    line: input.location_line(),
-                    column: input.get_column() as u32,
-                },
-                end: Position {
-                    line: rest.location_line(),
-                    column: rest.get_column() as u32,
-                },
-            },
+            location: Location::from_spans(&input, &rest),
         },
     ))
 }

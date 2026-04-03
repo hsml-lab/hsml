@@ -39,11 +39,6 @@ impl CommentNode {
 }
 
 pub fn comment_dev_node(input: Span<'_>) -> HsmlResult<'_, CommentNode> {
-    let start = Position {
-        line: input.location_line(),
-        column: input.get_column() as u32,
-    };
-
     let (rest, comment) = process_dev_comment(input)?;
 
     Ok((
@@ -51,23 +46,12 @@ pub fn comment_dev_node(input: Span<'_>) -> HsmlResult<'_, CommentNode> {
         CommentNode {
             text: comment.to_string(),
             is_dev: true,
-            location: Location {
-                start,
-                end: Position {
-                    line: rest.location_line(),
-                    column: rest.get_column() as u32,
-                },
-            },
+            location: Location::from_spans(&input, &rest),
         },
     ))
 }
 
 pub fn comment_native_node(input: Span<'_>) -> HsmlResult<'_, CommentNode> {
-    let start = Position {
-        line: input.location_line(),
-        column: input.get_column() as u32,
-    };
-
     let (rest, comment) = process_native_comment(input)?;
 
     Ok((
@@ -75,13 +59,7 @@ pub fn comment_native_node(input: Span<'_>) -> HsmlResult<'_, CommentNode> {
         CommentNode {
             text: comment.to_string(),
             is_dev: false,
-            location: Location {
-                start,
-                end: Position {
-                    line: rest.location_line(),
-                    column: rest.get_column() as u32,
-                },
-            },
+            location: Location::from_spans(&input, &rest),
         },
     ))
 }
