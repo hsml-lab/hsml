@@ -527,12 +527,37 @@ fn parse_fails_on_invalid_file() {
 }
 
 #[test]
+fn parse_directory_outputs_array_with_file_paths() {
+    let dir = TempDir::new().unwrap();
+
+    fs::write(dir.path().join("a.hsml"), "h1 A\n").unwrap();
+    fs::write(dir.path().join("b.hsml"), "h2 B\n").unwrap();
+
+    let output = cmd()
+        .args(["parse", dir.path().to_str().unwrap()])
+        .output()
+        .unwrap();
+
+    assert!(output.status.success());
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let parsed: serde_json::Value = serde_json::from_str(&stdout).expect("should be valid JSON");
+
+    let arr = parsed.as_array().unwrap();
+    assert_eq!(arr.len(), 2);
+    assert!(arr[0]["filePath"].is_string());
+    assert!(arr[0]["ast"]["nodes"].is_array());
+    assert!(arr[1]["filePath"].is_string());
+    assert!(arr[1]["ast"]["nodes"].is_array());
+}
+
+#[test]
 fn parse_fails_on_missing_file() {
     cmd()
         .args(["parse", "nonexistent.hsml"])
         .assert()
         .failure()
-        .stderr(predicates::str::contains("File does not exist"));
+        .stderr(predicates::str::contains("does not exist"));
 }
 
 #[test]
