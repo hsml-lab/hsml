@@ -1,0 +1,30 @@
+div(ref="container" :class="containerClass")
+  .sticky.top-0.z-20(
+    pt="[env(safe-area-inset-top,0)]"
+    bg="[rgba(var(--rgb-bg-base),0.7)]"
+    :class="{
+      'backdrop-blur': !getPreferences(userSettings, 'optimizeForLowPerformanceDevice'),
+    }"
+  )
+    .min-h-53px.px-2.py-1(flex="~ justify-between" :class="{ 'xl:hidden': $route.name !== 'tag' }" border="b base")
+      .w-full(flex="~ items-center")
+        button.btn-text.flex.items-center.p-3.xl:hidden(
+          v-if="backOnSmallScreen || showBackButton"
+          :aria-label="$t('nav.back')"
+          @click="$router.go(-1)"
+        )
+          .text-lg.rtl-flip(i-ri:arrow-left-line)
+        .flex.w-full
+          slot(name="title")
+        .sm:hidden.h-7.w-1px
+      .px-3(flex="~ items-center shrink-0 gap-x-2")
+        slot(name="actions")
+        PwaBadge.xl:hidden
+        NavUser(v-if="isHydrated")
+        NavUserSkeleton(v-else)
+    slot(name="header")
+      div(hidden)
+  PwaInstallPrompt.xl:hidden
+  .m-auto(:class="isHydrated && wideLayout ? 'xl:w-full sm:max-w-600px' : 'sm:max-w-600px md:shrink-0'")
+    .h-6(hidden :class="{ 'xl:block': $route.name !== 'tag' && !$slots.header }")
+    slot
