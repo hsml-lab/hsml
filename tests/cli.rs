@@ -488,12 +488,236 @@ fn compile_directory_json_mixes_errors_and_warnings() {
 // --- Unimplemented commands ---
 
 #[test]
-fn parse_command_shows_not_implemented() {
+fn parse_outputs_ast_as_json() {
+    let dir = TempDir::new().unwrap();
+    let input = dir.path().join("test.hsml");
+
+    fs::write(&input, "h1.title Hello World\n").unwrap();
+
+    let output = cmd()
+        .args(["parse", input.to_str().unwrap()])
+        .output()
+        .unwrap();
+
+    assert!(output.status.success());
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let parsed: serde_json::Value = serde_json::from_str(&stdout).expect("should be valid JSON");
+
+    let nodes = parsed["nodes"].as_array().unwrap();
+    assert_eq!(nodes.len(), 1);
+    assert_eq!(nodes[0]["type"], "tag");
+    assert_eq!(nodes[0]["tag"], "h1");
+    assert_eq!(nodes[0]["text"]["text"], "Hello World");
+    assert_eq!(nodes[0]["classes"][0]["name"], "title");
+    assert!(parsed["diagnostics"].as_array().unwrap().is_empty());
+}
+
+#[test]
+fn parse_outputs_nested_structure_with_attributes() {
+    let dir = TempDir::new().unwrap();
+    let input = dir.path().join("nested.hsml");
+
+    fs::write(
+        &input,
+        "\
+doctype html
+html
+  head
+    meta(charset=\"utf-8\")
+    title My Page
+  body
+    .container#app
+      img.rounded(src=\"/photo.jpg\" alt=\"Photo\")
+      p.text-gray Hello World
+",
+    )
+    .unwrap();
+
+    let output = cmd()
+        .args(["parse", input.to_str().unwrap()])
+        .output()
+        .unwrap();
+
+    assert!(output.status.success());
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let parsed: serde_json::Value = serde_json::from_str(&stdout).expect("should be valid JSON");
+
+    let nodes = parsed["nodes"].as_array().unwrap();
+    assert_eq!(nodes.len(), 2); // doctype + html
+
+    // Doctype
+    assert_eq!(nodes[0]["type"], "doctype");
+    assert_eq!(nodes[0]["doctype"], "html");
+
+    // html > head > meta
+    let html = &nodes[1];
+    assert_eq!(html["tag"], "html");
+    let head = &html["children"][0];
+    assert_eq!(head["tag"], "head");
+    let meta = &head["children"][0];
+    assert_eq!(meta["tag"], "meta");
+    assert_eq!(meta["attributes"][0]["type"], "attribute");
+    assert_eq!(meta["attributes"][0]["key"], "charset");
+    assert_eq!(meta["attributes"][0]["value"], "utf-8");
+
+    // html > head > title
+    let title = &head["children"][1];
+    assert_eq!(title["tag"], "title");
+    assert_eq!(title["text"]["text"], "My Page");
+
+    // html > body > .container#app
+    let body = &html["children"][1];
+    assert_eq!(body["tag"], "body");
+    let container = &body["children"][0];
+    assert_eq!(container["tag"], "div"); // implicit div
+    assert_eq!(container["ids"][0]["id"], "app");
+    assert_eq!(container["classes"][0]["name"], "container");
+
+    // img with classes and attributes
+    let img = &container["children"][0];
+    assert_eq!(img["tag"], "img");
+    assert_eq!(img["classes"][0]["name"], "rounded");
+    assert_eq!(img["attributes"][0]["key"], "src");
+    assert_eq!(img["attributes"][0]["value"], "/photo.jpg");
+    assert_eq!(img["attributes"][1]["key"], "alt");
+    assert_eq!(img["attributes"][1]["value"], "Photo");
+
+    // p with class and text
+    let p = &container["children"][1];
+    assert_eq!(p["tag"], "p");
+    assert_eq!(p["classes"][0]["name"], "text-gray");
+    assert_eq!(p["text"]["text"], "Hello World");
+}
+
+#[test]
+fn parse_includes_diagnostics() {
+    let dir = TempDir::new().unwrap();
+    let input = dir.path().join("warn.hsml");
+
+    fs::write(&input, "h1.foo.foo Hello\n").unwrap();
+
+    let output = cmd()
+        .args(["parse", input.to_str().unwrap()])
+        .output()
+        .unwrap();
+
+    assert!(output.status.success());
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let parsed: serde_json::Value = serde_json::from_str(&stdout).expect("should be valid JSON");
+
+    let diagnostics = parsed["diagnostics"].as_array().unwrap();
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(diagnostics[0]["code"], "W002");
+    assert_eq!(diagnostics[0]["severity"], "warning");
+}
+
+#[test]
+fn parse_returns_null_nodes_with_error_diagnostic_for_invalid_file() {
+    let dir = TempDir::new().unwrap();
+    let input = dir.path().join("bad.hsml");
+
+    fs::write(&input, "@@@invalid\n").unwrap();
+
+    let output = cmd()
+        .args(["parse", input.to_str().unwrap()])
+        .output()
+        .unwrap();
+
+    assert!(output.status.success());
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let parsed: serde_json::Value = serde_json::from_str(&stdout).expect("should be valid JSON");
+
+    assert!(parsed["nodes"].is_null());
+    let diagnostics = parsed["diagnostics"].as_array().unwrap();
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(diagnostics[0]["severity"], "error");
+}
+
+#[test]
+fn parse_directory_outputs_array_with_file_paths() {
+    let dir = TempDir::new().unwrap();
+
+    fs::write(dir.path().join("a.hsml"), "h1 A\n").unwrap();
+    fs::write(dir.path().join("b.hsml"), "h2 B\n").unwrap();
+
+    let output = cmd()
+        .args(["parse", dir.path().to_str().unwrap()])
+        .output()
+        .unwrap();
+
+    assert!(output.status.success());
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let parsed: serde_json::Value = serde_json::from_str(&stdout).expect("should be valid JSON");
+
+    let arr = parsed.as_array().unwrap();
+    assert_eq!(arr.len(), 2);
+    assert!(arr[0]["filePath"].is_string());
+    assert!(arr[0]["nodes"].is_array());
+    assert!(arr[0]["diagnostics"].is_array());
+    assert!(arr[1]["filePath"].is_string());
+    assert!(arr[1]["nodes"].is_array());
+    assert!(arr[1]["diagnostics"].is_array());
+}
+
+#[test]
+fn parse_directory_continues_on_parse_error() {
+    let dir = TempDir::new().unwrap();
+
+    fs::write(dir.path().join("good.hsml"), "h1 Hello\n").unwrap();
+    fs::write(dir.path().join("bad.hsml"), "@@@invalid\n").unwrap();
+
+    let output = cmd()
+        .args(["parse", dir.path().to_str().unwrap()])
+        .output()
+        .unwrap();
+
+    assert!(output.status.success());
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let parsed: serde_json::Value = serde_json::from_str(&stdout).expect("should be valid JSON");
+
+    let arr = parsed.as_array().unwrap();
+    assert_eq!(arr.len(), 2);
+
+    // Find the good and bad results by checking nodes
+    let good = arr.iter().find(|f| f["nodes"].is_array()).unwrap();
+    let bad = arr.iter().find(|f| f["nodes"].is_null()).unwrap();
+
+    assert!(good["filePath"].as_str().unwrap().contains("good.hsml"));
+    assert!(good["diagnostics"].as_array().unwrap().is_empty());
+
+    assert!(bad["filePath"].as_str().unwrap().contains("bad.hsml"));
+    let diags = bad["diagnostics"].as_array().unwrap();
+    assert_eq!(diags.len(), 1);
+    assert_eq!(diags[0]["severity"], "error");
+}
+
+#[test]
+fn parse_fails_on_missing_file() {
     cmd()
-        .args(["parse"])
+        .args(["parse", "nonexistent.hsml"])
         .assert()
         .failure()
-        .stderr(predicates::str::contains("not yet implemented"));
+        .stderr(predicates::str::contains("does not exist"));
+}
+
+#[test]
+fn parse_fails_on_wrong_extension() {
+    let dir = TempDir::new().unwrap();
+    let input = dir.path().join("test.txt");
+
+    fs::write(&input, "h1 Hello\n").unwrap();
+
+    cmd()
+        .args(["parse", input.to_str().unwrap()])
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains(".hsml extension"));
 }
 
 #[test]

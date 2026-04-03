@@ -7,7 +7,7 @@ use crate::parser::{
 
 use super::process::process_attribute;
 
-#[derive(Debug, Eq)]
+#[derive(Debug, Eq, serde::Serialize)]
 pub struct AttributeNode {
     pub key: String,
     pub value: Option<String>,

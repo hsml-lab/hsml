@@ -1,8 +1,10 @@
+use serde::Serialize;
+
 use crate::parser::{HsmlResult, Span};
 
 use super::process::process_doctype;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Serialize)]
 pub struct DoctypeNode {
     pub doctype: String,
 }

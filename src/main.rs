@@ -15,7 +15,7 @@ fn main() -> Result<(), String> {
 
     let result: Result<(), String> = match matches.subcommand() {
         Some(("compile", sub_matches)) => exec_compile(sub_matches),
-        Some(("parse", sub_matches)) => exec_parse(sub_matches).map_err(|e| e.to_string()),
+        Some(("parse", sub_matches)) => exec_parse(sub_matches),
         Some(("fmt", sub_matches)) => exec_format(sub_matches).map_err(|e| e.to_string()),
         Some(("check", sub_matches)) => exec_check(sub_matches),
         Some(("lsp", sub_matches)) => {
