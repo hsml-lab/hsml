@@ -665,6 +665,39 @@ fn parse_directory_outputs_array_with_file_paths() {
 }
 
 #[test]
+fn parse_directory_continues_on_parse_error() {
+    let dir = TempDir::new().unwrap();
+
+    fs::write(dir.path().join("good.hsml"), "h1 Hello\n").unwrap();
+    fs::write(dir.path().join("bad.hsml"), "@@@invalid\n").unwrap();
+
+    let output = cmd()
+        .args(["parse", dir.path().to_str().unwrap()])
+        .output()
+        .unwrap();
+
+    assert!(output.status.success());
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let parsed: serde_json::Value = serde_json::from_str(&stdout).expect("should be valid JSON");
+
+    let arr = parsed.as_array().unwrap();
+    assert_eq!(arr.len(), 2);
+
+    // Find the good and bad results by checking nodes
+    let good = arr.iter().find(|f| f["nodes"].is_array()).unwrap();
+    let bad = arr.iter().find(|f| f["nodes"].is_null()).unwrap();
+
+    assert!(good["filePath"].as_str().unwrap().contains("good.hsml"));
+    assert!(good["diagnostics"].as_array().unwrap().is_empty());
+
+    assert!(bad["filePath"].as_str().unwrap().contains("bad.hsml"));
+    let diags = bad["diagnostics"].as_array().unwrap();
+    assert_eq!(diags.len(), 1);
+    assert_eq!(diags[0]["severity"], "error");
+}
+
+#[test]
 fn parse_fails_on_missing_file() {
     cmd()
         .args(["parse", "nonexistent.hsml"])
