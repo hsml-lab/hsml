@@ -14,7 +14,10 @@ pub fn resolve_path(matches: &ArgMatches) -> Result<PathBuf, String> {
 
 /// Resolve the target path from CLI arguments (required, no fallback).
 pub fn resolve_required_path(matches: &ArgMatches) -> PathBuf {
-    matches.get_one::<PathBuf>("path").unwrap().clone()
+    matches
+        .get_one::<PathBuf>("path")
+        .expect("path argument is required")
+        .clone()
 }
 
 /// Collect `--ignore-pattern` values from CLI arguments.
