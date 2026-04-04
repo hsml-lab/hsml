@@ -1,30 +1,21 @@
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::time::Instant;
 
 use clap::ArgMatches;
 use hsml::formatter::{FormatOptions, format};
 use hsml::parser::{Span, parse::parse};
 
+use super::common::{resolve_ignore_patterns, resolve_path, validate_hsml_extension};
 use super::diagnostics::{DimCodes, format_duration, resolve_colors};
 use super::walker::walk_hsml_files;
 
 pub fn exec_format(matches: &ArgMatches) -> Result<(), String> {
-    let path = match matches.get_one::<PathBuf>("path") {
-        Some(p) => p.clone(),
-        None => {
-            std::env::current_dir().map_err(|e| format!("Unable to get current directory: {e}"))?
-        }
-    };
-
+    let path = resolve_path(matches)?;
     let check = matches.get_flag("check");
     let debug = matches.get_flag("debug");
     let (_, dim) = resolve_colors(matches);
-
-    let ignore_patterns: Vec<String> = matches
-        .get_many::<String>("ignore_pattern")
-        .map(|vals| vals.cloned().collect())
-        .unwrap_or_default();
+    let ignore_patterns = resolve_ignore_patterns(matches);
 
     if !path.exists() {
         return Err("Path does not exist".to_string());
@@ -66,9 +57,7 @@ pub fn exec_format(matches: &ArgMatches) -> Result<(), String> {
             }
         }
     } else if path.is_file() {
-        path.extension()
-            .filter(|&ext| ext == "hsml")
-            .ok_or("File must have .hsml extension".to_string())?;
+        validate_hsml_extension(&path)?;
 
         file_count = 1;
         format_file(&path, check, debug, dim, &options, &mut has_diff)?;

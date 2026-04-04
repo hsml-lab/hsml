@@ -1,12 +1,9 @@
-use std::{
-    env, fs,
-    path::{Path, PathBuf},
-    time::Instant,
-};
+use std::{fs, path::Path, time::Instant};
 
 use clap::ArgMatches;
 use hsml::check_content;
 
+use super::common::{resolve_ignore_patterns, resolve_path, validate_hsml_extension};
 use super::diagnostics::{
     FileDiagnostics, has_errors, print_summary, render_diagnostics, resolve_colors,
 };
@@ -18,16 +15,8 @@ pub fn exec_check(matches: &ArgMatches) -> Result<(), String> {
         .map(|s| s.as_str());
     let debug = matches.get_flag("debug");
     let (no_color, _dim) = resolve_colors(matches);
-
-    let ignore_patterns: Vec<String> = matches
-        .get_many::<String>("ignore_pattern")
-        .map(|vals| vals.cloned().collect())
-        .unwrap_or_default();
-
-    let path = match matches.get_one::<PathBuf>("path") {
-        Some(p) => p.clone(),
-        None => env::current_dir().map_err(|e| format!("Unable to get current directory: {e}"))?,
-    };
+    let ignore_patterns = resolve_ignore_patterns(matches);
+    let path = resolve_path(matches)?;
     let path = &path;
 
     let mut results: Vec<FileDiagnostics> = Vec::new();
@@ -90,9 +79,7 @@ fn collect_file(file: &Path, results: &mut Vec<FileDiagnostics>) -> Result<(), S
         return Err("Given file must be a file".to_string());
     }
 
-    file.extension()
-        .filter(|&ext| ext == "hsml")
-        .ok_or("File must have .hsml extension".to_string())?;
+    validate_hsml_extension(file)?;
 
     let content = fs::read_to_string(file)
         .map_err(|e| format!("Unable to read file {}: {e}", file.display()))?;

@@ -2,6 +2,7 @@ use std::path::PathBuf;
 
 use clap::{Command, arg, command, value_parser};
 
+mod common;
 mod diagnostics;
 pub mod exec_check;
 pub mod exec_compile;
