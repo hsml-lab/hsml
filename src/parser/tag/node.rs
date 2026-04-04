@@ -149,8 +149,23 @@ pub fn tag_node<'a>(input: Span<'a>, context: &mut HsmlProcessContext) -> HsmlRe
         if first_char == Some("\n") || first_two_chars == Some("\r\n") {
             // we hit a newline and the tag ended but could have child tag nodes
 
-            // check indentation
-            let (rest, _) = take_till1(|c| c != '\r' && c != '\n')(input)?;
+            // consume the newline
+            let (mut rest, _) = take_till1(|c| c != '\r' && c != '\n')(input)?;
+
+            // skip whitespace-only lines (blank lines between tags)
+            loop {
+                let (after_ws, ws) =
+                    take_till(|c: char| c == '\n' || c == '\r' || !c.is_whitespace())(rest)?;
+                // If we consumed only whitespace and hit a newline, this is a blank line — skip it
+                if !ws.fragment().is_empty()
+                    && (after_ws.starts_with('\n') || after_ws.starts_with("\r\n"))
+                {
+                    let (after_nl, _) = take_till1(|c| c != '\r' && c != '\n')(after_ws)?;
+                    rest = after_nl;
+                    continue;
+                }
+                break;
+            }
 
             // check if the next char is a tab or whitespace
             // if yes, check for indentation level

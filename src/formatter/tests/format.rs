@@ -277,7 +277,6 @@ fn it_should_preserve_blank_line_between_deep_siblings() {
 }
 
 #[test]
-#[ignore = "parser mishandles whitespace-only lines between tags — fix in separate PR"]
 fn it_should_preserve_blank_line_between_nested_nodes() {
     let input = "\
 .card
