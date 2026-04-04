@@ -303,6 +303,55 @@ fn it_should_preserve_blank_line_between_nested_nodes() {
 }
 
 #[test]
+fn it_should_handle_file_ending_with_trailing_whitespace_no_newline() {
+    // File ends with "    " (spaces, no newline) — parser should handle EOF gracefully
+    let input = "div\n  p Hello\n    ";
+    let expected = "div\n  p Hello\n";
+    assert_eq!(fmt(input), expected);
+}
+
+#[test]
+fn it_should_normalize_whitespace_and_preserve_blank_lines_in_complex_document() {
+    let input = "\
+figure.md:flex.bg-slate-100.rounded-xl.p-8.md:p-0.dark:bg-slate-800/10
+  
+  img.w-24.h-24.md:w-48.md:h-auto.md:rounded-none.rounded-full.mx-auto(
+    // supports attribute inline comments
+    src=\"/fancy-avatar.jpg\",
+    alt=\"\", // this is empty 🤷
+    width=\"384\",
+    height=\"512\"
+  )
+
+  .pt-6.md:p-8.text-center.md:text-left.space-y-4
+     blockquote(v-if=\"showBlockquote\")
+      p.text-lg.font-medium.
+        \"Tailwind CSS is the only framework that I've seen scale
+        on large teams. It's easy to customize, adapts to any design,
+        and the build size is tiny.\"
+    
+";
+    let expected = "\
+figure.md:flex.bg-slate-100.rounded-xl.p-8.md:p-0.dark:bg-slate-800/10
+  img.w-24.h-24.md:w-48.md:h-auto.md:rounded-none.rounded-full.mx-auto(
+    // supports attribute inline comments
+    src=\"/fancy-avatar.jpg\",
+    alt=\"\", // this is empty 🤷
+    width=\"384\",
+    height=\"512\"
+  )
+
+  .pt-6.md:p-8.text-center.md:text-left.space-y-4
+    blockquote(v-if=\"showBlockquote\")
+      p.text-lg.font-medium.
+        \"Tailwind CSS is the only framework that I've seen scale
+        on large teams. It's easy to customize, adapts to any design,
+        and the build size is tiny.\"
+";
+    assert_eq!(fmt(input), expected);
+}
+
+#[test]
 fn it_should_strip_trailing_whitespace_from_blank_lines_in_text_blocks() {
     // Blank line with trailing spaces in text block should become empty
     let input = "\
