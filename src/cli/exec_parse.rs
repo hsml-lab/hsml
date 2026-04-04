@@ -1,5 +1,5 @@
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use clap::ArgMatches;
 use hsml::diagnostic::Diagnostic;
@@ -7,6 +7,7 @@ use hsml::parser::{HsmlNode, Span, parse::parse};
 use hsml::validate::validate;
 use serde::Serialize;
 
+use super::common::{resolve_ignore_patterns, resolve_required_path, validate_hsml_extension};
 use super::walker::walk_hsml_files;
 
 #[derive(Serialize)]
@@ -25,19 +26,15 @@ struct FileParseResult {
 }
 
 pub fn exec_parse(matches: &ArgMatches) -> Result<(), String> {
-    let path = matches.get_one::<PathBuf>("path").unwrap();
-
-    let ignore_patterns: Vec<String> = matches
-        .get_many::<String>("ignore_pattern")
-        .map(|vals| vals.cloned().collect())
-        .unwrap_or_default();
+    let path = resolve_required_path(matches);
+    let ignore_patterns = resolve_ignore_patterns(matches);
 
     if !path.exists() {
         return Err("Path does not exist".to_string());
     }
 
     if path.is_dir() {
-        let result = walk_hsml_files(path, &ignore_patterns)?;
+        let result = walk_hsml_files(&path, &ignore_patterns)?;
 
         for error in &result.errors {
             eprintln!("{error}");
@@ -56,11 +53,9 @@ pub fn exec_parse(matches: &ArgMatches) -> Result<(), String> {
             .map_err(|e| format!("Failed to serialize AST: {e}"))?;
         println!("{json}");
     } else if path.is_file() {
-        path.extension()
-            .filter(|&ext| ext == "hsml")
-            .ok_or("File must have .hsml extension".to_string())?;
+        validate_hsml_extension(&path)?;
 
-        let result = parse_file(path);
+        let result = parse_file(&path);
         let json = serde_json::to_string_pretty(&result)
             .map_err(|e| format!("Failed to serialize AST: {e}"))?;
         println!("{json}");
