@@ -156,6 +156,12 @@ pub fn tag_node<'a>(input: Span<'a>, context: &mut HsmlProcessContext) -> HsmlRe
             loop {
                 let (after_ws, ws) =
                     take_till(|c: char| c == '\n' || c == '\r' || !c.is_whitespace())(rest)?;
+
+                // EOF after whitespace — nothing more to parse
+                if !ws.fragment().is_empty() && after_ws.fragment().is_empty() {
+                    break;
+                }
+
                 // If we consumed only whitespace and hit a newline, this is a blank line — skip it
                 if !ws.fragment().is_empty()
                     && (after_ws.starts_with('\n') || after_ws.starts_with("\r\n"))
@@ -164,6 +170,11 @@ pub fn tag_node<'a>(input: Span<'a>, context: &mut HsmlProcessContext) -> HsmlRe
                     rest = after_nl;
                     continue;
                 }
+                break;
+            }
+
+            // If we've reached EOF (possibly with trailing whitespace), stop
+            if rest.fragment().trim().is_empty() {
                 break;
             }
 
