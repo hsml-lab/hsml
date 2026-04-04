@@ -25,6 +25,7 @@ fn it_should_return_text_block_node() {
     assert_eq!(
         text_block,
         TextNode {
+            is_block: true,
             text: String::from(
                 r#""Tailwind CSS is the only framework that I've seen scale
 on large teams. It's easy to customize, adapts to any design,
@@ -57,6 +58,7 @@ fn it_should_stop_before_next_tag_node() {
     assert_eq!(
         text_block,
         TextNode {
+            is_block: true,
             text: String::from(r#"Sarah Dayan"#),
         }
     );
@@ -83,6 +85,7 @@ fn it_should_return_text_block_node_with_multibyte_chars() {
     assert_eq!(
         text_block,
         TextNode {
+            is_block: true,
             text: String::from("héllo wörld 🌍\npiù línés café"),
         }
     );
@@ -105,6 +108,7 @@ fn it_should_return_empty_text_block_when_first_line_not_indented_enough() {
     assert_eq!(
         text_block,
         TextNode {
+            is_block: true,
             text: String::from(""),
         }
     );
@@ -130,6 +134,7 @@ fn it_should_strip_indent_from_first_nonempty_line() {
     assert_eq!(
         text_block,
         TextNode {
+            is_block: true,
             text: String::from("line one\nline two"),
         }
     );
@@ -153,6 +158,7 @@ fn it_should_return_text_block_node_with_cjk_and_blank_lines() {
     assert_eq!(
         text_block,
         TextNode {
+            is_block: true,
             text: String::from("こんにちは\n\n世界テスト"),
         }
     );

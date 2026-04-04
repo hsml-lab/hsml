@@ -28,6 +28,7 @@ fn it_should_parse() {
                     None,
                     Some(TextNode {
                         text: String::from("Vite CJS Faker Demo"),
+                        is_block: false,
                     }),
                     None,
                 )),
@@ -93,6 +94,7 @@ fn it_should_parse() {
                             None,
                             Some(TextNode {
                                 text: String::from("{{ fullName }}"),
+                                is_block: false,
                             }),
                             None,
                         ))
@@ -154,7 +156,8 @@ div
                             None,
                             None,
                             Some(TextNode {
-                                text: String::from("another tag")
+                                text: String::from("another tag"),
+                                is_block: false,
                             }),
                             None,
                         )),

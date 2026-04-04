@@ -42,6 +42,7 @@ fn it_should_return_tag_node_with_piped_text() {
 on large teams. It's easy to customize, adapts to any design,
 and the build size is tiny.""#
                 ),
+                is_block: true,
             }),
             None,
         )
