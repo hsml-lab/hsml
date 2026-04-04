@@ -32,3 +32,6 @@ pub fn validate_hsml_extension(path: &std::path::Path) -> Result<(), String> {
         .ok_or("File must have .hsml extension".to_string())?;
     Ok(())
 }
+
+#[cfg(test)]
+mod tests;
