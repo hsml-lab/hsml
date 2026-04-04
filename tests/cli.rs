@@ -845,7 +845,7 @@ fn fmt_debug_shows_directory_summary() {
         "should show file count, got: {stdout}"
     );
     assert!(
-        stdout.contains("2 files formatted in") || stdout.contains("2 files checked in"),
+        stdout.contains("2 files formatted in"),
         "should show summary, got: {stdout}"
     );
 }
