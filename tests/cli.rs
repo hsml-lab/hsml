@@ -804,6 +804,77 @@ fn fmt_normalizes_attribute_commas() {
     );
 }
 
+#[test]
+fn fmt_debug_shows_timing_for_single_file() {
+    let dir = TempDir::new().unwrap();
+    let input = dir.path().join("test.hsml");
+
+    fs::write(&input, "h1 Hello\n").unwrap();
+
+    let output = cmd()
+        .args(["fmt", "--debug", "--no-color", input.to_str().unwrap()])
+        .output()
+        .unwrap();
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("µs") || stdout.contains("ms"),
+        "should show timing, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("unchanged"),
+        "already formatted file should show unchanged, got: {stdout}"
+    );
+}
+
+#[test]
+fn fmt_debug_shows_directory_summary() {
+    let dir = TempDir::new().unwrap();
+
+    fs::write(dir.path().join("a.hsml"), "h1 A\n").unwrap();
+    fs::write(dir.path().join("b.hsml"), "h2 B\n").unwrap();
+
+    let output = cmd()
+        .args(["fmt", "--debug", "--no-color", dir.path().to_str().unwrap()])
+        .output()
+        .unwrap();
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("Formatting 2 file(s)"),
+        "should show file count, got: {stdout}"
+    );
+    assert!(
+        stdout.contains("2 files formatted in"),
+        "should show summary, got: {stdout}"
+    );
+}
+
+#[test]
+fn fmt_debug_check_shows_needs_formatting() {
+    let dir = TempDir::new().unwrap();
+    let input = dir.path().join("test.hsml");
+
+    fs::write(&input, "div\n    h1 Hello\n").unwrap();
+
+    let output = cmd()
+        .args([
+            "fmt",
+            "--debug",
+            "--no-color",
+            "--check",
+            input.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("needs formatting"),
+        "unformatted file should show 'needs formatting', got: {stdout}"
+    );
+}
+
 // --- Check command ---
 
 #[test]
