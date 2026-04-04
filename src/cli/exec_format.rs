@@ -41,8 +41,9 @@ pub fn exec_format(matches: &ArgMatches) -> Result<(), String> {
         let result = walk_hsml_files(&path, &ignore_patterns)?;
 
         if debug {
+            let action = if check { "Checking" } else { "Formatting" };
             println!(
-                "{}Formatting {} file(s) from {}{}",
+                "{}{action} {} file(s) from {}{}",
                 dim.0,
                 result.files.len(),
                 path.display(),
@@ -77,13 +78,12 @@ pub fn exec_format(matches: &ArgMatches) -> Result<(), String> {
 
     if debug {
         let timing = format_duration(total_start.elapsed());
-        let files = if file_count == 1 {
-            "1 file"
-        } else {
-            &format!("{file_count} files")
-        };
+        let files_word = if file_count == 1 { "file" } else { "files" };
         let verb = if check { "checked" } else { "formatted" };
-        println!("\n{}{files} {verb} in {timing}{}", dim.0, dim.1);
+        println!(
+            "\n{}{file_count} {files_word} {verb} in {timing}{}",
+            dim.0, dim.1
+        );
     }
 
     if has_errors {
