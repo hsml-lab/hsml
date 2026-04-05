@@ -8,8 +8,8 @@ pub mod validate;
 use serde::Serialize;
 use wasm_bindgen::prelude::*;
 
-/// Core compile logic shared by WASM and native callers.
-pub fn compile_content_core(source: &str) -> Result<String, String> {
+/// Parse HSML source and return the AST, or an error string on failure.
+fn parse_source(source: &str) -> Result<parser::RootNode, String> {
     let span = parser::Span::new(source);
     let (rest, ast) = parser::parse::parse(span).map_err(|e| format!("HSML parse error: {e}"))?;
 
@@ -21,6 +21,12 @@ pub fn compile_content_core(source: &str) -> Result<String, String> {
         ));
     }
 
+    Ok(ast)
+}
+
+/// Core compile logic shared by WASM and native callers.
+pub fn compile_content_core(source: &str) -> Result<String, String> {
+    let ast = parse_source(source)?;
     compiler::compile(&ast, &compiler::HsmlCompileOptions::default())
 }
 
@@ -101,6 +107,62 @@ pub fn compile_content_diagnostics(
         .map_err(|e| vec![diagnostic::Diagnostic::compiler_error(e)])?;
 
     Ok(CompileOutput { html, diagnostics })
+}
+
+/// Core format logic shared by WASM and native callers.
+pub fn format_content_core(
+    source: &str,
+    options: &formatter::FormatOptions,
+) -> Result<String, String> {
+    let ast = parse_source(source)?;
+    Ok(formatter::format(&ast, options))
+}
+
+/// WASM format options that deserializes from a JS object.
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct WasmFormatOptions {
+    #[serde(default = "default_indent_size")]
+    indent_size: usize,
+    #[serde(default = "default_print_width")]
+    print_width: usize,
+}
+
+fn default_indent_size() -> usize {
+    formatter::FormatOptions::default().indent_size
+}
+
+fn default_print_width() -> usize {
+    formatter::FormatOptions::default().print_width
+}
+
+impl From<WasmFormatOptions> for formatter::FormatOptions {
+    fn from(opts: WasmFormatOptions) -> Self {
+        Self {
+            indent_size: opts.indent_size,
+            print_width: opts.print_width,
+        }
+    }
+}
+
+/// Format HSML source, exposed as a WASM binding.
+///
+/// Returns the formatted HSML string, or a `JsError` on parse failure.
+///
+/// Options (all optional):
+/// - `indentSize` — number of spaces per indentation level (default: 2)
+/// - `printWidth` — maximum line width before wrapping attributes (default: 80)
+#[wasm_bindgen(js_name = "formatContent")]
+pub fn format_content(source: &str, options: JsValue) -> Result<String, JsError> {
+    let options: formatter::FormatOptions = if options.is_undefined() || options.is_null() {
+        formatter::FormatOptions::default()
+    } else {
+        let wasm_opts: WasmFormatOptions = serde_wasm_bindgen::from_value(options)
+            .map_err(|e| JsError::new(&format!("Invalid formatContent options: {e}")))?;
+        wasm_opts.into()
+    };
+
+    format_content_core(source, &options).map_err(|e| JsError::new(&e))
 }
 
 /// Compile HSML source to HTML, exposed as a WASM binding.

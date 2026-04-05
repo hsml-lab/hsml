@@ -1,6 +1,7 @@
 use hsml::{
     check_content, compile_content_core, compile_content_diagnostics,
     compiler::{HsmlCompileOptions, compile},
+    format_content_core,
     parser::{
         HsmlNode, RootNode, Span, class::node::ClassNode, doctype::node::DoctypeNode,
         error::ErrorCode, id::node::IdNode, parse::parse, tag::node::TagNode, text::node::TextNode,
@@ -562,4 +563,31 @@ fn check_content_does_not_compile() {
     // This test verifies it only parses + validates, not compiles
     let diagnostics = check_content("div\n  span Hello\n");
     assert!(diagnostics.is_empty());
+}
+
+// Tests for format_content
+
+#[test]
+fn format_content_normalizes_indentation() {
+    let opts = hsml::formatter::FormatOptions::default();
+    let result = format_content_core("div\n    h1 Hello\n", &opts);
+    assert_eq!(result.unwrap(), "div\n  h1 Hello\n");
+}
+
+#[test]
+fn format_content_respects_indent_size() {
+    let opts = hsml::formatter::FormatOptions {
+        indent_size: 4,
+        ..Default::default()
+    };
+    let result = format_content_core("div\n  h1 Hello\n", &opts);
+    assert_eq!(result.unwrap(), "div\n    h1 Hello\n");
+}
+
+#[test]
+fn format_content_returns_error_for_invalid_input() {
+    let opts = hsml::formatter::FormatOptions::default();
+    let result = format_content_core("@@@invalid", &opts);
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("HSML parse error"));
 }

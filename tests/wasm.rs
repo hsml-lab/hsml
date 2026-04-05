@@ -67,3 +67,29 @@ fn wasm_compile_with_diagnostics_error() {
     let severity = js_sys::Reflect::get(&diag, &JsValue::from_str("severity")).unwrap();
     assert_eq!(severity, JsValue::from_str("error"));
 }
+
+#[wasm_bindgen_test]
+fn wasm_format_content_returns_formatted() {
+    let result = hsml::format_content("div\n    h1 Hello\n", JsValue::UNDEFINED);
+    assert_eq!(result.unwrap(), "div\n  h1 Hello\n");
+}
+
+#[wasm_bindgen_test]
+fn wasm_format_content_returns_error_for_invalid_input() {
+    let result = hsml::format_content("@@@invalid", JsValue::UNDEFINED);
+    assert!(result.is_err());
+}
+
+#[wasm_bindgen_test]
+fn wasm_format_content_respects_custom_indent_size() {
+    let options = js_sys::Object::new();
+    js_sys::Reflect::set(
+        &options,
+        &JsValue::from_str("indentSize"),
+        &JsValue::from(4),
+    )
+    .unwrap();
+
+    let result = hsml::format_content("div\n  h1 Hello\n", options.into());
+    assert_eq!(result.unwrap(), "div\n    h1 Hello\n");
+}
