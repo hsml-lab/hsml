@@ -8,8 +8,8 @@ pub mod validate;
 use serde::Serialize;
 use wasm_bindgen::prelude::*;
 
-/// Core compile logic shared by WASM and native callers.
-pub fn compile_content_core(source: &str) -> Result<String, String> {
+/// Parse HSML source and return the AST, or an error string on failure.
+fn parse_source(source: &str) -> Result<parser::RootNode, String> {
     let span = parser::Span::new(source);
     let (rest, ast) = parser::parse::parse(span).map_err(|e| format!("HSML parse error: {e}"))?;
 
@@ -21,6 +21,12 @@ pub fn compile_content_core(source: &str) -> Result<String, String> {
         ));
     }
 
+    Ok(ast)
+}
+
+/// Core compile logic shared by WASM and native callers.
+pub fn compile_content_core(source: &str) -> Result<String, String> {
+    let ast = parse_source(source)?;
     compiler::compile(&ast, &compiler::HsmlCompileOptions::default())
 }
 
@@ -108,17 +114,7 @@ pub fn format_content_core(
     source: &str,
     options: &formatter::FormatOptions,
 ) -> Result<String, String> {
-    let span = parser::Span::new(source);
-    let (rest, ast) = parser::parse::parse(span).map_err(|e| format!("HSML parse error: {e}"))?;
-
-    if !rest.fragment().is_empty() {
-        return Err(format!(
-            "HSML parse error: unconsumed input at line {}, column {}",
-            rest.location_line(),
-            rest.get_column()
-        ));
-    }
-
+    let ast = parse_source(source)?;
     Ok(formatter::format(&ast, options))
 }
 
@@ -161,8 +157,8 @@ pub fn format_content(source: &str, options: JsValue) -> Result<String, JsError>
     let options: formatter::FormatOptions = if options.is_undefined() || options.is_null() {
         formatter::FormatOptions::default()
     } else {
-        let wasm_opts: WasmFormatOptions =
-            serde_wasm_bindgen::from_value(options).map_err(|e| JsError::new(&e.to_string()))?;
+        let wasm_opts: WasmFormatOptions = serde_wasm_bindgen::from_value(options)
+            .map_err(|e| JsError::new(&format!("Invalid formatContent options: {e}")))?;
         wasm_opts.into()
     };
 
