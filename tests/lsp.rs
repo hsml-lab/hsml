@@ -347,6 +347,55 @@ fn lsp_formatting_normalizes_indentation() {
 }
 
 #[test]
+fn lsp_formatting_respects_tab_size() {
+    let mut lsp = LspProcess::new();
+    initialize(&mut lsp);
+
+    // Open file with 2-space indentation
+    send(
+        lsp.stdin(),
+        r#"{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///tabsize.hsml","languageId":"hsml","version":1,"text":"div\n  h1 Hello\n"}}}"#,
+    );
+    let _ = read_until(&mut lsp, "publishDiagnostics");
+
+    // Request formatting with tabSize 4 — should reformat to 4-space indent
+    send(
+        lsp.stdin(),
+        r#"{"jsonrpc":"2.0","id":3,"method":"textDocument/formatting","params":{"textDocument":{"uri":"file:///tabsize.hsml"},"options":{"tabSize":4,"insertSpaces":true}}}"#,
+    );
+
+    let msg = read_until(&mut lsp, "\"id\":3");
+    assert!(msg.contains("newText"));
+    assert!(msg.contains("    h1 Hello"));
+
+    lsp.shutdown();
+}
+
+#[test]
+fn lsp_formatting_returns_null_when_already_matches_tab_size() {
+    let mut lsp = LspProcess::new();
+    initialize(&mut lsp);
+
+    // Open file with 4-space indentation
+    send(
+        lsp.stdin(),
+        r#"{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///match.hsml","languageId":"hsml","version":1,"text":"div\n    h1 Hello\n"}}}"#,
+    );
+    let _ = read_until(&mut lsp, "publishDiagnostics");
+
+    // Request formatting with tabSize 4 — already correct, should return null
+    send(
+        lsp.stdin(),
+        r#"{"jsonrpc":"2.0","id":3,"method":"textDocument/formatting","params":{"textDocument":{"uri":"file:///match.hsml"},"options":{"tabSize":4,"insertSpaces":true}}}"#,
+    );
+
+    let msg = read_until(&mut lsp, "\"id\":3");
+    assert!(msg.contains("\"result\":null"));
+
+    lsp.shutdown();
+}
+
+#[test]
 fn lsp_formatting_returns_null_for_already_formatted() {
     let mut lsp = LspProcess::new();
     initialize(&mut lsp);
