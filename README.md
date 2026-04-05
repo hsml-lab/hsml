@@ -132,7 +132,7 @@ To re-include a built-in ignored directory, add a negation to `.hsmlignore`:
 ### WASM / JavaScript
 
 ```js
-import { compileContent, compileContentWithDiagnostics } from "hsml";
+import { compileContent, compileContentWithDiagnostics, formatContent } from "hsml";
 
 // Simple compilation
 const html = compileContent("h1.title Hello World\n");
@@ -141,6 +141,14 @@ const html = compileContent("h1.title Hello World\n");
 // With diagnostics (errors + warnings)
 const result = compileContentWithDiagnostics("h1.foo.foo Hello\n");
 // => { success: true, html: '...', diagnostics: [{ severity: 'warning', code: 'W002', ... }] }
+
+// Format HSML source
+const formatted = formatContent("div\n    h1 Hello\n");
+// => 'div\n  h1 Hello\n'
+
+// With custom options
+const formatted4 = formatContent("div\n  h1 Hello\n", { indentSize: 4 });
+// => 'div\n    h1 Hello\n'
 ```
 
 ## HSML Syntax
@@ -288,7 +296,7 @@ warning[W002]: Duplicate class 'foo'
 - [x] Ignore support (`.gitignore`, `.hsmlignore`, `--ignore-pattern`)
 - [x] `hsml fmt` — code formatter
 - [x] `hsml parse` — AST output as JSON
-- [x] LSP server with diagnostics and hover
+- [x] LSP server with diagnostics, hover, and formatting
 - [x] GitHub/GitLab CI diagnostic formatters
 
 ## Contributing
