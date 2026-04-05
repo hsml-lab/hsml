@@ -133,11 +133,11 @@ struct WasmFormatOptions {
 }
 
 fn default_indent_size() -> usize {
-    2
+    formatter::FormatOptions::default().indent_size
 }
 
 fn default_print_width() -> usize {
-    80
+    formatter::FormatOptions::default().print_width
 }
 
 impl From<WasmFormatOptions> for formatter::FormatOptions {
