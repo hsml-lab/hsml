@@ -7,15 +7,19 @@ use tower_lsp::{
     jsonrpc::Result,
     lsp_types::{
         Diagnostic as LspDiagnostic, DiagnosticSeverity, DidChangeTextDocumentParams,
-        DidCloseTextDocumentParams, DidOpenTextDocumentParams, Hover, HoverContents, HoverParams,
-        HoverProviderCapability, InitializeParams, InitializeResult, InitializedParams,
-        MarkupContent, MarkupKind, MessageType, NumberOrString, Position, Range,
-        ServerCapabilities, ServerInfo, TextDocumentSyncCapability, TextDocumentSyncKind, Url,
+        DidCloseTextDocumentParams, DidOpenTextDocumentParams, DocumentFormattingParams, Hover,
+        HoverContents, HoverParams, HoverProviderCapability, InitializeParams, InitializeResult,
+        InitializedParams, MarkupContent, MarkupKind, MessageType, NumberOrString, OneOf, Position,
+        Range, ServerCapabilities, ServerInfo, TextDocumentSyncCapability, TextDocumentSyncKind,
+        TextEdit, Url,
     },
 };
 
 use hsml::diagnostic::{Diagnostic, Severity};
+use hsml::formatter::{FormatOptions, format};
+use hsml::parser::Span;
 use hsml::parser::error::ErrorCode;
+use hsml::parser::parse::parse;
 
 fn position_to_lsp(pos: &hsml::common::Position) -> Position {
     Position::new(pos.line.saturating_sub(1), pos.column.saturating_sub(1))
@@ -115,6 +119,7 @@ impl LanguageServer for Backend {
                     TextDocumentSyncKind::FULL,
                 )),
                 hover_provider: Some(HoverProviderCapability::Simple(true)),
+                document_formatting_provider: Some(OneOf::Left(true)),
                 ..Default::default()
             },
         })
@@ -254,6 +259,48 @@ impl LanguageServer for Backend {
         }
 
         Ok(None)
+    }
+
+    async fn formatting(&self, params: DocumentFormattingParams) -> Result<Option<Vec<TextEdit>>> {
+        let uri = &params.text_document.uri;
+
+        // Clone source and release lock before doing CPU work
+        let source = {
+            let documents = self.documents.lock().unwrap();
+            let Some((_, source)) = documents.get(uri) else {
+                return Ok(None);
+            };
+            source.clone()
+        };
+
+        let span = Span::new(&source);
+        let Ok((_, ast)) = parse(span) else {
+            return Ok(None);
+        };
+
+        let options = FormatOptions {
+            indent_size: params.options.tab_size as usize,
+            ..FormatOptions::default()
+        };
+
+        let formatted = format(&ast, &options);
+
+        if formatted == source {
+            return Ok(None);
+        }
+
+        // Replace the entire document
+        let end_line = source.matches('\n').count() as u32;
+        let end_character = source
+            .rsplit('\n')
+            .next()
+            .map(|line| line.trim_end_matches('\r').encode_utf16().count() as u32)
+            .unwrap_or(0);
+
+        Ok(Some(vec![TextEdit {
+            range: Range::new(Position::new(0, 0), Position::new(end_line, end_character)),
+            new_text: formatted,
+        }]))
     }
 }
 

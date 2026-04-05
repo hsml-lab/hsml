@@ -319,3 +319,207 @@ fn lsp_hover_shows_warning_code_description() {
 
     lsp.shutdown();
 }
+
+#[test]
+fn lsp_formatting_normalizes_indentation() {
+    let mut lsp = LspProcess::new();
+    initialize(&mut lsp);
+
+    // Open file with 4-space indentation (formatter normalizes to 2)
+    send(
+        lsp.stdin(),
+        r#"{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///fmt.hsml","languageId":"hsml","version":1,"text":"div\n    h1 Hello\n"}}}"#,
+    );
+    let _ = read_until(&mut lsp, "publishDiagnostics");
+
+    // Request formatting
+    send(
+        lsp.stdin(),
+        r#"{"jsonrpc":"2.0","id":3,"method":"textDocument/formatting","params":{"textDocument":{"uri":"file:///fmt.hsml"},"options":{"tabSize":2,"insertSpaces":true}}}"#,
+    );
+
+    let msg = read_until(&mut lsp, "\"id\":3");
+    // Should return a TextEdit with the formatted content
+    assert!(msg.contains("newText"));
+    assert!(msg.contains("  h1 Hello"));
+
+    lsp.shutdown();
+}
+
+#[test]
+fn lsp_formatting_respects_tab_size() {
+    let mut lsp = LspProcess::new();
+    initialize(&mut lsp);
+
+    // Open file with 2-space indentation
+    send(
+        lsp.stdin(),
+        r#"{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///tabsize.hsml","languageId":"hsml","version":1,"text":"div\n  h1 Hello\n"}}}"#,
+    );
+    let _ = read_until(&mut lsp, "publishDiagnostics");
+
+    // Request formatting with tabSize 4 — should reformat to 4-space indent
+    send(
+        lsp.stdin(),
+        r#"{"jsonrpc":"2.0","id":3,"method":"textDocument/formatting","params":{"textDocument":{"uri":"file:///tabsize.hsml"},"options":{"tabSize":4,"insertSpaces":true}}}"#,
+    );
+
+    let msg = read_until(&mut lsp, "\"id\":3");
+    assert!(msg.contains("newText"));
+    assert!(msg.contains("    h1 Hello"));
+
+    lsp.shutdown();
+}
+
+#[test]
+fn lsp_formatting_returns_null_when_already_matches_tab_size() {
+    let mut lsp = LspProcess::new();
+    initialize(&mut lsp);
+
+    // Open file with 4-space indentation
+    send(
+        lsp.stdin(),
+        r#"{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///match.hsml","languageId":"hsml","version":1,"text":"div\n    h1 Hello\n"}}}"#,
+    );
+    let _ = read_until(&mut lsp, "publishDiagnostics");
+
+    // Request formatting with tabSize 4 — already correct, should return null
+    send(
+        lsp.stdin(),
+        r#"{"jsonrpc":"2.0","id":3,"method":"textDocument/formatting","params":{"textDocument":{"uri":"file:///match.hsml"},"options":{"tabSize":4,"insertSpaces":true}}}"#,
+    );
+
+    let msg = read_until(&mut lsp, "\"id\":3");
+    assert!(msg.contains("\"result\":null"));
+
+    lsp.shutdown();
+}
+
+#[test]
+fn lsp_formatting_returns_null_for_already_formatted() {
+    let mut lsp = LspProcess::new();
+    initialize(&mut lsp);
+
+    // Open already-formatted file
+    send(
+        lsp.stdin(),
+        r#"{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///ok.hsml","languageId":"hsml","version":1,"text":"div\n  h1 Hello\n"}}}"#,
+    );
+    let _ = read_until(&mut lsp, "publishDiagnostics");
+
+    // Request formatting
+    send(
+        lsp.stdin(),
+        r#"{"jsonrpc":"2.0","id":3,"method":"textDocument/formatting","params":{"textDocument":{"uri":"file:///ok.hsml"},"options":{"tabSize":2,"insertSpaces":true}}}"#,
+    );
+
+    let msg = read_until(&mut lsp, "\"id\":3");
+    assert!(msg.contains("\"result\":null"));
+
+    lsp.shutdown();
+}
+
+#[test]
+fn lsp_formatting_returns_null_for_invalid_file() {
+    let mut lsp = LspProcess::new();
+    initialize(&mut lsp);
+
+    // Open file with parse error
+    send(
+        lsp.stdin(),
+        r#"{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///bad.hsml","languageId":"hsml","version":1,"text":"@@@invalid\n"}}}"#,
+    );
+    let _ = read_until(&mut lsp, "publishDiagnostics");
+
+    // Request formatting — should return null (can't format unparseable file)
+    send(
+        lsp.stdin(),
+        r#"{"jsonrpc":"2.0","id":3,"method":"textDocument/formatting","params":{"textDocument":{"uri":"file:///bad.hsml"},"options":{"tabSize":2,"insertSpaces":true}}}"#,
+    );
+
+    let msg = read_until(&mut lsp, "\"id\":3");
+    assert!(msg.contains("\"result\":null"));
+
+    lsp.shutdown();
+}
+
+#[test]
+fn lsp_formatting_range_covers_document_with_trailing_newline() {
+    let mut lsp = LspProcess::new();
+    initialize(&mut lsp);
+
+    // "div\n    h1 Hello\n" — 2 newlines, trailing newline → end should be {line:2, character:0}
+    send(
+        lsp.stdin(),
+        r#"{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///trail.hsml","languageId":"hsml","version":1,"text":"div\n    h1 Hello\n"}}}"#,
+    );
+    let _ = read_until(&mut lsp, "publishDiagnostics");
+
+    send(
+        lsp.stdin(),
+        r#"{"jsonrpc":"2.0","id":3,"method":"textDocument/formatting","params":{"textDocument":{"uri":"file:///trail.hsml"},"options":{"tabSize":2,"insertSpaces":true}}}"#,
+    );
+
+    let msg = read_until(&mut lsp, "\"id\":3");
+    // End position: line 2 (after 2 newlines), character 0 (empty after last newline)
+    assert!(
+        msg.contains(r#""end":{"character":0,"line":2}"#),
+        "end position should be line 2, character 0 for trailing newline, got: {msg}"
+    );
+
+    lsp.shutdown();
+}
+
+#[test]
+fn lsp_formatting_range_covers_three_line_document() {
+    let mut lsp = LspProcess::new();
+    initialize(&mut lsp);
+
+    // "div\n    h1 A\n    h2 B\n" — 3 newlines → end should be {line:3, character:0}
+    send(
+        lsp.stdin(),
+        r#"{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///three.hsml","languageId":"hsml","version":1,"text":"div\n    h1 A\n    h2 B\n"}}}"#,
+    );
+    let _ = read_until(&mut lsp, "publishDiagnostics");
+
+    send(
+        lsp.stdin(),
+        r#"{"jsonrpc":"2.0","id":3,"method":"textDocument/formatting","params":{"textDocument":{"uri":"file:///three.hsml"},"options":{"tabSize":2,"insertSpaces":true}}}"#,
+    );
+
+    let msg = read_until(&mut lsp, "\"id\":3");
+    // 3 newlines, trailing newline → end at line 3, character 0
+    assert!(
+        msg.contains(r#""end":{"character":0,"line":3}"#),
+        "end position should be line 3, character 0, got: {msg}"
+    );
+
+    lsp.shutdown();
+}
+
+#[test]
+fn lsp_formatting_range_handles_crlf_line_endings() {
+    let mut lsp = LspProcess::new();
+    initialize(&mut lsp);
+
+    // "div\r\n    h1 Hello\r\n" — CRLF line endings, 2 newlines → end at {line:2, character:0}
+    send(
+        lsp.stdin(),
+        r#"{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///crlf.hsml","languageId":"hsml","version":1,"text":"div\r\n    h1 Hello\r\n"}}}"#,
+    );
+    let _ = read_until(&mut lsp, "publishDiagnostics");
+
+    send(
+        lsp.stdin(),
+        r#"{"jsonrpc":"2.0","id":3,"method":"textDocument/formatting","params":{"textDocument":{"uri":"file:///crlf.hsml"},"options":{"tabSize":2,"insertSpaces":true}}}"#,
+    );
+
+    let msg = read_until(&mut lsp, "\"id\":3");
+    // \r should not be counted in character position
+    assert!(
+        msg.contains(r#""end":{"character":0,"line":2}"#),
+        "end position should be line 2, character 0 (not counting \\r), got: {msg}"
+    );
+
+    lsp.shutdown();
+}
