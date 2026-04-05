@@ -1,5 +1,6 @@
 pub mod common;
 pub mod compiler;
+pub mod converter;
 pub mod diagnostic;
 pub mod formatter;
 pub mod parser;
@@ -109,6 +110,11 @@ pub fn compile_content_diagnostics(
     Ok(CompileOutput { html, diagnostics })
 }
 
+/// Core convert logic shared by WASM and native callers.
+pub fn convert_html_core(html: &str) -> Result<String, String> {
+    converter::convert(html)
+}
+
 /// Core format logic shared by WASM and native callers.
 pub fn format_content_core(
     source: &str,
@@ -163,6 +169,14 @@ pub fn format_content(source: &str, options: JsValue) -> Result<String, JsError>
     };
 
     format_content_core(source, &options).map_err(|e| JsError::new(&e))
+}
+
+/// Convert HTML to HSML, exposed as a WASM binding.
+///
+/// Returns the converted HSML string, or a `JsError` on parse failure.
+#[wasm_bindgen(js_name = "convertHtml")]
+pub fn convert_html(html: &str) -> Result<String, JsError> {
+    convert_html_core(html).map_err(|e| JsError::new(&e))
 }
 
 /// Compile HSML source to HTML, exposed as a WASM binding.
