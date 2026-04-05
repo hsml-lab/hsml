@@ -7,15 +7,19 @@ use tower_lsp::{
     jsonrpc::Result,
     lsp_types::{
         Diagnostic as LspDiagnostic, DiagnosticSeverity, DidChangeTextDocumentParams,
-        DidCloseTextDocumentParams, DidOpenTextDocumentParams, Hover, HoverContents, HoverParams,
-        HoverProviderCapability, InitializeParams, InitializeResult, InitializedParams,
-        MarkupContent, MarkupKind, MessageType, NumberOrString, Position, Range,
-        ServerCapabilities, ServerInfo, TextDocumentSyncCapability, TextDocumentSyncKind, Url,
+        DidCloseTextDocumentParams, DidOpenTextDocumentParams, DocumentFormattingParams, Hover,
+        HoverContents, HoverParams, HoverProviderCapability, InitializeParams, InitializeResult,
+        InitializedParams, MarkupContent, MarkupKind, MessageType, NumberOrString, OneOf, Position,
+        Range, ServerCapabilities, ServerInfo, TextDocumentSyncCapability, TextDocumentSyncKind,
+        TextEdit, Url,
     },
 };
 
 use hsml::diagnostic::{Diagnostic, Severity};
+use hsml::formatter::{FormatOptions, format};
+use hsml::parser::Span;
 use hsml::parser::error::ErrorCode;
+use hsml::parser::parse::parse;
 
 fn position_to_lsp(pos: &hsml::common::Position) -> Position {
     Position::new(pos.line.saturating_sub(1), pos.column.saturating_sub(1))
@@ -115,6 +119,7 @@ impl LanguageServer for Backend {
                     TextDocumentSyncKind::FULL,
                 )),
                 hover_provider: Some(HoverProviderCapability::Simple(true)),
+                document_formatting_provider: Some(OneOf::Left(true)),
                 ..Default::default()
             },
         })
@@ -254,6 +259,38 @@ impl LanguageServer for Backend {
         }
 
         Ok(None)
+    }
+
+    async fn formatting(&self, params: DocumentFormattingParams) -> Result<Option<Vec<TextEdit>>> {
+        let uri = &params.text_document.uri;
+
+        let documents = self.documents.lock().unwrap();
+        let Some((_, source)) = documents.get(uri) else {
+            return Ok(None);
+        };
+
+        let span = Span::new(source);
+        let Ok((_, ast)) = parse(span) else {
+            return Ok(None);
+        };
+
+        let formatted = format(&ast, &FormatOptions::default());
+
+        if formatted == *source {
+            return Ok(None);
+        }
+
+        // Replace the entire document
+        let line_count = source.lines().count() as u32;
+        let last_line_len = source.lines().last().map_or(0, |l| l.len() as u32);
+
+        Ok(Some(vec![TextEdit {
+            range: Range::new(
+                Position::new(0, 0),
+                Position::new(line_count, last_line_len),
+            ),
+            new_text: formatted,
+        }]))
     }
 }
 

@@ -319,3 +319,77 @@ fn lsp_hover_shows_warning_code_description() {
 
     lsp.shutdown();
 }
+
+#[test]
+fn lsp_formatting_normalizes_indentation() {
+    let mut lsp = LspProcess::new();
+    initialize(&mut lsp);
+
+    // Open file with 4-space indentation (formatter normalizes to 2)
+    send(
+        lsp.stdin(),
+        r#"{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///fmt.hsml","languageId":"hsml","version":1,"text":"div\n    h1 Hello\n"}}}"#,
+    );
+    let _ = read_until(&mut lsp, "publishDiagnostics");
+
+    // Request formatting
+    send(
+        lsp.stdin(),
+        r#"{"jsonrpc":"2.0","id":3,"method":"textDocument/formatting","params":{"textDocument":{"uri":"file:///fmt.hsml"},"options":{"tabSize":2,"insertSpaces":true}}}"#,
+    );
+
+    let msg = read_until(&mut lsp, "\"id\":3");
+    // Should return a TextEdit with the formatted content
+    assert!(msg.contains("newText"));
+    assert!(msg.contains("  h1 Hello"));
+
+    lsp.shutdown();
+}
+
+#[test]
+fn lsp_formatting_returns_null_for_already_formatted() {
+    let mut lsp = LspProcess::new();
+    initialize(&mut lsp);
+
+    // Open already-formatted file
+    send(
+        lsp.stdin(),
+        r#"{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///ok.hsml","languageId":"hsml","version":1,"text":"div\n  h1 Hello\n"}}}"#,
+    );
+    let _ = read_until(&mut lsp, "publishDiagnostics");
+
+    // Request formatting
+    send(
+        lsp.stdin(),
+        r#"{"jsonrpc":"2.0","id":3,"method":"textDocument/formatting","params":{"textDocument":{"uri":"file:///ok.hsml"},"options":{"tabSize":2,"insertSpaces":true}}}"#,
+    );
+
+    let msg = read_until(&mut lsp, "\"id\":3");
+    assert!(msg.contains("\"result\":null"));
+
+    lsp.shutdown();
+}
+
+#[test]
+fn lsp_formatting_returns_null_for_invalid_file() {
+    let mut lsp = LspProcess::new();
+    initialize(&mut lsp);
+
+    // Open file with parse error
+    send(
+        lsp.stdin(),
+        r#"{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///bad.hsml","languageId":"hsml","version":1,"text":"@@@invalid\n"}}}"#,
+    );
+    let _ = read_until(&mut lsp, "publishDiagnostics");
+
+    // Request formatting — should return null (can't format unparseable file)
+    send(
+        lsp.stdin(),
+        r#"{"jsonrpc":"2.0","id":3,"method":"textDocument/formatting","params":{"textDocument":{"uri":"file:///bad.hsml"},"options":{"tabSize":2,"insertSpaces":true}}}"#,
+    );
+
+    let msg = read_until(&mut lsp, "\"id\":3");
+    assert!(msg.contains("\"result\":null"));
+
+    lsp.shutdown();
+}
