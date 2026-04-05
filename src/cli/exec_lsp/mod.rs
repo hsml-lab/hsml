@@ -264,19 +264,28 @@ impl LanguageServer for Backend {
     async fn formatting(&self, params: DocumentFormattingParams) -> Result<Option<Vec<TextEdit>>> {
         let uri = &params.text_document.uri;
 
-        let documents = self.documents.lock().unwrap();
-        let Some((_, source)) = documents.get(uri) else {
-            return Ok(None);
+        // Clone source and release lock before doing CPU work
+        let source = {
+            let documents = self.documents.lock().unwrap();
+            let Some((_, source)) = documents.get(uri) else {
+                return Ok(None);
+            };
+            source.clone()
         };
 
-        let span = Span::new(source);
+        let span = Span::new(&source);
         let Ok((_, ast)) = parse(span) else {
             return Ok(None);
         };
 
-        let formatted = format(&ast, &FormatOptions::default());
+        let options = FormatOptions {
+            indent_size: params.options.tab_size as usize,
+            ..FormatOptions::default()
+        };
 
-        if formatted == *source {
+        let formatted = format(&ast, &options);
+
+        if formatted == source {
             return Ok(None);
         }
 
