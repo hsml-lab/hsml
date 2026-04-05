@@ -290,14 +290,15 @@ impl LanguageServer for Backend {
         }
 
         // Replace the entire document
-        let line_count = source.lines().count() as u32;
-        let last_line_len = source.lines().last().map_or(0, |l| l.len() as u32);
+        let end_line = source.matches('\n').count() as u32;
+        let end_character = source
+            .rsplit('\n')
+            .next()
+            .map(|line| line.trim_end_matches('\r').encode_utf16().count() as u32)
+            .unwrap_or(0);
 
         Ok(Some(vec![TextEdit {
-            range: Range::new(
-                Position::new(0, 0),
-                Position::new(line_count, last_line_len),
-            ),
+            range: Range::new(Position::new(0, 0), Position::new(end_line, end_character)),
             new_text: formatted,
         }]))
     }

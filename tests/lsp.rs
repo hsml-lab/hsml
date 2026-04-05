@@ -442,3 +442,84 @@ fn lsp_formatting_returns_null_for_invalid_file() {
 
     lsp.shutdown();
 }
+
+#[test]
+fn lsp_formatting_range_covers_document_with_trailing_newline() {
+    let mut lsp = LspProcess::new();
+    initialize(&mut lsp);
+
+    // "div\n    h1 Hello\n" — 2 newlines, trailing newline → end should be {line:2, character:0}
+    send(
+        lsp.stdin(),
+        r#"{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///trail.hsml","languageId":"hsml","version":1,"text":"div\n    h1 Hello\n"}}}"#,
+    );
+    let _ = read_until(&mut lsp, "publishDiagnostics");
+
+    send(
+        lsp.stdin(),
+        r#"{"jsonrpc":"2.0","id":3,"method":"textDocument/formatting","params":{"textDocument":{"uri":"file:///trail.hsml"},"options":{"tabSize":2,"insertSpaces":true}}}"#,
+    );
+
+    let msg = read_until(&mut lsp, "\"id\":3");
+    // End position: line 2 (after 2 newlines), character 0 (empty after last newline)
+    assert!(
+        msg.contains(r#""end":{"character":0,"line":2}"#),
+        "end position should be line 2, character 0 for trailing newline, got: {msg}"
+    );
+
+    lsp.shutdown();
+}
+
+#[test]
+fn lsp_formatting_range_covers_three_line_document() {
+    let mut lsp = LspProcess::new();
+    initialize(&mut lsp);
+
+    // "div\n    h1 A\n    h2 B\n" — 3 newlines → end should be {line:3, character:0}
+    send(
+        lsp.stdin(),
+        r#"{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///three.hsml","languageId":"hsml","version":1,"text":"div\n    h1 A\n    h2 B\n"}}}"#,
+    );
+    let _ = read_until(&mut lsp, "publishDiagnostics");
+
+    send(
+        lsp.stdin(),
+        r#"{"jsonrpc":"2.0","id":3,"method":"textDocument/formatting","params":{"textDocument":{"uri":"file:///three.hsml"},"options":{"tabSize":2,"insertSpaces":true}}}"#,
+    );
+
+    let msg = read_until(&mut lsp, "\"id\":3");
+    // 3 newlines, trailing newline → end at line 3, character 0
+    assert!(
+        msg.contains(r#""end":{"character":0,"line":3}"#),
+        "end position should be line 3, character 0, got: {msg}"
+    );
+
+    lsp.shutdown();
+}
+
+#[test]
+fn lsp_formatting_range_handles_crlf_line_endings() {
+    let mut lsp = LspProcess::new();
+    initialize(&mut lsp);
+
+    // "div\r\n    h1 Hello\r\n" — CRLF line endings, 2 newlines → end at {line:2, character:0}
+    send(
+        lsp.stdin(),
+        r#"{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///crlf.hsml","languageId":"hsml","version":1,"text":"div\r\n    h1 Hello\r\n"}}}"#,
+    );
+    let _ = read_until(&mut lsp, "publishDiagnostics");
+
+    send(
+        lsp.stdin(),
+        r#"{"jsonrpc":"2.0","id":3,"method":"textDocument/formatting","params":{"textDocument":{"uri":"file:///crlf.hsml"},"options":{"tabSize":2,"insertSpaces":true}}}"#,
+    );
+
+    let msg = read_until(&mut lsp, "\"id\":3");
+    // \r should not be counted in character position
+    assert!(
+        msg.contains(r#""end":{"character":0,"line":2}"#),
+        "end position should be line 2, character 0 (not counting \\r), got: {msg}"
+    );
+
+    lsp.shutdown();
+}
