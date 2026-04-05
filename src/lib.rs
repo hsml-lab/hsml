@@ -103,6 +103,72 @@ pub fn compile_content_diagnostics(
     Ok(CompileOutput { html, diagnostics })
 }
 
+/// Core format logic shared by WASM and native callers.
+pub fn format_content_core(
+    source: &str,
+    options: &formatter::FormatOptions,
+) -> Result<String, String> {
+    let span = parser::Span::new(source);
+    let (rest, ast) = parser::parse::parse(span).map_err(|e| format!("HSML parse error: {e}"))?;
+
+    if !rest.fragment().is_empty() {
+        return Err(format!(
+            "HSML parse error: unconsumed input at line {}, column {}",
+            rest.location_line(),
+            rest.get_column()
+        ));
+    }
+
+    Ok(formatter::format(&ast, options))
+}
+
+/// WASM format options that deserializes from a JS object.
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct WasmFormatOptions {
+    #[serde(default = "default_indent_size")]
+    indent_size: usize,
+    #[serde(default = "default_print_width")]
+    print_width: usize,
+}
+
+fn default_indent_size() -> usize {
+    2
+}
+
+fn default_print_width() -> usize {
+    80
+}
+
+impl From<WasmFormatOptions> for formatter::FormatOptions {
+    fn from(opts: WasmFormatOptions) -> Self {
+        Self {
+            indent_size: opts.indent_size,
+            print_width: opts.print_width,
+        }
+    }
+}
+
+/// Format HSML source, exposed as a WASM binding.
+///
+/// Returns the formatted HSML string, or a `JsError` on parse failure.
+///
+/// Options (all optional):
+/// - `indentSize` — number of spaces per indentation level (default: 2)
+/// - `printWidth` — maximum line width before wrapping attributes (default: 80)
+#[wasm_bindgen(js_name = "formatContent")]
+pub fn format_content(source: &str, options: JsValue) -> Result<String, JsError> {
+    let options: formatter::FormatOptions = if options.is_undefined() || options.is_null() {
+        formatter::FormatOptions::default()
+    } else {
+        let wasm_opts: WasmFormatOptions =
+            serde_wasm_bindgen::from_value(options).map_err(|e| JsError::new(&e.to_string()))?;
+        wasm_opts.into()
+    };
+
+    format_content_core(source, &options).map_err(|e| JsError::new(&e))
+}
+
 /// Compile HSML source to HTML, exposed as a WASM binding.
 ///
 /// Returns the compiled HTML string, or a `JsError` on parse/compile failure.

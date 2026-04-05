@@ -51,6 +51,7 @@ jobs:
         shell: bash
         run: |
           sed -i 's/compileContentWithDiagnostics(source: string): any/compileContentWithDiagnostics(source: string): CompileResult/' pkg/hsml.d.ts
+          sed -i 's/formatContent(source: string, options: any)/formatContent(source: string, options?: FormatContentOptions)/' pkg/hsml.d.ts
           {
             echo ''
             echo '/** A single point in source code. */'
@@ -91,6 +92,14 @@ jobs:
             echo '  html: string | null;'
             echo '  /** All diagnostics (errors and warnings) collected during compilation. */'
             echo '  diagnostics: Diagnostic[];'
+            echo '}'
+            echo ''
+            echo '/** Options for formatting HSML source. */'
+            echo 'export interface FormatContentOptions {'
+            echo '  /** Number of spaces per indentation level (default: 2). */'
+            echo '  indentSize?: number;'
+            echo '  /** Maximum line width before wrapping attributes (default: 80). */'
+            echo '  printWidth?: number;'
             echo '}'
           } >> pkg/hsml.d.ts
 
