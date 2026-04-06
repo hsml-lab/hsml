@@ -6,15 +6,16 @@ use crate::common::is_void_element;
 const INDENT_SIZE: usize = 2;
 
 /// Emit HSML source from an html5ever DOM.
-pub fn emit(dom: &RcDom) -> String {
+pub fn emit(dom: &RcDom, original_html: &str) -> String {
     let mut output = String::new();
+    let lower_html = original_html.to_ascii_lowercase();
 
     // html5ever wraps content in <html><head><body> for document parsing.
     // We need to find the meaningful content nodes.
-    let nodes = find_content_nodes(&dom.document);
+    let nodes = find_content_nodes(&dom.document, &lower_html);
 
     for node in &nodes {
-        emit_node(node, 0, &mut output);
+        emit_node(node, 0, &lower_html, &mut output);
     }
 
     if !output.is_empty() && !output.ends_with('\n') {
@@ -26,7 +27,7 @@ pub fn emit(dom: &RcDom) -> String {
 
 /// Find the content nodes, skipping the implicit html/head/body wrapper
 /// that html5ever adds for document parsing.
-fn find_content_nodes(document: &Handle) -> Vec<Handle> {
+fn find_content_nodes(document: &Handle, lower_html: &str) -> Vec<Handle> {
     let children = document.children.borrow();
 
     // Check if this looks like a full document (has DOCTYPE or html element)
@@ -38,11 +39,19 @@ fn find_content_nodes(document: &Handle) -> Vec<Handle> {
         |c| matches!(&c.data, NodeData::Element { name, .. } if name.local.as_ref() == "html"),
     );
 
-    if has_doctype {
-        // Full document — emit doctype + html element
-        children.iter().cloned().collect()
+    // Check if the user explicitly wrote <html> or <body> tags
+    let has_explicit_html = lower_html.contains("<html") || lower_html.contains("<body");
+
+    if has_doctype || has_explicit_html {
+        // Full document or user-authored html/body — emit all children,
+        // but skip empty elements synthesized by html5ever that the user didn't write
+        children
+            .iter()
+            .filter(|c| !is_synthesized_empty_element(c, lower_html))
+            .cloned()
+            .collect()
     } else if let Some(html) = html_node {
-        // html5ever wrapped a fragment in <html><head><body>
+        // html5ever synthesized <html><head><body> for a fragment
         // Collect document-level comments + head elements + body children
         let mut nodes: Vec<Handle> = Vec::new();
 
@@ -81,6 +90,27 @@ fn find_content_nodes(document: &Handle) -> Vec<Handle> {
     } else {
         children.iter().cloned().collect()
     }
+}
+
+/// Check if a node is an empty element synthesized by html5ever
+/// that doesn't appear in the original HTML source.
+fn is_synthesized_empty_element(node: &Handle, lower_html: &str) -> bool {
+    if let NodeData::Element { name, .. } = &node.data {
+        let tag = name.local.as_ref();
+        let tag_in_source = lower_html.contains(&format!("<{tag}"));
+        if !tag_in_source {
+            let children = node.children.borrow();
+            // Empty or only contains whitespace text nodes
+            return children.iter().all(|c| {
+                if let NodeData::Text { contents } = &c.data {
+                    contents.borrow().trim().is_empty()
+                } else {
+                    false
+                }
+            });
+        }
+    }
+    false
 }
 
 /// Get the effective children of a node (handles template_contents).
@@ -213,13 +243,20 @@ fn serialize_node_to_html(node: &Handle, output: &mut String) {
     }
 }
 
-fn emit_node(node: &Handle, depth: usize, output: &mut String) {
+fn emit_node(node: &Handle, depth: usize, lower_html: &str, output: &mut String) {
     match &node.data {
         NodeData::Doctype { name, .. } => {
             output.push_str(&format!("doctype {name}\n"));
         }
         NodeData::Element { name, attrs, .. } => {
-            emit_element(node, &name.local, &attrs.borrow(), depth, output);
+            emit_element(
+                node,
+                &name.local,
+                &attrs.borrow(),
+                depth,
+                lower_html,
+                output,
+            );
         }
         NodeData::Comment { contents } => {
             let indent = " ".repeat(depth * INDENT_SIZE);
@@ -241,6 +278,7 @@ fn emit_element(
     tag: &str,
     attrs: &[html5ever::interface::Attribute],
     depth: usize,
+    lower_html: &str,
     output: &mut String,
 ) {
     let indent = " ".repeat(depth * INDENT_SIZE);
@@ -363,16 +401,26 @@ fn emit_element(
 
     // Whitespace-sensitive tags: preserve content exactly as text block
     if whitespace_sensitive {
-        let raw: String = significant_children
+        let has_non_text = significant_children
             .iter()
-            .filter_map(|c| {
-                if let NodeData::Text { contents } = &c.data {
-                    Some(contents.borrow().to_string())
-                } else {
-                    None
-                }
-            })
-            .collect();
+            .any(|c| !matches!(c.data, NodeData::Text { .. }));
+
+        let raw = if has_non_text {
+            // Has nested elements/comments — serialize as raw HTML to preserve markup
+            serialize_inner_html(node)
+        } else {
+            // Text-only — collect raw text content
+            significant_children
+                .iter()
+                .filter_map(|c| {
+                    if let NodeData::Text { contents } = &c.data {
+                        Some(contents.borrow().to_string())
+                    } else {
+                        None
+                    }
+                })
+                .collect()
+        };
 
         output.push_str(&format!("{indent}{line}.\n"));
         let text_indent = " ".repeat((depth + 1) * INDENT_SIZE);
@@ -434,7 +482,9 @@ fn emit_element(
 
     // Element children only — recurse
     output.push_str(&format!("{indent}{line}\n"));
-    for child in &significant_children {
-        emit_node(child, depth + 1, output);
+    for child in significant_children {
+        if !is_synthesized_empty_element(child, lower_html) {
+            emit_node(child, depth + 1, lower_html, output);
+        }
     }
 }

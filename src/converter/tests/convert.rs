@@ -349,6 +349,42 @@ fn it_should_roundtrip_pre_tag_content() {
     assert_eq!(compiled, html, "round-trip should preserve pre content");
 }
 
+// --- Pre with nested markup ---
+
+#[test]
+fn it_should_preserve_nested_markup_in_pre() {
+    assert_eq!(
+        conv("<pre><code>hello</code></pre>"),
+        "pre.\n  <code>hello</code>\n"
+    );
+}
+
+#[test]
+fn it_should_preserve_nested_markup_with_whitespace_in_pre() {
+    assert_eq!(
+        conv("<pre><code>  fn main() {\n    println!(\"hi\");\n  }</code></pre>"),
+        "pre.\n  <code>  fn main() {\n      println!(\"hi\");\n    }</code>\n"
+    );
+}
+
+// --- Script/style raw text ---
+
+#[test]
+fn it_should_not_escape_script_content_in_mixed_serialization() {
+    assert_eq!(
+        conv("<script>if (a < b && c > d) {}</script>"),
+        "script.\n  if (a < b && c > d) {}\n"
+    );
+}
+
+#[test]
+fn it_should_not_escape_style_content() {
+    assert_eq!(
+        conv("<style>.foo > .bar { color: red; }</style>"),
+        "style.\n  .foo > .bar { color: red; }\n"
+    );
+}
+
 // --- TailwindCSS ---
 
 #[test]
@@ -371,6 +407,17 @@ fn it_should_handle_multiple_root_elements() {
 #[test]
 fn it_should_ignore_insignificant_whitespace() {
     assert_eq!(conv("<div>\n  <p>Hello</p>\n</div>"), "div\n  p Hello\n");
+}
+
+// --- Explicit html/body without DOCTYPE ---
+
+#[test]
+fn it_should_preserve_explicit_html_body_without_doctype() {
+    // <head> is synthesized by html5ever but not in the source — should be skipped
+    assert_eq!(
+        conv("<html><body><p>Hello</p></body></html>"),
+        "html\n  body\n    p Hello\n"
+    );
 }
 
 // --- Real-world examples ---

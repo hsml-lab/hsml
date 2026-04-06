@@ -11,7 +11,7 @@ pub fn convert(html: &str) -> Result<String, String> {
         .read_from(&mut html.as_bytes())
         .map_err(|e| format!("HTML parse error: {e}"))?;
 
-    Ok(emitter::emit(&dom))
+    Ok(emitter::emit(&dom, html))
 }
 
 #[cfg(test)]
