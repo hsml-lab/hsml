@@ -18,7 +18,10 @@ pub fn text_block_node<'a>(
 
     let text_str = *text.fragment();
 
-    // Strip the first non-empty line's indentation prefix from each line
+    // Strip the first non-empty line's indentation prefix from each line.
+    // This removes the text block's structural indentation but also removes
+    // any content whitespace that matches (a known HSML language limitation
+    // for whitespace-sensitive content like <pre> tags).
     let block_indent = text_str
         .lines()
         .find(|line| !line.trim().is_empty())
