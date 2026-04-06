@@ -127,12 +127,38 @@ fn escape_html_text(text: &str) -> String {
         .replace('>', "&gt;")
 }
 
-/// Escape special HTML characters in attribute values.
+/// Escape special HTML characters in attribute values (for HTML serialization).
 fn escape_html_attr(text: &str) -> String {
     text.replace('&', "&amp;")
         .replace('"', "&quot;")
         .replace('<', "&lt;")
         .replace('>', "&gt;")
+}
+
+/// Check if an attribute key is a framework directive (Vue/Angular)
+/// whose value contains a JavaScript expression rather than a plain HTML value.
+fn is_framework_directive(key: &str) -> bool {
+    key.starts_with(':')
+        || key.starts_with('@')
+        || key.starts_with("v-")
+        || key.starts_with('#')
+        || key.starts_with('[')
+        || key.starts_with('(')
+        || key.starts_with('*')
+}
+
+/// Escape an HSML attribute value.
+/// Framework directives (Vue `:`, `@`, `v-`, `#`; Angular `[`, `(`, `*`)
+/// contain JavaScript expressions where `&` is valid (e.g. `&&`).
+/// Regular HTML attributes contain values where `&` must be `&amp;`
+/// so the compiled HTML is valid.
+fn escape_hsml_attr(key: &str, value: &str) -> String {
+    if is_framework_directive(key) {
+        value.replace('"', "&quot;")
+    } else {
+        // Encode & first, then " — order matters to avoid double-encoding
+        value.replace('&', "&amp;").replace('"', "&quot;")
+    }
 }
 
 fn serialize_node_to_html(node: &Handle, output: &mut String) {
@@ -259,7 +285,7 @@ fn emit_element(
             } else {
                 line.push_str(key);
                 line.push_str("=\"");
-                line.push_str(value);
+                line.push_str(&escape_hsml_attr(key, value));
                 line.push('"');
             }
         }

@@ -179,6 +179,48 @@ fn it_should_escape_quotes_in_mixed_content_attributes() {
     );
 }
 
+// --- HTML entities in HSML attribute output ---
+
+#[test]
+fn it_should_escape_quotes_in_hsml_attribute_values() {
+    // An attribute value containing a double quote would break key="value" syntax
+    assert_eq!(
+        conv(r#"<div title="say &quot;hello&quot;"></div>"#),
+        r#"div(title="say &quot;hello&quot;")
+"#
+    );
+}
+
+#[test]
+fn it_should_reencode_ampersands_in_regular_hsml_attributes() {
+    // html5ever decodes &amp; to & — regular HTML attributes must re-encode
+    // so the compiled HTML output has valid &amp;
+    assert_eq!(
+        conv(r#"<a href="/search?a=1&amp;b=2">link</a>"#),
+        r#"a(href="/search?a=1&amp;b=2") link
+"#
+    );
+}
+
+#[test]
+fn it_should_keep_ampersands_in_vue_directive_values() {
+    // Vue directive values contain JS expressions where && is valid
+    assert_eq!(
+        conv(r#"<div :class="a && b"></div>"#),
+        r#"div(:class="a && b")
+"#
+    );
+}
+
+#[test]
+fn it_should_keep_ampersands_in_angular_directive_values() {
+    assert_eq!(
+        conv(r#"<div [class]="a && b"></div>"#),
+        r#"div([class]="a && b")
+"#
+    );
+}
+
 // --- TailwindCSS ---
 
 #[test]
