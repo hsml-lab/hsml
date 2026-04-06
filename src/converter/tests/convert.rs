@@ -152,6 +152,33 @@ fn it_should_keep_complex_mixed_content_as_raw_html() {
     );
 }
 
+// --- HTML entities in mixed content ---
+
+#[test]
+fn it_should_escape_entities_in_mixed_content_text() {
+    // html5ever decodes &amp; to & in the DOM — serialize_inner_html must re-encode
+    assert_eq!(
+        conv("<p>A &amp; B <strong>bold</strong></p>"),
+        "p A &amp; B <strong>bold</strong>\n"
+    );
+}
+
+#[test]
+fn it_should_escape_lt_gt_in_mixed_content_text() {
+    assert_eq!(
+        conv("<p>Use &lt;div&gt; for <em>containers</em></p>"),
+        "p Use &lt;div&gt; for <em>containers</em>\n"
+    );
+}
+
+#[test]
+fn it_should_escape_quotes_in_mixed_content_attributes() {
+    assert_eq!(
+        conv("<p>Click <a href=\"/search?q=a&amp;b\">here</a> now</p>"),
+        "p Click <a href=\"/search?q=a&amp;b\">here</a> now\n"
+    );
+}
+
 // --- TailwindCSS ---
 
 #[test]

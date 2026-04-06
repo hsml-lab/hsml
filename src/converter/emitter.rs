@@ -120,10 +120,25 @@ fn serialize_inner_html(node: &Handle) -> String {
     html
 }
 
+/// Escape special HTML characters in text content.
+fn escape_html_text(text: &str) -> String {
+    text.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+}
+
+/// Escape special HTML characters in attribute values.
+fn escape_html_attr(text: &str) -> String {
+    text.replace('&', "&amp;")
+        .replace('"', "&quot;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+}
+
 fn serialize_node_to_html(node: &Handle, output: &mut String) {
     match &node.data {
         NodeData::Text { contents } => {
-            output.push_str(&contents.borrow());
+            output.push_str(&escape_html_text(&contents.borrow()));
         }
         NodeData::Element { name, attrs, .. } => {
             let tag = name.local.as_ref();
@@ -133,7 +148,7 @@ fn serialize_node_to_html(node: &Handle, output: &mut String) {
                 output.push(' ');
                 output.push_str(attr.name.local.as_ref());
                 output.push_str("=\"");
-                output.push_str(&attr.value);
+                output.push_str(&escape_html_attr(&attr.value));
                 output.push('"');
             }
             if is_void_element(tag) {
