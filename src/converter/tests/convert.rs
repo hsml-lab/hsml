@@ -83,6 +83,56 @@ fn it_should_extract_id_and_class_from_attributes() {
     );
 }
 
+// --- IDs and classes with special characters ---
+
+#[test]
+fn it_should_escape_id_with_hash() {
+    // id="foo#bar" can't use #foo#bar syntax — ambiguous
+    assert_eq!(
+        conv(r#"<div id="foo#bar"></div>"#),
+        r#"div(id="foo#bar")
+"#
+    );
+}
+
+#[test]
+fn it_should_escape_class_with_dot() {
+    // class="btn.primary" can't use .btn.primary syntax — ambiguous
+    assert_eq!(
+        conv(r#"<div class="btn.primary"></div>"#),
+        r#"div(class="btn.primary")
+"#
+    );
+}
+
+#[test]
+fn it_should_fallback_entire_class_when_one_contains_dot() {
+    // Safe classes use shorthand, unsafe ones fall back to attribute syntax
+    assert_eq!(
+        conv(r#"<div class="container btn.primary active"></div>"#),
+        r#".container.active(class="btn.primary")
+"#
+    );
+}
+
+#[test]
+fn it_should_use_shorthand_for_tailwind_arbitrary_color() {
+    // bg-[#1da1f2] has # inside brackets — safe for shorthand
+    assert_eq!(
+        conv(r#"<div class="bg-[#1da1f2] text-white"></div>"#),
+        ".bg-[#1da1f2].text-white\n"
+    );
+}
+
+#[test]
+fn it_should_handle_normal_id_and_class() {
+    // Normal id/class without special chars — use shorthand
+    assert_eq!(
+        conv(r#"<div id="app" class="container main"></div>"#),
+        "#app.container.main\n"
+    );
+}
+
 // --- Vue/Angular syntax ---
 
 #[test]

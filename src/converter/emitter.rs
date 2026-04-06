@@ -135,6 +135,21 @@ fn escape_html_attr(text: &str) -> String {
         .replace('>', "&gt;")
 }
 
+/// Check if a value contains `#` or `.` outside of `[...]` brackets.
+/// TailwindCSS uses `[#hex]` and `[...]` which are safe for shorthand syntax.
+fn has_selector_chars_outside_brackets(value: &str) -> bool {
+    let mut in_bracket = false;
+    for ch in value.chars() {
+        match ch {
+            '[' => in_bracket = true,
+            ']' => in_bracket = false,
+            '#' | '.' if !in_bracket => return true,
+            _ => {}
+        }
+    }
+    false
+}
+
 /// Check if an attribute key is a framework directive (Vue/Angular)
 /// whose value contains a JavaScript expression rather than a plain HTML value.
 fn is_framework_directive(key: &str) -> bool {
@@ -233,14 +248,32 @@ fn emit_element(
     // Extract id and class from attributes
     let mut id: Option<&str> = None;
     let mut classes: Vec<&str> = Vec::new();
+    let mut unsafe_class_attr: Option<String> = None;
     let mut other_attrs: Vec<(&str, &StrTendril)> = Vec::new();
 
     for attr in attrs {
         let key = attr.name.local.as_ref();
         match key {
-            "id" => id = Some(&attr.value),
+            "id" => {
+                let val = &*attr.value;
+                if has_selector_chars_outside_brackets(val) {
+                    other_attrs.push((key, &attr.value));
+                } else {
+                    id = Some(val);
+                }
+            }
             "class" => {
-                classes.extend(attr.value.split_whitespace());
+                let mut unsafe_classes: Vec<&str> = Vec::new();
+                for class in attr.value.split_whitespace() {
+                    if has_selector_chars_outside_brackets(class) {
+                        unsafe_classes.push(class);
+                    } else {
+                        classes.push(class);
+                    }
+                }
+                if !unsafe_classes.is_empty() {
+                    unsafe_class_attr = Some(unsafe_classes.join(" "));
+                }
             }
             _ => {
                 other_attrs.push((key, &attr.value));
@@ -270,10 +303,21 @@ fn emit_element(
     }
 
     // Append (attributes)
-    if !other_attrs.is_empty() {
+    let has_attrs = !other_attrs.is_empty() || unsafe_class_attr.is_some();
+    if has_attrs {
         line.push('(');
-        for (i, (key, value)) in other_attrs.iter().enumerate() {
-            if i > 0 {
+        let mut first = true;
+
+        // Unsafe classes that couldn't use shorthand syntax
+        if let Some(ref unsafe_classes) = unsafe_class_attr {
+            line.push_str("class=\"");
+            line.push_str(&escape_hsml_attr("class", unsafe_classes));
+            line.push('"');
+            first = false;
+        }
+
+        for (key, value) in other_attrs.iter() {
+            if !first {
                 line.push_str(", ");
             }
             if value.is_empty() {
@@ -285,6 +329,7 @@ fn emit_element(
                 line.push_str(&escape_hsml_attr(key, value));
                 line.push('"');
             }
+            first = false;
         }
         line.push(')');
     }
