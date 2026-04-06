@@ -385,6 +385,15 @@ fn it_should_not_escape_style_content() {
     );
 }
 
+#[test]
+fn it_should_not_escape_script_in_mixed_content() {
+    assert_eq!(
+        conv(r#"<div>text<script>if (a < b) {}</script>more</div>"#),
+        r#"div text<script>if (a < b) {}</script>more
+"#
+    );
+}
+
 // --- TailwindCSS ---
 
 #[test]

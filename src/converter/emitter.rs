@@ -145,7 +145,7 @@ fn has_mixed_content(node: &Handle) -> bool {
 fn serialize_inner_html(node: &Handle) -> String {
     let mut html = String::new();
     for child in &effective_children(node) {
-        serialize_node_to_html(child, &mut html);
+        serialize_node_to_html(child, &mut html, false);
     }
     html
 }
@@ -206,13 +206,18 @@ fn escape_hsml_attr(key: &str, value: &str) -> String {
     }
 }
 
-fn serialize_node_to_html(node: &Handle, output: &mut String) {
+fn serialize_node_to_html(node: &Handle, output: &mut String, in_raw_text: bool) {
     match &node.data {
         NodeData::Text { contents } => {
-            output.push_str(&escape_html_text(&contents.borrow()));
+            if in_raw_text {
+                output.push_str(&contents.borrow());
+            } else {
+                output.push_str(&escape_html_text(&contents.borrow()));
+            }
         }
         NodeData::Element { name, attrs, .. } => {
             let tag = name.local.as_ref();
+            let is_raw = matches!(tag, "script" | "style");
             output.push('<');
             output.push_str(tag);
             for attr in attrs.borrow().iter() {
@@ -227,7 +232,7 @@ fn serialize_node_to_html(node: &Handle, output: &mut String) {
             } else {
                 output.push('>');
                 for child in &effective_children(node) {
-                    serialize_node_to_html(child, output);
+                    serialize_node_to_html(child, output, is_raw);
                 }
                 output.push_str("</");
                 output.push_str(tag);
