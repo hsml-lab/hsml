@@ -294,10 +294,14 @@ fn emit_element(
 
     // Handle children
     let children = effective_children(node);
+    let whitespace_sensitive = matches!(tag, "pre" | "textarea" | "script" | "style");
+
     let significant_children: Vec<&Handle> = children
         .iter()
         .filter(|c| match &c.data {
-            NodeData::Text { contents } => !contents.borrow().trim().is_empty(),
+            NodeData::Text { contents } => {
+                whitespace_sensitive || !contents.borrow().trim().is_empty()
+            }
             NodeData::Element { .. } | NodeData::Comment { .. } => true,
             _ => false,
         })
@@ -312,6 +316,27 @@ fn emit_element(
     if significant_children.is_empty() {
         // No content
         output.push_str(&format!("{indent}{line}\n"));
+        return;
+    }
+
+    // Whitespace-sensitive tags: preserve content exactly as text block
+    if whitespace_sensitive {
+        let raw: String = significant_children
+            .iter()
+            .filter_map(|c| {
+                if let NodeData::Text { contents } = &c.data {
+                    Some(contents.borrow().to_string())
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        output.push_str(&format!("{indent}{line}.\n"));
+        let text_indent = " ".repeat((depth + 1) * INDENT_SIZE);
+        for text_line in raw.lines() {
+            output.push_str(&format!("{text_indent}{text_line}\n"));
+        }
         return;
     }
 

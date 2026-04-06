@@ -221,6 +221,46 @@ fn it_should_keep_ampersands_in_angular_directive_values() {
     );
 }
 
+// --- Whitespace-sensitive tags ---
+
+#[test]
+fn it_should_preserve_whitespace_in_pre_tag() {
+    // Pre tag content preserves original whitespace via text block syntax.
+    // Text block indent is (depth+1)*2 = 2 spaces, original content on top.
+    assert_eq!(
+        conv("<pre>  line 1\n  line 2\n    indented</pre>"),
+        "pre.\n    line 1\n    line 2\n      indented\n"
+    );
+}
+
+#[test]
+fn it_should_preserve_whitespace_in_pre_tag_with_class() {
+    assert_eq!(
+        conv(
+            "<pre class=\"hljs language-rust\">fn main() {\n    println!(\"Hello, world!\");\n}</pre>"
+        ),
+        "pre.hljs.language-rust.\n  fn main() {\n      println!(\"Hello, world!\");\n  }\n"
+    );
+}
+
+#[test]
+fn it_should_preserve_whitespace_in_textarea() {
+    assert_eq!(
+        conv("<textarea>  some\n  text</textarea>"),
+        "textarea.\n    some\n    text\n"
+    );
+}
+
+#[test]
+#[ignore] // TODO: round-trip for pre tags loses leading whitespace — needs text block compiler fix
+fn it_should_roundtrip_pre_tag_content() {
+    let html = "<pre>  line 1\n  line 2</pre>";
+    let hsml = conv(html);
+
+    let compiled = crate::compile_content_core(&hsml).unwrap();
+    assert_eq!(compiled, html, "round-trip should preserve pre content");
+}
+
 // --- TailwindCSS ---
 
 #[test]
