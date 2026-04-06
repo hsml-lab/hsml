@@ -156,6 +156,14 @@ fn it_should_preserve_multiple_pascal_case_components() {
     );
 }
 
+#[test]
+fn it_should_preserve_pascal_case_in_mixed_content() {
+    assert_eq!(
+        conv(r#"<p>Hello <MyBadge>World</MyBadge> more</p>"#),
+        "p Hello <MyBadge>World</MyBadge> more\n"
+    );
+}
+
 // --- Kebab-case custom elements ---
 
 #[test]

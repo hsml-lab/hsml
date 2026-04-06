@@ -183,10 +183,10 @@ fn has_mixed_content(node: &Handle) -> bool {
 }
 
 /// Serialize a node's children back to raw HTML (for mixed content).
-fn serialize_inner_html(node: &Handle) -> String {
+fn serialize_inner_html(node: &Handle, case_map: &HashMap<String, String>) -> String {
     let mut html = String::new();
     for child in &effective_children(node) {
-        serialize_node_to_html(child, &mut html, false);
+        serialize_node_to_html(child, &mut html, false, case_map);
     }
     html
 }
@@ -247,7 +247,12 @@ fn escape_hsml_attr(key: &str, value: &str) -> String {
     }
 }
 
-fn serialize_node_to_html(node: &Handle, output: &mut String, in_raw_text: bool) {
+fn serialize_node_to_html(
+    node: &Handle,
+    output: &mut String,
+    in_raw_text: bool,
+    case_map: &HashMap<String, String>,
+) {
     match &node.data {
         NodeData::Text { contents } => {
             if in_raw_text {
@@ -257,8 +262,9 @@ fn serialize_node_to_html(node: &Handle, output: &mut String, in_raw_text: bool)
             }
         }
         NodeData::Element { name, attrs, .. } => {
-            let tag = name.local.as_ref();
-            let is_raw = matches!(tag, "script" | "style");
+            let lower_tag = name.local.as_ref();
+            let tag = resolve_tag_case(lower_tag, case_map);
+            let is_raw = matches!(lower_tag, "script" | "style");
             output.push('<');
             output.push_str(tag);
             for attr in attrs.borrow().iter() {
@@ -268,12 +274,12 @@ fn serialize_node_to_html(node: &Handle, output: &mut String, in_raw_text: bool)
                 output.push_str(&escape_html_attr(&attr.value));
                 output.push('"');
             }
-            if is_void_element(tag) {
+            if is_void_element(lower_tag) {
                 output.push_str(" />");
             } else {
                 output.push('>');
                 for child in &effective_children(node) {
-                    serialize_node_to_html(child, output, is_raw);
+                    serialize_node_to_html(child, output, is_raw, case_map);
                 }
                 output.push_str("</");
                 output.push_str(tag);
@@ -462,7 +468,7 @@ fn emit_element(
 
         let raw = if has_non_text {
             // Has nested elements/comments — serialize as raw HTML to preserve markup
-            serialize_inner_html(node)
+            serialize_inner_html(node, case_map)
         } else {
             // Text-only — collect raw text content
             significant_children
@@ -487,7 +493,7 @@ fn emit_element(
 
     // Check for mixed content
     if has_mixed_content(node) {
-        let inner = serialize_inner_html(node);
+        let inner = serialize_inner_html(node, case_map);
         let trimmed = inner.trim();
         if trimmed.contains('\n') {
             // Multi-line mixed content → text block
