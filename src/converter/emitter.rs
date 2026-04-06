@@ -95,12 +95,12 @@ fn effective_children(node: &Handle) -> Vec<Handle> {
     node.children.borrow().iter().cloned().collect()
 }
 
-/// Check if an element has mixed content (text interleaved with element children).
+/// Check if an element has mixed content (text interleaved with element or comment children).
 fn has_mixed_content(node: &Handle) -> bool {
     let children = effective_children(node);
-    let has_elements = children
+    let has_non_text = children
         .iter()
-        .any(|c| matches!(c.data, NodeData::Element { .. }));
+        .any(|c| matches!(c.data, NodeData::Element { .. } | NodeData::Comment { .. }));
     let has_significant_text = children.iter().any(|c| {
         if let NodeData::Text { contents } = &c.data {
             !contents.borrow().trim().is_empty()
@@ -108,7 +108,7 @@ fn has_mixed_content(node: &Handle) -> bool {
             false
         }
     });
-    has_elements && has_significant_text
+    has_non_text && has_significant_text
 }
 
 /// Serialize a node's children back to raw HTML (for mixed content).
@@ -211,14 +211,9 @@ fn emit_node(node: &Handle, depth: usize, output: &mut String) {
             let text = contents.trim();
             output.push_str(&format!("{indent}//! {text}\n"));
         }
-        NodeData::Text { contents } => {
-            // Standalone text nodes (not inside an element) — should not happen
-            // in well-formed HTML, but handle gracefully
-            let text = contents.borrow().to_string();
-            if !text.trim().is_empty() {
-                let indent = " ".repeat(depth * INDENT_SIZE);
-                output.push_str(&format!("{indent}| {}\n", text.trim()));
-            }
+        NodeData::Text { .. } => {
+            // Standalone text nodes outside elements are ignored.
+            // Significant text inside elements is handled by emit_element.
         }
         _ => {}
     }

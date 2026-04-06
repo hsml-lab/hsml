@@ -152,6 +152,36 @@ fn it_should_keep_complex_mixed_content_as_raw_html() {
     );
 }
 
+#[test]
+fn it_should_handle_multiline_mixed_content_as_text_block() {
+    assert_eq!(
+        conv("<p>Hello\n<strong>World</strong>\nmore</p>"),
+        "p.\n  Hello\n  <strong>World</strong>\n  more\n"
+    );
+}
+
+#[test]
+fn it_should_handle_mixed_content_with_void_element() {
+    assert_eq!(conv("<p>Hello<br>World</p>"), "p Hello<br />World\n");
+}
+
+#[test]
+fn it_should_handle_mixed_content_with_comment() {
+    // Comments interleaved with text are treated as mixed content
+    assert_eq!(
+        conv("<p>Hello<!-- separator -->World</p>"),
+        "p Hello<!-- separator -->World\n"
+    );
+}
+
+#[test]
+fn it_should_handle_multiline_text_as_text_block() {
+    assert_eq!(
+        conv("<p>Line one\nLine two\nLine three</p>"),
+        "p.\n  Line one\n  Line two\n  Line three\n"
+    );
+}
+
 // --- HTML entities in mixed content ---
 
 #[test]
