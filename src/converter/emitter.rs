@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use html5ever::tendril::StrTendril;
 use markup5ever_rcdom::{Handle, NodeData, RcDom};
 
@@ -5,17 +7,56 @@ use crate::common::is_void_element;
 
 const INDENT_SIZE: usize = 2;
 
+/// Build a mapping from lowercased tag names to their original PascalCase form.
+/// html5ever lowercases all tags per HTML5 spec, but Vue/Angular use PascalCase
+/// components that we want to preserve.
+fn build_case_map(original_html: &str) -> HashMap<String, String> {
+    let mut map = HashMap::new();
+    let bytes = original_html.as_bytes();
+    let mut i = 0;
+
+    while i < bytes.len() {
+        if bytes[i] == b'<' && i + 1 < bytes.len() && bytes[i + 1].is_ascii_alphabetic() {
+            // Found a tag opening — extract the tag name
+            let start = i + 1;
+            let mut end = start;
+            while end < bytes.len()
+                && (bytes[end].is_ascii_alphanumeric() || bytes[end] == b'-' || bytes[end] == b'_')
+            {
+                end += 1;
+            }
+            let tag = &original_html[start..end];
+            // Only store if it has uppercase characters (PascalCase)
+            if tag.chars().any(|c| c.is_ascii_uppercase()) {
+                let lower = tag.to_ascii_lowercase();
+                map.entry(lower).or_insert_with(|| tag.to_string());
+            }
+            i = end;
+        } else {
+            i += 1;
+        }
+    }
+
+    map
+}
+
+/// Resolve a tag name to its original casing if it was PascalCase in the source.
+fn resolve_tag_case<'a>(tag: &'a str, case_map: &'a HashMap<String, String>) -> &'a str {
+    case_map.get(tag).map(|s| s.as_str()).unwrap_or(tag)
+}
+
 /// Emit HSML source from an html5ever DOM.
 pub fn emit(dom: &RcDom, original_html: &str) -> String {
     let mut output = String::new();
     let lower_html = original_html.to_ascii_lowercase();
+    let case_map = build_case_map(original_html);
 
     // html5ever wraps content in <html><head><body> for document parsing.
     // We need to find the meaningful content nodes.
     let nodes = find_content_nodes(&dom.document, &lower_html);
 
     for node in &nodes {
-        emit_node(node, 0, &lower_html, &mut output);
+        emit_node(node, 0, &lower_html, &case_map, &mut output);
     }
 
     if !output.is_empty() && !output.ends_with('\n') {
@@ -248,18 +289,26 @@ fn serialize_node_to_html(node: &Handle, output: &mut String, in_raw_text: bool)
     }
 }
 
-fn emit_node(node: &Handle, depth: usize, lower_html: &str, output: &mut String) {
+fn emit_node(
+    node: &Handle,
+    depth: usize,
+    lower_html: &str,
+    case_map: &HashMap<String, String>,
+    output: &mut String,
+) {
     match &node.data {
         NodeData::Doctype { name, .. } => {
             output.push_str(&format!("doctype {name}\n"));
         }
         NodeData::Element { name, attrs, .. } => {
+            let tag = resolve_tag_case(&name.local, case_map);
             emit_element(
                 node,
-                &name.local,
+                tag,
                 &attrs.borrow(),
                 depth,
                 lower_html,
+                case_map,
                 output,
             );
         }
@@ -284,6 +333,7 @@ fn emit_element(
     attrs: &[html5ever::interface::Attribute],
     depth: usize,
     lower_html: &str,
+    case_map: &HashMap<String, String>,
     output: &mut String,
 ) {
     let indent = " ".repeat(depth * INDENT_SIZE);
@@ -489,7 +539,7 @@ fn emit_element(
     output.push_str(&format!("{indent}{line}\n"));
     for child in significant_children {
         if !is_synthesized_empty_element(child, lower_html) {
-            emit_node(child, depth + 1, lower_html, output);
+            emit_node(child, depth + 1, lower_html, case_map, output);
         }
     }
 }

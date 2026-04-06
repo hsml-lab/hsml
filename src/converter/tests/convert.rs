@@ -133,6 +133,61 @@ fn it_should_handle_normal_id_and_class() {
     );
 }
 
+// --- PascalCase tag preservation ---
+
+#[test]
+fn it_should_preserve_pascal_case_vue_components() {
+    assert_eq!(
+        conv(r#"<PwaInstallPrompt class="xl:hidden"></PwaInstallPrompt>"#),
+        "PwaInstallPrompt.xl:hidden\n"
+    );
+}
+
+#[test]
+fn it_should_preserve_multiple_pascal_case_components() {
+    assert_eq!(
+        conv(
+            r#"<div><NavUser v-if="show"></NavUser><NavUserSkeleton v-else></NavUserSkeleton></div>"#
+        ),
+        r#"div
+  NavUser(v-if="show")
+  NavUserSkeleton(v-else)
+"#
+    );
+}
+
+// --- Kebab-case custom elements ---
+
+#[test]
+fn it_should_preserve_kebab_case_custom_elements() {
+    assert_eq!(
+        conv(r#"<my-component class="active"></my-component>"#),
+        "my-component.active\n"
+    );
+}
+
+#[test]
+fn it_should_preserve_kebab_case_web_components() {
+    assert_eq!(
+        conv(r#"<pwa-install-prompt class="xl:hidden"></pwa-install-prompt>"#),
+        "pwa-install-prompt.xl:hidden\n"
+    );
+}
+
+#[test]
+fn it_should_not_confuse_kebab_case_with_pascal_case() {
+    // Both forms in the same document — each preserved as written
+    assert_eq!(
+        conv(
+            r#"<div><PwaBadge class="lg:hidden"></PwaBadge><pwa-badge class="xl:hidden"></pwa-badge></div>"#
+        ),
+        r#"div
+  PwaBadge.lg:hidden
+  pwa-badge.xl:hidden
+"#
+    );
+}
+
 // --- Vue/Angular syntax ---
 
 #[test]
@@ -491,7 +546,6 @@ figure.md:flex.bg-slate-100.rounded-xl.p-8.md:p-0.dark:bg-slate-800/10
 
 #[test]
 fn it_should_convert_complex_vue_html() {
-    // TODO @Shinigami92 2026-04-06: PascalCase tags are currently not supported by html5ever
     let html = r#"<div ref="container" :class="containerClass">
   <div
     class="sticky top-0 z-20"
@@ -521,14 +575,14 @@ fn it_should_convert_complex_vue_html() {
       </div>
       <div class="px-3" flex="~ items-center shrink-0 gap-x-2">
         <slot name="actions"></slot>
-        <pwa-badge class="xl:hidden"></pwa-badge>
-        <nav-user v-if="isHydrated"></nav-user>
-        <nav-user-skeleton v-else></nav-user-skeleton>
+        <PwaBadge class="xl:hidden"></PwaBadge>
+        <NavUser v-if="isHydrated"></NavUser>
+        <NavUserSkeleton v-else></NavUserSkeleton>
       </div>
     </div>
     <slot name="header"><div hidden></div></slot>
   </div>
-  <pwa-install-prompt class="xl:hidden"></pwa-install-prompt>
+  <PwaInstallPrompt class="xl:hidden"></PwaInstallPrompt>
   <div
     class="m-auto"
     :class="isHydrated && wideLayout ? 'xl:w-full sm:max-w-600px' : 'sm:max-w-600px md:shrink-0'"
@@ -558,12 +612,12 @@ fn it_should_convert_complex_vue_html() {
         .sm:hidden.h-7.w-1px
       .px-3(flex="~ items-center shrink-0 gap-x-2")
         slot(name="actions")
-        pwa-badge.xl:hidden
-        nav-user(v-if="isHydrated")
-        nav-user-skeleton(v-else)
+        PwaBadge.xl:hidden
+        NavUser(v-if="isHydrated")
+        NavUserSkeleton(v-else)
     slot(name="header")
       div(hidden)
-  pwa-install-prompt.xl:hidden
+  PwaInstallPrompt.xl:hidden
   .m-auto(:class="isHydrated && wideLayout ? 'xl:w-full sm:max-w-600px' : 'sm:max-w-600px md:shrink-0'")
     .h-6(hidden, :class="{ 'xl:block': $route.name !== 'tag' && !$slots.header }")
     slot
