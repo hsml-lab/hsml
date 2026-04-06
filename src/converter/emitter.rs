@@ -209,7 +209,9 @@ fn emit_node(node: &Handle, depth: usize, output: &mut String) {
         NodeData::Comment { contents } => {
             let indent = " ".repeat(depth * INDENT_SIZE);
             let text = contents.trim();
-            output.push_str(&format!("{indent}//! {text}\n"));
+            for line in text.lines() {
+                output.push_str(&format!("{indent}//! {line}\n"));
+            }
         }
         NodeData::Text { .. } => {
             // Standalone text nodes outside elements are ignored.

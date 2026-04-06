@@ -124,6 +124,14 @@ fn it_should_convert_comments() {
     assert_eq!(conv("<!-- Hello -->"), "//! Hello\n");
 }
 
+#[test]
+fn it_should_convert_multiline_comment() {
+    assert_eq!(
+        conv("<!-- line one\nline two -->"),
+        "//! line one\n//! line two\n"
+    );
+}
+
 // --- DOCTYPE ---
 
 #[test]
