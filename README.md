@@ -132,7 +132,7 @@ To re-include a built-in ignored directory, add a negation to `.hsmlignore`:
 ### WASM / JavaScript
 
 ```js
-import { compileContent, compileContentWithDiagnostics, formatContent } from "hsml";
+import { compileContent, compileContentWithDiagnostics, formatContent, convertHtml } from "hsml";
 
 // Simple compilation
 const html = compileContent("h1.title Hello World\n");
@@ -149,6 +149,10 @@ const formatted = formatContent("div\n    h1 Hello\n");
 // With custom options
 const formatted4 = formatContent("div\n  h1 Hello\n", { indentSize: 4 });
 // => 'div\n    h1 Hello\n'
+
+// Convert HTML to HSML
+const hsml = convertHtml('<div class="card"><p>Hello</p></div>');
+// => '.card\n  p Hello\n'
 ```
 
 ## HSML Syntax
