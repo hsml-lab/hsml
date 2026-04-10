@@ -323,6 +323,18 @@ fn it_should_drop_valueless_class_without_shorthand() {
     );
 }
 
+#[test]
+fn it_should_ignore_whitespace_only_class_attribute_values() {
+    assert_eq!(
+        compile_content_core("div.foo(class=\"   \") Hello\n"),
+        Ok(String::from(r#"<div class="foo">Hello</div>"#))
+    );
+    assert_eq!(
+        compile_content_core("div(class=\"   \") Hello\n"),
+        Ok(String::from("<div>Hello</div>"))
+    );
+}
+
 // Tests for compile_content error handling (mirrors lib.rs WASM logic)
 
 #[test]
