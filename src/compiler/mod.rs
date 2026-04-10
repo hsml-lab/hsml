@@ -5,12 +5,35 @@ use crate::parser::{
 };
 
 /// Options for configuring the HSML-to-HTML compiler.
-#[derive(Default)]
-pub struct HsmlCompileOptions {}
+pub struct HsmlCompileOptions {
+    /// Emit pretty-printed HTML with indentation and newlines.
+    pub pretty: bool,
+    /// Number of spaces per indentation level (only used when `pretty` is true).
+    pub indent_size: usize,
+}
 
-fn compile_tag_node(tag_node: &TagNode, _options: &HsmlCompileOptions) -> Result<String, String> {
+impl Default for HsmlCompileOptions {
+    fn default() -> Self {
+        Self {
+            pretty: false,
+            indent_size: 2,
+        }
+    }
+}
+
+fn compile_tag_node(
+    tag_node: &TagNode,
+    options: &HsmlCompileOptions,
+    depth: usize,
+) -> Result<String, String> {
     let mut html_content = String::new();
+    let indent = if options.pretty {
+        " ".repeat(depth * options.indent_size)
+    } else {
+        String::new()
+    };
 
+    html_content.push_str(&indent);
     html_content.push('<');
     html_content.push_str(&tag_node.tag);
 
@@ -63,6 +86,9 @@ fn compile_tag_node(tag_node: &TagNode, _options: &HsmlCompileOptions) -> Result
 
     if is_void_element(&tag_node.tag) {
         html_content.push_str(" />");
+        if options.pretty {
+            html_content.push('\n');
+        }
         return Ok(html_content);
     }
 
@@ -73,14 +99,21 @@ fn compile_tag_node(tag_node: &TagNode, _options: &HsmlCompileOptions) -> Result
     }
 
     if let Some(child_nodes) = &tag_node.children {
+        if options.pretty {
+            html_content.push('\n');
+        }
         for child_node in child_nodes {
             match child_node {
                 HsmlNode::Tag(tag_node) => {
-                    html_content.push_str(&compile_tag_node(tag_node, _options)?)
+                    html_content.push_str(&compile_tag_node(tag_node, options, depth + 1)?)
                 }
                 HsmlNode::Comment(comment_node) => {
                     if !comment_node.is_dev {
-                        html_content.push_str(&compile_comment_node(comment_node, _options))
+                        html_content.push_str(&compile_comment_node(
+                            comment_node,
+                            options,
+                            depth + 1,
+                        ))
                     }
                 }
                 other => {
@@ -91,21 +124,39 @@ fn compile_tag_node(tag_node: &TagNode, _options: &HsmlCompileOptions) -> Result
                 }
             }
         }
+        if options.pretty {
+            html_content.push_str(&indent);
+        }
     }
 
     html_content.push_str("</");
     html_content.push_str(&tag_node.tag);
     html_content.push('>');
+    if options.pretty {
+        html_content.push('\n');
+    }
 
     Ok(html_content)
 }
 
-fn compile_comment_node(comment_node: &CommentNode, _options: &HsmlCompileOptions) -> String {
+fn compile_comment_node(
+    comment_node: &CommentNode,
+    options: &HsmlCompileOptions,
+    depth: usize,
+) -> String {
     let mut html_content = String::new();
+
+    if options.pretty {
+        html_content.push_str(&" ".repeat(depth * options.indent_size));
+    }
 
     html_content.push_str("<!--");
     html_content.push_str(&comment_node.text);
     html_content.push_str(" -->");
+
+    if options.pretty {
+        html_content.push('\n');
+    }
 
     html_content
 }
@@ -114,12 +165,22 @@ fn compile_doctype_node(doctype_node: &DoctypeNode) -> String {
     format!("<!DOCTYPE {}>", doctype_node.doctype)
 }
 
-fn compile_node(node: &HsmlNode, options: &HsmlCompileOptions) -> Result<String, String> {
+fn compile_node(
+    node: &HsmlNode,
+    options: &HsmlCompileOptions,
+    depth: usize,
+) -> Result<String, String> {
     match node {
-        HsmlNode::Doctype(doctype_node) => Ok(compile_doctype_node(doctype_node)),
-        HsmlNode::Tag(tag_node) => compile_tag_node(tag_node, options),
+        HsmlNode::Doctype(doctype_node) => {
+            let mut s = compile_doctype_node(doctype_node);
+            if options.pretty {
+                s.push('\n');
+            }
+            Ok(s)
+        }
+        HsmlNode::Tag(tag_node) => compile_tag_node(tag_node, options, depth),
         HsmlNode::Comment(comment_node) if !comment_node.is_dev => {
-            Ok(compile_comment_node(comment_node, options))
+            Ok(compile_comment_node(comment_node, options, depth))
         }
         HsmlNode::Comment(_) => Ok(String::from("")),
         other => Err(format!("Unsupported root node type: {other:?}")),
@@ -133,7 +194,7 @@ pub fn compile(hsml_ast: &RootNode, options: &HsmlCompileOptions) -> Result<Stri
     let mut html_content = String::new();
 
     for node in &hsml_ast.nodes {
-        html_content.push_str(&compile_node(node, options)?);
+        html_content.push_str(&compile_node(node, options, 0)?);
     }
 
     Ok(html_content)

@@ -50,7 +50,7 @@ jobs:
       - name: Patch TypeScript types
         shell: bash
         run: |
-          sed -i 's/compileContentWithDiagnostics(source: string): any/compileContentWithDiagnostics(source: string): CompileResult/' pkg/hsml.d.ts
+          sed -i 's/compileContentWithDiagnostics(source: string, options: any)/compileContentWithDiagnostics(source: string, options?: CompileOptions): CompileResult/' pkg/hsml.d.ts
           sed -i 's/formatContent(source: string, options: any)/formatContent(source: string, options?: FormatContentOptions)/' pkg/hsml.d.ts
           {
             echo ''
@@ -82,6 +82,14 @@ jobs:
             echo '  location?: Location;'
             echo '  /** File path, if available. */'
             echo '  filePath?: string;'
+            echo '}'
+            echo ''
+            echo '/** Options for compiling HSML source. */'
+            echo 'export interface CompileOptions {'
+            echo '  /** Emit pretty-printed HTML with indentation (default: false). */'
+            echo '  pretty?: boolean;'
+            echo '  /** Number of spaces per indentation level (default: 2). */'
+            echo '  indentSize?: number;'
             echo '}'
             echo ''
             echo '/** Result of compiling HSML source with diagnostic support. */'

@@ -5,7 +5,7 @@ use std::{
 };
 
 use clap::ArgMatches;
-use hsml::compile_content_diagnostics;
+use hsml::compile_content_diagnostics_with_options;
 
 use super::common::{resolve_ignore_patterns, resolve_path, validate_hsml_extension};
 use super::diagnostics::{
@@ -19,6 +19,7 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
         .get_one::<String>("report_format")
         .map(|s| s.as_str());
     let debug = matches.get_flag("debug");
+    let pretty = matches.get_flag("pretty");
     let (no_color, dim) = resolve_colors(matches);
     let ignore_patterns = resolve_ignore_patterns(matches);
     let path = resolve_path(matches)?;
@@ -45,9 +46,15 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
                 io_errors.extend(result.errors);
                 file_count = result.files.len();
                 for file in &result.files {
-                    if let Err(e) =
-                        compile_file(file, None, debug, dim, &mut diagnostics, &mut io_errors)
-                    {
+                    if let Err(e) = compile_file(
+                        file,
+                        None,
+                        pretty,
+                        debug,
+                        dim,
+                        &mut diagnostics,
+                        &mut io_errors,
+                    ) {
                         io_errors.push(e);
                     }
                 }
@@ -56,7 +63,15 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
         }
     } else if path.is_file() {
         file_count = 1;
-        if let Err(e) = compile_file(path, out, debug, dim, &mut diagnostics, &mut io_errors) {
+        if let Err(e) = compile_file(
+            path,
+            out,
+            pretty,
+            debug,
+            dim,
+            &mut diagnostics,
+            &mut io_errors,
+        ) {
             io_errors.push(e);
         }
     } else {
@@ -89,6 +104,7 @@ pub fn exec_compile(matches: &ArgMatches) -> Result<(), String> {
 fn compile_file(
     file: &Path,
     out_file: Option<&PathBuf>,
+    pretty: bool,
     debug: bool,
     dim: (&str, &str),
     diagnostics: &mut Vec<FileDiagnostics>,
@@ -112,7 +128,12 @@ fn compile_file(
 
     let start = Instant::now();
 
-    match compile_content_diagnostics(&content) {
+    let compile_options = hsml::compiler::HsmlCompileOptions {
+        pretty,
+        ..Default::default()
+    };
+
+    match compile_content_diagnostics_with_options(&content, &compile_options) {
         Ok(output) => {
             // Write HTML immediately — don't buffer
             if let Err(e) = fs::write(out_file, &output.html) {

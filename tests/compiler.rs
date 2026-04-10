@@ -1,5 +1,6 @@
 use hsml::{
     check_content, compile_content_core, compile_content_diagnostics,
+    compile_content_diagnostics_with_options,
     compiler::{HsmlCompileOptions, compile},
     format_content_core,
     parser::{
@@ -590,4 +591,108 @@ fn format_content_returns_error_for_invalid_input() {
     let result = format_content_core("@@@invalid", &opts);
     assert!(result.is_err());
     assert!(result.unwrap_err().contains("HSML parse error"));
+}
+
+// Pretty compilation tests
+
+#[test]
+fn compile_pretty_simple_nested() {
+    let opts = HsmlCompileOptions {
+        pretty: true,
+        ..Default::default()
+    };
+    let (_, ast) = parse(Span::new("div\n  p Hello\n")).unwrap();
+    assert_eq!(
+        compile(&ast, &opts).unwrap(),
+        "<div>\n  <p>Hello</p>\n</div>\n"
+    );
+}
+
+#[test]
+fn compile_pretty_deeply_nested() {
+    let opts = HsmlCompileOptions {
+        pretty: true,
+        ..Default::default()
+    };
+    let (_, ast) = parse(Span::new("div\n  section\n    p Hello\n")).unwrap();
+    assert_eq!(
+        compile(&ast, &opts).unwrap(),
+        "<div>\n  <section>\n    <p>Hello</p>\n  </section>\n</div>\n"
+    );
+}
+
+#[test]
+fn compile_pretty_void_elements() {
+    let opts = HsmlCompileOptions {
+        pretty: true,
+        ..Default::default()
+    };
+    let (_, ast) = parse(Span::new("div\n  br\n  hr\n")).unwrap();
+    assert_eq!(
+        compile(&ast, &opts).unwrap(),
+        "<div>\n  <br />\n  <hr />\n</div>\n"
+    );
+}
+
+#[test]
+fn compile_pretty_with_doctype() {
+    let opts = HsmlCompileOptions {
+        pretty: true,
+        ..Default::default()
+    };
+    let (_, ast) = parse(Span::new(
+        "doctype html\nhtml\n  head\n  body\n    p Hello\n",
+    ))
+    .unwrap();
+    assert_eq!(
+        compile(&ast, &opts).unwrap(),
+        "<!DOCTYPE html>\n<html>\n  <head></head>\n  <body>\n    <p>Hello</p>\n  </body>\n</html>\n"
+    );
+}
+
+#[test]
+fn compile_pretty_with_comments() {
+    let opts = HsmlCompileOptions {
+        pretty: true,
+        ..Default::default()
+    };
+    let (_, ast) = parse(Span::new("div\n  //! hello\n  p World\n")).unwrap();
+    assert_eq!(
+        compile(&ast, &opts).unwrap(),
+        "<div>\n  <!-- hello -->\n  <p>World</p>\n</div>\n"
+    );
+}
+
+#[test]
+fn compile_pretty_with_custom_indent() {
+    let opts = HsmlCompileOptions {
+        pretty: true,
+        indent_size: 4,
+    };
+    let (_, ast) = parse(Span::new("div\n  p Hello\n")).unwrap();
+    assert_eq!(
+        compile(&ast, &opts).unwrap(),
+        "<div>\n    <p>Hello</p>\n</div>\n"
+    );
+}
+
+#[test]
+fn compile_pretty_inline_text_no_extra_newline() {
+    let opts = HsmlCompileOptions {
+        pretty: true,
+        ..Default::default()
+    };
+    let (_, ast) = parse(Span::new("p Hello World\n")).unwrap();
+    assert_eq!(compile(&ast, &opts).unwrap(), "<p>Hello World</p>\n");
+}
+
+#[test]
+fn compile_pretty_via_diagnostics_api() {
+    let opts = HsmlCompileOptions {
+        pretty: true,
+        ..Default::default()
+    };
+    let output = compile_content_diagnostics_with_options("div\n  p Hello\n", &opts).unwrap();
+    assert_eq!(output.html, "<div>\n  <p>Hello</p>\n</div>\n");
+    assert!(output.diagnostics.is_empty());
 }

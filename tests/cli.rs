@@ -398,6 +398,60 @@ fn compile_debug_summary_shows_cross_for_errors() {
 }
 
 #[test]
+fn compile_pretty_produces_indented_html() {
+    let dir = TempDir::new().unwrap();
+    let input = dir.path().join("test.hsml");
+    let output = dir.path().join("test.html");
+
+    fs::write(&input, "div\n  p Hello\n").unwrap();
+
+    cmd()
+        .args(["compile", "--pretty", input.to_str().unwrap()])
+        .assert()
+        .success();
+
+    let html = fs::read_to_string(&output).unwrap();
+    assert_eq!(html, "<div>\n  <p>Hello</p>\n</div>\n");
+}
+
+#[test]
+fn compile_pretty_with_nested_structure() {
+    let dir = TempDir::new().unwrap();
+    let input = dir.path().join("test.hsml");
+    let output = dir.path().join("test.html");
+
+    fs::write(&input, "doctype html\nhtml\n  head\n  body\n    p Hello\n").unwrap();
+
+    cmd()
+        .args(["compile", "--pretty", input.to_str().unwrap()])
+        .assert()
+        .success();
+
+    let html = fs::read_to_string(&output).unwrap();
+    assert_eq!(
+        html,
+        "<!DOCTYPE html>\n<html>\n  <head></head>\n  <body>\n    <p>Hello</p>\n  </body>\n</html>\n"
+    );
+}
+
+#[test]
+fn compile_without_pretty_produces_single_line() {
+    let dir = TempDir::new().unwrap();
+    let input = dir.path().join("test.hsml");
+    let output = dir.path().join("test.html");
+
+    fs::write(&input, "div\n  p Hello\n").unwrap();
+
+    cmd()
+        .args(["compile", input.to_str().unwrap()])
+        .assert()
+        .success();
+
+    let html = fs::read_to_string(&output).unwrap();
+    assert_eq!(html, "<div><p>Hello</p></div>");
+}
+
+#[test]
 fn compile_json_emits_empty_array_for_clean_run() {
     let dir = TempDir::new().unwrap();
     let input = dir.path().join("clean.hsml");
