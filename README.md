@@ -13,6 +13,8 @@ A pug-inspired HTML preprocessor, written in Rust. Less typing, more shipping.
 
 > Still young and growing! Some features are cooking. Check out the [roadmap](#roadmap) below.
 
+**[Try it live in the Playground](https://hsml-lab.github.io/playground/)**
+
 ## What is it?
 
 HSML compiles a short, indentation-based syntax into HTML — think [Pug](https://pugjs.org), but leaner:
