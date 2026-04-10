@@ -305,6 +305,24 @@ fn it_should_merge_classes_and_preserve_framework_bindings() {
     );
 }
 
+#[test]
+fn it_should_handle_valueless_class_with_shorthand() {
+    // div.foo(class) — valueless class is a no-op, shorthand still works
+    assert_eq!(
+        compile_content_core("div.foo(class) Hello\n"),
+        Ok(String::from(r#"<div class="foo">Hello</div>"#))
+    );
+}
+
+#[test]
+fn it_should_drop_valueless_class_without_shorthand() {
+    // div(class) — valueless class with no shorthand produces no class attribute
+    assert_eq!(
+        compile_content_core("div(class) Hello\n"),
+        Ok(String::from("<div>Hello</div>"))
+    );
+}
+
 // Tests for compile_content error handling (mirrors lib.rs WASM logic)
 
 #[test]
