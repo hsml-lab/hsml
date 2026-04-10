@@ -77,6 +77,14 @@ pub fn check_content(source: &str) -> Vec<diagnostic::Diagnostic> {
 pub fn compile_content_diagnostics(
     source: &str,
 ) -> Result<CompileOutput, Vec<diagnostic::Diagnostic>> {
+    compile_content_diagnostics_with_options(source, &compiler::HsmlCompileOptions::default())
+}
+
+/// Compile HSML source with custom options, returning structured diagnostics on error.
+pub fn compile_content_diagnostics_with_options(
+    source: &str,
+    options: &compiler::HsmlCompileOptions,
+) -> Result<CompileOutput, Vec<diagnostic::Diagnostic>> {
     let span = parser::Span::new(source);
 
     let (rest, ast) =
@@ -104,7 +112,7 @@ pub fn compile_content_diagnostics(
     // Run validation to collect warnings
     let diagnostics = validate::validate(&ast, source);
 
-    let html = compiler::compile(&ast, &compiler::HsmlCompileOptions::default())
+    let html = compiler::compile(&ast, options)
         .map_err(|e| vec![diagnostic::Diagnostic::compiler_error(e)])?;
 
     Ok(CompileOutput { html, diagnostics })
@@ -195,12 +203,53 @@ struct WasmCompileResult {
     diagnostics: Vec<diagnostic::Diagnostic>,
 }
 
+/// WASM compile options that deserializes from a JS object.
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct WasmCompileOptions {
+    #[serde(default)]
+    pretty: bool,
+    #[serde(default = "default_compile_indent_size")]
+    indent_size: usize,
+}
+
+fn default_compile_indent_size() -> usize {
+    compiler::HsmlCompileOptions::default().indent_size
+}
+
+impl From<WasmCompileOptions> for compiler::HsmlCompileOptions {
+    fn from(opts: WasmCompileOptions) -> Self {
+        Self {
+            pretty: opts.pretty,
+            indent_size: opts.indent_size,
+        }
+    }
+}
+
 /// Compile HSML source and return a JS object with HTML output and diagnostics.
 ///
 /// Returns a JS object: `{ success: boolean, html: string | null, diagnostics: Diagnostic[] }`
+///
+/// Options (all optional):
+/// - `pretty` — emit pretty-printed HTML with indentation (default: false)
+/// - `indentSize` — number of spaces per indentation level (default: 2)
 #[wasm_bindgen(js_name = "compileContentWithDiagnostics")]
-pub fn compile_content_with_diagnostics(source: &str) -> JsValue {
-    let result = match compile_content_diagnostics(source) {
+pub fn compile_content_with_diagnostics(source: &str, options: JsValue) -> JsValue {
+    let compile_options: compiler::HsmlCompileOptions =
+        if options.is_undefined() || options.is_null() {
+            compiler::HsmlCompileOptions::default()
+        } else {
+            let wasm_opts: WasmCompileOptions = match serde_wasm_bindgen::from_value(options) {
+                Ok(opts) => opts,
+                Err(_) => WasmCompileOptions {
+                    pretty: false,
+                    indent_size: default_compile_indent_size(),
+                },
+            };
+            wasm_opts.into()
+        };
+
+    let result = match compile_content_diagnostics_with_options(source, &compile_options) {
         Ok(output) => WasmCompileResult {
             success: true,
             html: Some(output.html),

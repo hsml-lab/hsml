@@ -17,7 +17,7 @@ fn wasm_compile_content_returns_error_for_invalid_input() {
 
 #[wasm_bindgen_test]
 fn wasm_compile_with_diagnostics_success() {
-    let result = hsml::compile_content_with_diagnostics("h1 Hello\n");
+    let result = hsml::compile_content_with_diagnostics("h1 Hello\n", JsValue::UNDEFINED);
 
     let success = js_sys::Reflect::get(&result, &JsValue::from_str("success")).unwrap();
     assert_eq!(success, JsValue::from_bool(true));
@@ -32,7 +32,7 @@ fn wasm_compile_with_diagnostics_success() {
 
 #[wasm_bindgen_test]
 fn wasm_compile_with_diagnostics_warning() {
-    let result = hsml::compile_content_with_diagnostics("h1.foo.foo Hello\n");
+    let result = hsml::compile_content_with_diagnostics("h1.foo.foo Hello\n", JsValue::UNDEFINED);
 
     let success = js_sys::Reflect::get(&result, &JsValue::from_str("success")).unwrap();
     assert_eq!(success, JsValue::from_bool(true));
@@ -51,7 +51,7 @@ fn wasm_compile_with_diagnostics_warning() {
 
 #[wasm_bindgen_test]
 fn wasm_compile_with_diagnostics_error() {
-    let result = hsml::compile_content_with_diagnostics("@@@invalid");
+    let result = hsml::compile_content_with_diagnostics("@@@invalid", JsValue::UNDEFINED);
 
     let success = js_sys::Reflect::get(&result, &JsValue::from_str("success")).unwrap();
     assert_eq!(success, JsValue::from_bool(false));
@@ -66,6 +66,17 @@ fn wasm_compile_with_diagnostics_error() {
     let diag = arr.get(0);
     let severity = js_sys::Reflect::get(&diag, &JsValue::from_str("severity")).unwrap();
     assert_eq!(severity, JsValue::from_str("error"));
+}
+
+#[wasm_bindgen_test]
+fn wasm_compile_with_diagnostics_pretty() {
+    let options = js_sys::Object::new();
+    js_sys::Reflect::set(&options, &JsValue::from_str("pretty"), &JsValue::from(true)).unwrap();
+
+    let result = hsml::compile_content_with_diagnostics("div\n  p Hello\n", options.into());
+
+    let html = js_sys::Reflect::get(&result, &JsValue::from_str("html")).unwrap();
+    assert_eq!(html, JsValue::from_str("<div>\n  <p>Hello</p>\n</div>\n"));
 }
 
 #[wasm_bindgen_test]

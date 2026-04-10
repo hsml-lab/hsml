@@ -36,7 +36,8 @@ pub fn cli() -> Command {
                 .arg(
                     arg!(ignore_pattern: --"ignore-pattern" <PATTERN> "Glob pattern for files/directories to ignore")
                         .action(clap::ArgAction::Append),
-                ),
+                )
+                .arg(arg!(pretty: --pretty "Emit pretty-printed HTML with indentation")),
         )
         .subcommand(
             Command::new("parse")
