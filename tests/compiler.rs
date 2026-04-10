@@ -241,6 +241,100 @@ fn it_should_not_self_close_custom_components() {
     );
 }
 
+// Class attribute merging
+
+#[test]
+fn it_should_merge_shorthand_and_attribute_classes() {
+    assert_eq!(
+        compile_content_core("div.foo(class=\"bar\") Hello\n"),
+        Ok(String::from(r#"<div class="foo bar">Hello</div>"#))
+    );
+}
+
+#[test]
+fn it_should_merge_multiple_shorthand_with_attribute_classes() {
+    assert_eq!(
+        compile_content_core("div.a.b(class=\"c d\") Hello\n"),
+        Ok(String::from(r#"<div class="a b c d">Hello</div>"#))
+    );
+}
+
+#[test]
+fn it_should_handle_class_attribute_without_shorthand() {
+    assert_eq!(
+        compile_content_core("div(class=\"foo bar\") Hello\n"),
+        Ok(String::from(r#"<div class="foo bar">Hello</div>"#))
+    );
+}
+
+#[test]
+fn it_should_handle_shorthand_classes_without_attribute() {
+    assert_eq!(
+        compile_content_core("div.foo.bar Hello\n"),
+        Ok(String::from(r#"<div class="foo bar">Hello</div>"#))
+    );
+}
+
+#[test]
+fn it_should_preserve_other_attributes_when_merging_classes() {
+    assert_eq!(
+        compile_content_core("div.foo(class=\"bar\" data-x=\"1\") Hello\n"),
+        Ok(String::from(
+            r#"<div class="foo bar" data-x="1">Hello</div>"#
+        ))
+    );
+}
+
+#[test]
+fn it_should_merge_classes_with_shorthand_id() {
+    assert_eq!(
+        compile_content_core("div#app.foo(class=\"bar\") Hello\n"),
+        Ok(String::from(r#"<div id="app" class="foo bar">Hello</div>"#))
+    );
+}
+
+#[test]
+fn it_should_merge_classes_and_preserve_framework_bindings() {
+    assert_eq!(
+        compile_content_core(
+            "div.card(class=\"active\" :class=\"dynamicClass\" [class]=\"expr\")\n"
+        ),
+        Ok(String::from(
+            r#"<div class="card active" :class="dynamicClass" [class]="expr"></div>"#
+        ))
+    );
+}
+
+#[test]
+fn it_should_handle_valueless_class_with_shorthand() {
+    // div.foo(class) — valueless class is a no-op, shorthand still works
+    assert_eq!(
+        compile_content_core("div.foo(class) Hello\n"),
+        Ok(String::from(r#"<div class="foo">Hello</div>"#))
+    );
+}
+
+#[test]
+fn it_should_drop_valueless_class_without_shorthand() {
+    // div(class) — valueless class with no shorthand produces no class attribute
+    assert_eq!(
+        compile_content_core("div(class) Hello\n"),
+        Ok(String::from("<div>Hello</div>"))
+    );
+}
+
+#[test]
+fn it_should_ignore_whitespace_only_class_attribute_values() {
+    assert_eq!(
+        compile_content_core("div.foo(class=\"   \") Hello\n"),
+        Ok(String::from(r#"<div class="foo">Hello</div>"#))
+    );
+    assert_eq!(
+        compile_content_core("div(class=\"   \") Hello\n"),
+        Ok(String::from("<div>Hello</div>"))
+    );
+}
+
 // Tests for compile_content error handling (mirrors lib.rs WASM logic)
 
 #[test]
