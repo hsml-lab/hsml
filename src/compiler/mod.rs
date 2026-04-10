@@ -44,24 +44,36 @@ fn compile_tag_node(
         html_content.push('\"');
     }
 
+    // Collect shorthand classes
+    let mut all_classes: Vec<&str> = Vec::new();
     if let Some(class_nodes) = &tag_node.classes {
+        all_classes.extend(class_nodes.iter().map(|c| c.name.as_str()));
+    }
+
+    // Merge class attributes from (class="...") with shorthand classes
+    if let Some(attributes) = &tag_node.attributes {
+        for node in attributes {
+            if let HsmlNode::Attribute(AttributeNode { key, value, .. }) = node
+                && key == "class"
+                && let Some(value) = value
+            {
+                all_classes.extend(value.split_whitespace());
+            }
+        }
+    }
+
+    // Write merged class attribute
+    if !all_classes.is_empty() {
         html_content.push_str(r#" class=""#);
-
-        let class_names: String = class_nodes
-            .iter()
-            .map(|class_node| class_node.name.as_str())
-            .collect::<Vec<&str>>()
-            .join(" ");
-
-        html_content.push_str(&class_names);
-
+        html_content.push_str(&all_classes.join(" "));
         html_content.push('\"');
     }
 
+    // Write remaining attributes (skip class — already merged)
     if let Some(attributes) = &tag_node.attributes {
         for node in attributes {
             match node {
-                HsmlNode::Attribute(AttributeNode { key, value, .. }) => {
+                HsmlNode::Attribute(AttributeNode { key, value, .. }) if key != "class" => {
                     html_content.push(' ');
                     html_content.push_str(key);
 
@@ -70,6 +82,9 @@ fn compile_tag_node(
                         html_content.push_str(value);
                         html_content.push('\"');
                     }
+                }
+                HsmlNode::Attribute(AttributeNode { key, .. }) if key == "class" => {
+                    // Already merged above
                 }
                 HsmlNode::Comment(node) if node.is_dev => {
                     // do nothing
