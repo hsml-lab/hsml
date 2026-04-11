@@ -89,9 +89,12 @@ fn expand_self_closing_tags(html: &str) -> String {
                             i = j + 1;
                             found_end = true;
 
-                            // Skip raw text content inside script/style tags
+                            // Skip raw text content inside raw text / RCDATA elements
                             let tag_lower = tag_name.to_ascii_lowercase();
-                            if tag_lower == "script" || tag_lower == "style" {
+                            if matches!(
+                                tag_lower.as_str(),
+                                "script" | "style" | "textarea" | "title"
+                            ) {
                                 let closing = format!("</{tag_name}>");
                                 let closing_lower = closing.to_ascii_lowercase();
                                 if let Some(pos) =

@@ -545,6 +545,22 @@ fn it_should_not_expand_self_closing_tags_inside_style() {
 }
 
 #[test]
+fn it_should_not_expand_self_closing_tags_inside_textarea() {
+    assert_eq!(
+        conv(r#"<textarea><div /></textarea><p>Hello</p>"#),
+        "textarea.\n  <div />\np Hello\n"
+    );
+}
+
+#[test]
+fn it_should_not_expand_self_closing_tags_inside_title() {
+    assert_eq!(
+        conv(r#"<title><div /></title><p>Hello</p>"#),
+        "title <div />\np Hello\n"
+    );
+}
+
+#[test]
 fn it_should_handle_elk_skeleton_html() {
     let html = r#"<div>
   <div px2 pt2>
