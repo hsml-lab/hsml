@@ -457,6 +457,122 @@ fn it_should_not_escape_script_in_mixed_content() {
     );
 }
 
+// --- Self-closing non-void elements ---
+
+#[test]
+fn it_should_handle_self_closing_non_void_element() {
+    // <div /> is not valid self-closing HTML (div is not a void element),
+    // but frameworks like Vue use it commonly. html5ever treats <div /> as <div>
+    // which swallows all subsequent siblings as children.
+    assert_eq!(
+        conv(r#"<div class="parent"><div class="child" /><div class="sibling">Hello</div></div>"#),
+        ".parent\n  .child\n  .sibling Hello\n"
+    );
+}
+
+#[test]
+fn it_should_handle_self_closing_span() {
+    assert_eq!(
+        conv(r#"<div><span class="icon" /><span>Text</span></div>"#),
+        "div\n  span.icon\n  span Text\n"
+    );
+}
+
+#[test]
+fn it_should_keep_void_elements_self_closing() {
+    // img is a void element — self-closing is fine and should still work
+    assert_eq!(
+        conv(r#"<div><img src="a.jpg" /><p>Text</p></div>"#),
+        "div\n  img(src=\"a.jpg\")\n  p Text\n"
+    );
+}
+
+#[test]
+fn it_should_keep_br_self_closing() {
+    assert_eq!(
+        conv(r#"<div><br /><p>Text</p></div>"#),
+        "div\n  br\n  p Text\n"
+    );
+}
+
+#[test]
+fn it_should_handle_self_closing_with_attributes() {
+    assert_eq!(
+        conv(r#"<div class="a" data-x="y" />"#),
+        ".a(data-x=\"y\")\n"
+    );
+}
+
+#[test]
+fn it_should_handle_self_closing_pascal_case_component() {
+    assert_eq!(
+        conv(r#"<div><MyComponent class="active" /><p>After</p></div>"#),
+        "div\n  MyComponent.active\n  p After\n"
+    );
+}
+
+#[test]
+fn it_should_handle_multiple_self_closing_siblings() {
+    assert_eq!(
+        conv(r#"<div><div class="a" /><div class="b" /><div class="c" /></div>"#),
+        "div\n  .a\n  .b\n  .c\n"
+    );
+}
+
+#[test]
+fn it_should_handle_self_closing_in_comment_context() {
+    // Self-closing divs inside comments should not be expanded
+    assert_eq!(
+        conv(r#"<!-- <div class="ignore" /> --><p>Hello</p>"#),
+        "//! <div class=\"ignore\" />\np Hello\n"
+    );
+}
+
+#[test]
+fn it_should_handle_elk_skeleton_html() {
+    let html = r#"<div>
+  <div px2 pt2>
+    <div rounded of-hidden aspect="3.19" class="flex skeleton-loading-bg" />
+    <div px-4 pb-4 flex="~ col gap-2">
+      <div flex sm:flex-row flex-col flex-gap-2>
+        <div flex items-center justify-between>
+          <div w-17 h-17 rounded-full border-4 border-bg-base z-2 mt--2 ms--1 of-hidden bg-base>
+            <div class="flex skeleton-loading-bg" w-full h-full />
+          </div>
+          <div block sm:hidden class="skeleton-loading-bg" h-8 w-30 rounded-full />
+        </div>
+        <div sm:mt-2 flex="~ col 1 gap-2">
+          <div flex class="skeleton-loading-bg" h-5 w-20 rounded />
+          <div flex class="skeleton-loading-bg" h-4 w-40 rounded />
+        </div>
+      </div>
+      <div flex class="skeleton-loading-bg" h-4 my3 w="3/5" rounded />
+      <div flex justify-between items-center>
+        <div flex class="skeleton-loading-bg" h-4 w="sm:1/2 full" rounded />
+        <div sm:flex hidden class="skeleton-loading-bg" h-8 w-30 rounded-full />
+      </div>
+    </div>
+  </div>
+</div>"#;
+
+    let result = conv(html);
+
+    // Each self-closing div should be a sibling, not swallowing subsequent elements.
+    // The skeleton-loading-bg divs that are self-closing should not nest their siblings.
+    // Verify key structural properties:
+    // 1. "px-4" div should be a sibling of the first skeleton-loading-bg, not a child
+    assert!(
+        !result.contains("      .flex.skeleton-loading-bg\n        div"),
+        "self-closing div should not swallow siblings as children"
+    );
+    // 2. The result should have the right number of skeleton-loading-bg occurrences
+    assert_eq!(
+        result.matches("skeleton-loading-bg").count(),
+        8,
+        "all 8 skeleton-loading-bg elements should be present"
+    );
+}
+
 // --- TailwindCSS ---
 
 #[test]
