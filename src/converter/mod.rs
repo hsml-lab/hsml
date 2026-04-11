@@ -4,7 +4,7 @@ use html5ever::parse_document;
 use html5ever::tendril::TendrilSink;
 use markup5ever_rcdom::RcDom;
 
-use crate::common::is_void_element;
+use crate::common::{is_raw_text_element, is_rcdata_element, is_void_element};
 
 /// Convert an HTML string to HSML source.
 pub fn convert(html: &str) -> Result<String, String> {
@@ -89,12 +89,8 @@ fn expand_self_closing_tags(html: &str) -> String {
                             i = j + 1;
                             found_end = true;
 
-                            // Skip raw text content inside raw text / RCDATA elements
-                            let tag_lower = tag_name.to_ascii_lowercase();
-                            if matches!(
-                                tag_lower.as_str(),
-                                "script" | "style" | "textarea" | "title"
-                            ) {
+                            // Skip content inside raw text / RCDATA elements
+                            if is_raw_text_element(tag_name) || is_rcdata_element(tag_name) {
                                 let closing = format!("</{tag_name}>");
                                 let closing_lower = closing.to_ascii_lowercase();
                                 if let Some(pos) =
