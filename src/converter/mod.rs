@@ -87,6 +87,21 @@ fn expand_self_closing_tags(html: &str) -> String {
                             result.push_str(&html[i..j + 1]);
                             i = j + 1;
                             found_end = true;
+
+                            // Skip raw text content inside script/style tags
+                            let tag_lower = tag_name.to_ascii_lowercase();
+                            if tag_lower == "script" || tag_lower == "style" {
+                                let closing = format!("</{tag_name}>");
+                                let closing_lower = closing.to_ascii_lowercase();
+                                if let Some(pos) =
+                                    html[i..].to_ascii_lowercase().find(&closing_lower)
+                                {
+                                    let end = i + pos + closing.len();
+                                    result.push_str(&html[i..end]);
+                                    i = end;
+                                }
+                            }
+
                             break;
                         }
                         _ => {}

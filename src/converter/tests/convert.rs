@@ -529,6 +529,22 @@ fn it_should_handle_self_closing_in_comment_context() {
 }
 
 #[test]
+fn it_should_not_expand_self_closing_tags_inside_script() {
+    assert_eq!(
+        conv(r#"<script>var x = '<div />';</script><p>Hello</p>"#),
+        "script.\n  var x = '<div />';\np Hello\n"
+    );
+}
+
+#[test]
+fn it_should_not_expand_self_closing_tags_inside_style() {
+    assert_eq!(
+        conv(r#"<style>div::before { content: '<div />'; }</style><p>Hello</p>"#),
+        "style.\n  div::before { content: '<div />'; }\np Hello\n"
+    );
+}
+
+#[test]
 fn it_should_handle_elk_skeleton_html() {
     let html = r#"<div>
   <div px2 pt2>
