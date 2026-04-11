@@ -27,16 +27,36 @@ pub struct Location {
 }
 
 /// HTML void elements that cannot have children and must not have a closing tag.
-/// See: https://developer.mozilla.org/en-US/docs/Glossary/Void_element
+/// See: https://html.spec.whatwg.org/multipage/syntax.html#void-elements
 pub const VOID_ELEMENTS: &[&str] = &[
     "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track",
     "wbr",
 ];
 
+/// HTML raw text elements whose content is not parsed as HTML.
+/// See: https://html.spec.whatwg.org/multipage/syntax.html#raw-text-elements
+pub const RAW_TEXT_ELEMENTS: &[&str] = &["script", "style"];
+
+/// HTML RCDATA elements whose content allows character references but no child elements.
+/// See: https://html.spec.whatwg.org/multipage/syntax.html#rcdata-elements
+pub const RCDATA_ELEMENTS: &[&str] = &["textarea", "title"];
+
 /// Check if a tag name is an HTML void element.
 pub fn is_void_element(tag: &str) -> bool {
     let lower = tag.to_ascii_lowercase();
     VOID_ELEMENTS.contains(&lower.as_str())
+}
+
+/// Check if a tag name is an HTML raw text element.
+pub fn is_raw_text_element(tag: &str) -> bool {
+    let lower = tag.to_ascii_lowercase();
+    RAW_TEXT_ELEMENTS.contains(&lower.as_str())
+}
+
+/// Check if a tag name is an HTML RCDATA element.
+pub fn is_rcdata_element(tag: &str) -> bool {
+    let lower = tag.to_ascii_lowercase();
+    RCDATA_ELEMENTS.contains(&lower.as_str())
 }
 
 impl Location {

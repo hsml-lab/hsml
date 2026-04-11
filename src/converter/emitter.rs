@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use html5ever::tendril::StrTendril;
 use markup5ever_rcdom::{Handle, NodeData, RcDom};
 
-use crate::common::is_void_element;
+use crate::common::{is_raw_text_element, is_void_element};
 
 const INDENT_SIZE: usize = 2;
 
@@ -264,7 +264,7 @@ fn serialize_node_to_html(
         NodeData::Element { name, attrs, .. } => {
             let lower_tag = name.local.as_ref();
             let tag = resolve_tag_case(lower_tag, case_map);
-            let is_raw = matches!(lower_tag, "script" | "style");
+            let is_raw = is_raw_text_element(lower_tag);
             output.push('<');
             output.push_str(tag);
             for attr in attrs.borrow().iter() {
