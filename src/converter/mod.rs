@@ -30,13 +30,14 @@ fn expand_self_closing_tags(html: &str) -> String {
 
     while i < bytes.len() {
         // Skip HTML comments
-        if bytes[i] == b'<' && html[i..].starts_with("<!--") {
-            if let Some(end) = html[i + 4..].find("-->") {
-                let comment_end = i + 4 + end + 3;
-                result.push_str(&html[i..comment_end]);
-                i = comment_end;
-                continue;
-            }
+        if bytes[i] == b'<'
+            && html[i..].starts_with("<!--")
+            && let Some(end) = html[i + 4..].find("-->")
+        {
+            let comment_end = i + 4 + end + 3;
+            result.push_str(&html[i..comment_end]);
+            i = comment_end;
+            continue;
         }
 
         // Check for start of an opening tag
