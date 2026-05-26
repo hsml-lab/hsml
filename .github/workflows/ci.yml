@@ -88,7 +88,7 @@ jobs:
       - name: Install wasm-pack
         uses: taiki-e/install-action@920ab1831fbf4fb3ef75c8ead83556c918bb7290 # v2.79.8
         with:
-          tool: wasm-pack@0.14.0
+          tool: wasm-pack@0.15.0
 
       - name: Build and test WASM
         run: wasm-pack test --node
