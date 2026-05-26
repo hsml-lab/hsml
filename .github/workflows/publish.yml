@@ -42,7 +42,7 @@ jobs:
           ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Install wasm-pack
-        run: cargo install wasm-pack@0.14.0
+        run: cargo install wasm-pack@0.15.0
 
       - name: Build WASM package
         run: wasm-pack build --target bundler
