@@ -8,10 +8,29 @@ set -euo pipefail
 
 TARGET="${1:-pkg/hsml.d.ts}"
 
+require() {
+  if ! grep -Fq "$1" "$TARGET"; then
+    echo "error: expected to find '$1' in $TARGET" >&2
+    exit 1
+  fi
+}
+
+# Idempotency: bail out cleanly if the file has already been patched.
+if grep -Fq 'export interface CompileResult {' "$TARGET"; then
+  exit 0
+fi
+
+# Fail fast if wasm-pack output drifts and the sed patterns would silently no-op.
+require 'compileContentWithDiagnostics(source: string, options: any): any'
+require 'formatContent(source: string, options: any)'
+
 # `sed -i.bak` is portable across GNU and BSD sed; the .bak file is removed below.
 sed -i.bak 's/compileContentWithDiagnostics(source: string, options: any): any/compileContentWithDiagnostics(source: string, options?: CompileOptions): CompileResult/' "$TARGET"
 sed -i.bak 's/formatContent(source: string, options: any)/formatContent(source: string, options?: FormatContentOptions)/' "$TARGET"
 rm "${TARGET}.bak"
+
+require 'compileContentWithDiagnostics(source: string, options?: CompileOptions): CompileResult'
+require 'formatContent(source: string, options?: FormatContentOptions)'
 
 cat >> "$TARGET" <<'EOF'
 

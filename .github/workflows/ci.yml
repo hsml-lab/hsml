@@ -117,4 +117,4 @@ jobs:
         run: ./scripts/patch-wasm-types.sh
 
       - name: Validate patched TypeScript types
-        run: npx -y -p typescript@latest tsc --noEmit --strict pkg/hsml.d.ts
+        run: npx -y -p typescript@6.0.3 tsc --noEmit --strict pkg/hsml.d.ts
