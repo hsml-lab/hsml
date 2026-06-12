@@ -45,6 +45,34 @@ fn it_should_not_warn_on_unique_classes() {
 }
 
 #[test]
+fn it_should_warn_on_duplicate_class_inside_an_angular_block() {
+    let source = "@if (show)\n  h1.text-red.text-red Hello\n";
+    let (_, ast) = parse(Span::new(source)).unwrap();
+
+    let diagnostics = validate(&ast, source);
+
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(
+        diagnostics[0].code,
+        Some(ErrorCode::DuplicateClass.code().to_string())
+    );
+}
+
+#[test]
+fn it_should_warn_on_void_element_content_inside_a_switch_case() {
+    let source = "@switch (state)\n  @case (a)\n    img Hello\n";
+    let (_, ast) = parse(Span::new(source)).unwrap();
+
+    let diagnostics = validate(&ast, source);
+
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(
+        diagnostics[0].code,
+        Some(ErrorCode::VoidElementContent.code().to_string())
+    );
+}
+
+#[test]
 fn it_should_warn_on_duplicate_class_in_child() {
     let source = "div\n  h1.foo.foo Hello\n";
     let (_, ast) = parse(Span::new(source)).unwrap();
