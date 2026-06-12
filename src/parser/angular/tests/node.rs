@@ -482,3 +482,95 @@ fn it_should_dispatch_boundary_via_angular_node() {
 
     assert!(matches!(node, AngularNode::Boundary(_)));
 }
+
+// --- error paths & edge cases (coverage for the block parsers) ---
+
+fn err(input: &str) -> bool {
+    let mut context = HsmlProcessContext::default();
+    angular_node(Span::new(input), &mut context).is_err()
+}
+
+#[test]
+fn it_should_error_on_a_block_head_without_parentheses() {
+    assert!(err("@if\n  p A\n"));
+}
+
+#[test]
+fn it_should_error_on_a_block_head_followed_by_junk() {
+    assert!(err("@if (a) junk\n"));
+}
+
+#[test]
+fn it_should_error_on_a_case_head_followed_by_junk() {
+    assert!(err("@switch (s)\n  @case (a) junk\n"));
+}
+
+#[test]
+fn it_should_error_on_a_duplicate_default() {
+    assert!(err(
+        "@switch (s)\n  @default\n    p a\n  @default\n    p b\n"
+    ));
+}
+
+#[test]
+fn it_should_error_on_a_trailing_bare_case_at_end_of_switch() {
+    assert!(err("@switch (s)\n  @case (a)\n"));
+}
+
+#[test]
+fn it_should_error_on_default_never_with_unbalanced_parens() {
+    assert!(err(
+        "@switch (s)\n  @case (a)\n    p A\n  @default never(unclosed\n"
+    ));
+}
+
+#[test]
+fn it_should_error_on_duplicate_defer_loading() {
+    assert!(err("@defer\n  p x\n@loading\n  p a\n@loading\n  p b\n"));
+}
+
+#[test]
+fn it_should_error_on_duplicate_defer_error() {
+    assert!(err("@defer\n  p x\n@error\n  p a\n@error\n  p b\n"));
+}
+
+#[test]
+fn it_should_error_on_sub_block_with_unbalanced_parens() {
+    assert!(err("@defer\n  p x\n@placeholder (minimum\n  p ph\n"));
+}
+
+#[test]
+fn it_should_error_on_let_with_an_unclosed_string() {
+    assert!(let_node(Span::new("@let x = 'abc\n")).is_err());
+}
+
+#[test]
+fn it_should_parse_a_switch_at_end_of_input_without_a_trailing_newline() {
+    let mut context = HsmlProcessContext::default();
+    let (_, node) = switch_node(Span::new("@switch (s)\n  @case (a) {}"), &mut context).unwrap();
+
+    assert_eq!(node.cases.len(), 1);
+}
+
+#[test]
+fn it_should_parse_a_boundary_at_end_of_input_without_a_trailing_newline() {
+    let mut context = HsmlProcessContext::default();
+    let (_, node) = boundary_node(Span::new("@boundary\n  @if (x) {}"), &mut context).unwrap();
+
+    assert!(node.catch.is_none());
+}
+
+#[test]
+fn it_should_capture_a_condition_with_an_escaped_quote() {
+    let mut context = HsmlProcessContext::default();
+    let (_, node) = if_node(Span::new("@if (x === '\\'')\n  p A\n"), &mut context).unwrap();
+
+    assert_eq!(node.condition, "x === '\\''");
+}
+
+#[test]
+fn it_should_handle_an_escaped_quote_in_a_let_expression() {
+    let (_, node) = let_node(Span::new("@let q = '\\'';\n")).unwrap();
+
+    assert_eq!(node.expression, "'\\''");
+}

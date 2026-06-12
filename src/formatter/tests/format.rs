@@ -93,6 +93,19 @@ fn it_should_preserve_blank_lines_between_angular_blocks() {
 }
 
 #[test]
+fn it_should_format_defer_with_loading_and_no_params() {
+    let input = "@defer\n  p x\n@loading\n  p ld\n";
+    assert_eq!(fmt(input), input);
+}
+
+#[test]
+fn it_should_format_switch_with_stacked_empty_and_bare_never() {
+    let input =
+        "@switch (s)\n  @case (a) {}\n  @case (b)\n  @case (c)\n    p X\n  @default never;\n";
+    assert_eq!(fmt(input), input);
+}
+
+#[test]
 fn it_should_format_implicit_div_with_class() {
     assert_eq!(fmt(".container\n"), ".container\n");
 }

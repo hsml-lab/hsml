@@ -146,6 +146,21 @@ fn it_should_compile_boundary_without_catch() {
 }
 
 #[test]
+fn it_should_compile_switch_with_bare_default_never() {
+    let html =
+        compile_content_core("@switch (s)\n  @case (a)\n    p A\n  @default never;\n").unwrap();
+
+    assert_eq!(html, "@switch (s) { @case (a) {<p>A</p>} @default never;}");
+}
+
+#[test]
+fn it_should_compile_defer_with_loading() {
+    let html = compile_content_core("@defer\n  p x\n@loading (after 100ms)\n  p ld\n").unwrap();
+
+    assert_eq!(html, "@defer {<p>x</p>} @loading (after 100ms) {<p>ld</p>}");
+}
+
+#[test]
 fn it_should_pretty_print_if_else() {
     let (_, ast) = parse(Span::new("@if (a)\n  p A\n@else\n  p B\n")).unwrap();
     let html = compile(
@@ -178,6 +193,55 @@ fn it_should_pretty_print_switch() {
     assert_eq!(
         html,
         "@switch (s) {\n  @case (a) {\n    <p>A</p>\n  }\n  @default {\n    <p>D</p>\n  }\n}\n"
+    );
+}
+
+fn compile_pretty(source: &str) -> String {
+    let (_, ast) = parse(Span::new(source)).unwrap();
+    compile(
+        &ast,
+        &HsmlCompileOptions {
+            pretty: true,
+            indent_size: 2,
+        },
+    )
+    .unwrap()
+}
+
+#[test]
+fn it_should_pretty_print_let() {
+    assert_eq!(compile_pretty("@let x = 5;\n"), "@let x = 5;\n");
+}
+
+#[test]
+fn it_should_pretty_print_for_empty() {
+    assert_eq!(
+        compile_pretty("@for (x of xs; track x)\n  p A\n@empty\n  p B\n"),
+        "@for (x of xs; track x) {\n  <p>A</p>\n} @empty {\n  <p>B</p>\n}\n"
+    );
+}
+
+#[test]
+fn it_should_pretty_print_defer() {
+    assert_eq!(
+        compile_pretty("@defer (on viewport)\n  p A\n@placeholder\n  p B\n"),
+        "@defer (on viewport) {\n  <p>A</p>\n} @placeholder {\n  <p>B</p>\n}\n"
+    );
+}
+
+#[test]
+fn it_should_pretty_print_boundary() {
+    assert_eq!(
+        compile_pretty("@boundary\n  p A\n@catch (error)\n  p B\n"),
+        "@boundary {\n  <p>A</p>\n} @catch (error) {\n  <p>B</p>\n}\n"
+    );
+}
+
+#[test]
+fn it_should_pretty_print_switch_with_default_never() {
+    assert_eq!(
+        compile_pretty("@switch (s)\n  @case (a)\n    p A\n  @default never(s);\n"),
+        "@switch (s) {\n  @case (a) {\n    <p>A</p>\n  }\n  @default never(s);\n}\n"
     );
 }
 
