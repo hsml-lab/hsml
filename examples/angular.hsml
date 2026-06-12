@@ -1,0 +1,27 @@
+@let cartTotal = cart.items.reduce((sum, item) => sum + item.price, 0);
+.product-list
+  @if (products$ | async; as products)
+    @for (product of products; track product.sku)
+      .card
+        img([src]="product.image" [alt]="product.name")
+        h3 {{ product.name }}
+        @switch (product.status)
+          @case ('in-stock')
+            button((click)="addToCart(product)") Add to cart
+          @case ('low-stock')
+            button((click)="addToCart(product)" [disabled]="product.qty === 0") Only {{ product.qty }} left
+          @default
+            span.sold-out Sold out
+    @empty
+      p.empty No products available
+  @else
+    app-spinner
+.summary Total: {{ cartTotal }}
+@defer (on viewport; prefetch on idle)
+  app-recommendations([total]="cartTotal")
+@placeholder (minimum 500ms)
+  .skeleton Loading recommendations
+@loading (after 100ms)
+  app-spinner
+@error
+  p.error Could not load recommendations

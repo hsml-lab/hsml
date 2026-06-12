@@ -251,6 +251,32 @@ template(#default)
 button([disabled]="isDisabled" (click)="onClick()") Click
 ```
 
+### Angular `@`-blocks
+
+HSML understands Angular's `@`-block syntax — written braceless and indentation-based like the rest of HSML, and compiled to Angular's brace blocks. Supported: `@if` / `@else if` / `@else`, `@for` / `@empty`, `@switch` / `@case` / `@default`, `@defer` (with `@placeholder` / `@loading` / `@error`), `@let`, and `@boundary` / `@catch`.
+
+```hsml
+ul
+  @for (todo of todos; track todo.id)
+    li {{ todo.title }}
+  @empty
+    li.empty Nothing to do
+```
+
+compiles to:
+
+```html
+<ul>
+  @for (todo of todos; track todo.id) {
+    <li>{{ todo.title }}</li>
+  } @empty {
+    <li class="empty">Nothing to do</li>
+  }
+</ul>
+```
+
+Block heads (conditions, triggers, `track` / `let` clauses) and `@let` expressions are passed through verbatim — HSML never evaluates them. An empty block body is written `{}` (e.g. `@case ('hide') {}`). See [`examples/angular.hsml`](examples/angular.hsml) for a fuller example.
+
 ## Diagnostics
 
 HSML provides helpful error messages with source context:
@@ -304,6 +330,7 @@ warning[W002]: Duplicate class 'foo'
 - [x] `hsml parse` — AST output as JSON
 - [x] LSP server with diagnostics, hover, and formatting
 - [x] GitHub/GitLab CI diagnostic formatters
+- [x] Angular `@`-block syntax (`@if` / `@for` / `@switch` / `@defer` / `@let` / `@boundary`)
 
 ## Contributing
 
