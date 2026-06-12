@@ -11,7 +11,7 @@ fn wasm_compile_content_returns_html() {
 
 #[wasm_bindgen_test]
 fn wasm_compile_content_returns_error_for_invalid_input() {
-    let result = hsml::compile_content("@@@invalid");
+    let result = hsml::compile_content("%%%invalid");
     assert!(result.is_err());
 }
 
@@ -51,7 +51,7 @@ fn wasm_compile_with_diagnostics_warning() {
 
 #[wasm_bindgen_test]
 fn wasm_compile_with_diagnostics_error() {
-    let result = hsml::compile_content_with_diagnostics("@@@invalid", JsValue::UNDEFINED);
+    let result = hsml::compile_content_with_diagnostics("%%%invalid", JsValue::UNDEFINED);
 
     let success = js_sys::Reflect::get(&result, &JsValue::from_str("success")).unwrap();
     assert_eq!(success, JsValue::from_bool(false));
@@ -87,7 +87,7 @@ fn wasm_format_content_returns_formatted() {
 
 #[wasm_bindgen_test]
 fn wasm_format_content_returns_error_for_invalid_input() {
-    let result = hsml::format_content("@@@invalid", JsValue::UNDEFINED);
+    let result = hsml::format_content("%%%invalid", JsValue::UNDEFINED);
     assert!(result.is_err());
 }
 

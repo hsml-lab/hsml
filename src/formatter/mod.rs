@@ -1,4 +1,8 @@
-use crate::parser::{HsmlNode, RootNode, tag::node::TagNode};
+use crate::parser::{
+    HsmlNode, RootNode,
+    angular::node::{AngularNode, DefaultBranch},
+    tag::node::TagNode,
+};
 
 /// A single item inside an attribute list, either an attribute or a comment.
 enum AttrItem {
@@ -130,7 +134,164 @@ fn format_node(node: &HsmlNode, depth: usize, options: &FormatOptions, output: &
         HsmlNode::Doctype(doctype) => {
             output.push_str(&format!("doctype {}\n", doctype.doctype));
         }
+        HsmlNode::Angular(angular) => format_angular_node(angular, depth, options, output),
         _ => {}
+    }
+}
+
+fn format_angular_node(
+    node: &AngularNode,
+    depth: usize,
+    options: &FormatOptions,
+    output: &mut String,
+) {
+    let indent = " ".repeat(depth * options.indent_size);
+    match node {
+        AngularNode::Let(let_node) => {
+            output.push_str(&format!(
+                "{indent}@let {} = {};\n",
+                let_node.name, let_node.expression
+            ));
+        }
+        AngularNode::If(if_node) => {
+            format_block_head(
+                output,
+                &indent,
+                &format!("@if ({})", if_node.condition),
+                &if_node.then_branch,
+                depth,
+                options,
+            );
+            for branch in &if_node.else_if_branches {
+                format_block_head(
+                    output,
+                    &indent,
+                    &format!("@else if ({})", branch.condition),
+                    &branch.body,
+                    depth,
+                    options,
+                );
+            }
+            if let Some(else_body) = &if_node.else_branch {
+                format_block_head(output, &indent, "@else", else_body, depth, options);
+            }
+        }
+        AngularNode::For(for_node) => {
+            format_block_head(
+                output,
+                &indent,
+                &format!("@for ({})", for_node.expression),
+                &for_node.body,
+                depth,
+                options,
+            );
+            if let Some(empty_body) = &for_node.empty_branch {
+                format_block_head(output, &indent, "@empty", empty_body, depth, options);
+            }
+        }
+        AngularNode::Switch(switch_node) => {
+            output.push_str(&format!("{indent}@switch ({})\n", switch_node.expression));
+            let case_depth = depth + 1;
+            let case_indent = " ".repeat(case_depth * options.indent_size);
+            for case in &switch_node.cases {
+                // Stacked bare cases render on their own lines; the last carries the body.
+                let (last, leading) = case
+                    .values
+                    .split_last()
+                    .expect("a @case always has at least one value");
+                for value in leading {
+                    output.push_str(&format!("{case_indent}@case ({value})\n"));
+                }
+                format_block_head(
+                    output,
+                    &case_indent,
+                    &format!("@case ({last})"),
+                    &case.body,
+                    case_depth,
+                    options,
+                );
+            }
+            if let Some(default) = &switch_node.default {
+                match default {
+                    DefaultBranch::Block(body) => format_block_head(
+                        output,
+                        &case_indent,
+                        "@default",
+                        body,
+                        case_depth,
+                        options,
+                    ),
+                    DefaultBranch::Never(None) => {
+                        output.push_str(&format!("{case_indent}@default never;\n"))
+                    }
+                    DefaultBranch::Never(Some(expression)) => {
+                        output.push_str(&format!("{case_indent}@default never({expression});\n"))
+                    }
+                }
+            }
+        }
+        AngularNode::Defer(defer_node) => {
+            let head = match &defer_node.triggers {
+                Some(triggers) => format!("@defer ({triggers})"),
+                None => "@defer".to_string(),
+            };
+            format_block_head(output, &indent, &head, &defer_node.body, depth, options);
+
+            if let Some(placeholder) = &defer_node.placeholder {
+                let head = match &placeholder.params {
+                    Some(params) => format!("@placeholder ({params})"),
+                    None => "@placeholder".to_string(),
+                };
+                format_block_head(output, &indent, &head, &placeholder.body, depth, options);
+            }
+            if let Some(loading) = &defer_node.loading {
+                let head = match &loading.params {
+                    Some(params) => format!("@loading ({params})"),
+                    None => "@loading".to_string(),
+                };
+                format_block_head(output, &indent, &head, &loading.body, depth, options);
+            }
+            if let Some(error_body) = &defer_node.error {
+                format_block_head(output, &indent, "@error", error_body, depth, options);
+            }
+        }
+        AngularNode::Boundary(boundary_node) => {
+            format_block_head(
+                output,
+                &indent,
+                "@boundary",
+                &boundary_node.body,
+                depth,
+                options,
+            );
+            if let Some(catch) = &boundary_node.catch {
+                let head = match &catch.binding {
+                    Some(binding) => format!("@catch ({binding})"),
+                    None => "@catch".to_string(),
+                };
+                format_block_head(output, &indent, &head, &catch.body, depth, options);
+            }
+        }
+    }
+}
+
+/// Format a control-flow block head and its body: `{head}` followed by either
+/// ` {}` for an empty body or an indented child block.
+fn format_block_head(
+    output: &mut String,
+    indent: &str,
+    head: &str,
+    body: &[HsmlNode],
+    depth: usize,
+    options: &FormatOptions,
+) {
+    output.push_str(indent);
+    output.push_str(head);
+    if body.is_empty() {
+        output.push_str(" {}\n");
+    } else {
+        output.push('\n');
+        format_nodes(body, depth + 1, options, output);
     }
 }
 

@@ -89,7 +89,7 @@ fn compile_invalid_hsml_content_fails() {
     let dir = TempDir::new().unwrap();
     let input = dir.path().join("bad.hsml");
 
-    fs::write(&input, "@@@invalid\n").unwrap();
+    fs::write(&input, "%%%invalid\n").unwrap();
 
     cmd()
         .args(["compile", input.to_str().unwrap()])
@@ -103,7 +103,7 @@ fn compile_invalid_hsml_content_fails_with_json_format() {
     let dir = TempDir::new().unwrap();
     let input = dir.path().join("bad.hsml");
 
-    fs::write(&input, "@@@invalid\n").unwrap();
+    fs::write(&input, "%%%invalid\n").unwrap();
 
     cmd()
         .args([
@@ -193,7 +193,7 @@ fn compile_directory_reports_errors_from_invalid_files() {
     let dir = TempDir::new().unwrap();
 
     fs::write(dir.path().join("good.hsml"), "h1 OK\n").unwrap();
-    fs::write(dir.path().join("bad.hsml"), "@@@\n").unwrap();
+    fs::write(dir.path().join("bad.hsml"), "%%%\n").unwrap();
 
     cmd()
         .args(["compile", dir.path().to_str().unwrap()])
@@ -378,7 +378,7 @@ fn compile_debug_summary_shows_warnings() {
 fn compile_debug_summary_shows_cross_for_errors() {
     let dir = TempDir::new().unwrap();
 
-    fs::write(dir.path().join("bad.hsml"), "@@@invalid\n").unwrap();
+    fs::write(dir.path().join("bad.hsml"), "%%%invalid\n").unwrap();
 
     let output = cmd()
         .args([
@@ -508,7 +508,7 @@ fn compile_directory_json_mixes_errors_and_warnings() {
     let dir = TempDir::new().unwrap();
 
     fs::write(dir.path().join("good.hsml"), "h1.foo.foo OK\n").unwrap();
-    fs::write(dir.path().join("bad.hsml"), "@@@invalid\n").unwrap();
+    fs::write(dir.path().join("bad.hsml"), "%%%invalid\n").unwrap();
 
     let output = cmd()
         .args([
@@ -673,7 +673,7 @@ fn parse_returns_null_nodes_with_error_diagnostic_for_invalid_file() {
     let dir = TempDir::new().unwrap();
     let input = dir.path().join("bad.hsml");
 
-    fs::write(&input, "@@@invalid\n").unwrap();
+    fs::write(&input, "%%%invalid\n").unwrap();
 
     let output = cmd()
         .args(["parse", input.to_str().unwrap()])
@@ -723,7 +723,7 @@ fn parse_directory_continues_on_parse_error() {
     let dir = TempDir::new().unwrap();
 
     fs::write(dir.path().join("good.hsml"), "h1 Hello\n").unwrap();
-    fs::write(dir.path().join("bad.hsml"), "@@@invalid\n").unwrap();
+    fs::write(dir.path().join("bad.hsml"), "%%%invalid\n").unwrap();
 
     let output = cmd()
         .args(["parse", dir.path().to_str().unwrap()])
@@ -949,7 +949,7 @@ fn check_invalid_file_fails() {
     let dir = TempDir::new().unwrap();
     let input = dir.path().join("bad.hsml");
 
-    fs::write(&input, "@@@invalid\n").unwrap();
+    fs::write(&input, "%%%invalid\n").unwrap();
 
     cmd()
         .args(["check", input.to_str().unwrap()])
@@ -1018,7 +1018,7 @@ fn check_github_format_outputs_error_annotation() {
     let dir = TempDir::new().unwrap();
     let input = dir.path().join("bad.hsml");
 
-    fs::write(&input, "@@@invalid\n").unwrap();
+    fs::write(&input, "%%%invalid\n").unwrap();
 
     let output = cmd()
         .args([
@@ -1086,7 +1086,7 @@ fn check_directory() {
     let dir = TempDir::new().unwrap();
 
     fs::write(dir.path().join("good.hsml"), "h1 OK\n").unwrap();
-    fs::write(dir.path().join("bad.hsml"), "@@@\n").unwrap();
+    fs::write(dir.path().join("bad.hsml"), "%%%\n").unwrap();
 
     cmd()
         .args(["check", dir.path().to_str().unwrap()])
@@ -1192,7 +1192,7 @@ fn check_ignores_node_modules() {
     let nm = dir.path().join("node_modules").join("pkg");
     fs::create_dir_all(&nm).unwrap();
     // Invalid hsml that would cause an error if not ignored
-    fs::write(nm.join("bad.hsml"), "@@@invalid\n").unwrap();
+    fs::write(nm.join("bad.hsml"), "%%%invalid\n").unwrap();
 
     cmd()
         .args(["check", dir.path().to_str().unwrap()])
@@ -1232,7 +1232,7 @@ fn check_respects_gitignore() {
 
     let ignored = dir.path().join("ignored");
     fs::create_dir(&ignored).unwrap();
-    fs::write(ignored.join("bad.hsml"), "@@@invalid\n").unwrap();
+    fs::write(ignored.join("bad.hsml"), "%%%invalid\n").unwrap();
 
     cmd()
         .args(["check", dir.path().to_str().unwrap()])
@@ -1272,7 +1272,7 @@ fn check_respects_hsmlignore() {
 
     let vendor = dir.path().join("vendor");
     fs::create_dir(&vendor).unwrap();
-    fs::write(vendor.join("bad.hsml"), "@@@invalid\n").unwrap();
+    fs::write(vendor.join("bad.hsml"), "%%%invalid\n").unwrap();
 
     cmd()
         .args(["check", dir.path().to_str().unwrap()])
@@ -1315,7 +1315,7 @@ fn check_respects_ignore_pattern_flag() {
 
     let skip = dir.path().join("skip");
     fs::create_dir(&skip).unwrap();
-    fs::write(skip.join("bad.hsml"), "@@@invalid\n").unwrap();
+    fs::write(skip.join("bad.hsml"), "%%%invalid\n").unwrap();
 
     cmd()
         .args([
@@ -1434,7 +1434,7 @@ fn check_skips_hidden_directories() {
 
     let hidden = dir.path().join(".hidden");
     fs::create_dir(&hidden).unwrap();
-    fs::write(hidden.join("bad.hsml"), "@@@invalid\n").unwrap();
+    fs::write(hidden.join("bad.hsml"), "%%%invalid\n").unwrap();
 
     cmd()
         .args(["check", dir.path().to_str().unwrap()])
@@ -1450,7 +1450,7 @@ fn check_builtin_ignores_target_directory() {
 
     let target = dir.path().join("target");
     fs::create_dir(&target).unwrap();
-    fs::write(target.join("bad.hsml"), "@@@invalid\n").unwrap();
+    fs::write(target.join("bad.hsml"), "%%%invalid\n").unwrap();
 
     cmd()
         .args(["check", dir.path().to_str().unwrap()])

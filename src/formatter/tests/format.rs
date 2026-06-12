@@ -17,6 +17,76 @@ fn it_should_format_tag_with_class() {
 }
 
 #[test]
+fn it_should_format_let_declaration() {
+    assert_eq!(fmt("@let x = user.name;\n"), "@let x = user.name;\n");
+}
+
+#[test]
+fn it_should_format_nested_let_declaration() {
+    assert_eq!(
+        fmt(".box\n  @let n = 5;\n  h1 done\n"),
+        ".box\n  @let n = 5;\n  h1 done\n"
+    );
+}
+
+#[test]
+fn it_should_format_if_else_chain() {
+    assert_eq!(
+        fmt("@if (a)\n  p A\n@else if (b)\n  p B\n@else\n  p C\n"),
+        "@if (a)\n  p A\n@else if (b)\n  p B\n@else\n  p C\n"
+    );
+}
+
+#[test]
+fn it_should_format_if_with_empty_body() {
+    assert_eq!(fmt("@if (x) {}\n"), "@if (x) {}\n");
+}
+
+#[test]
+fn it_should_format_nested_if() {
+    assert_eq!(
+        fmt(".box\n  @if (a)\n    p yes\n"),
+        ".box\n  @if (a)\n    p yes\n"
+    );
+}
+
+#[test]
+fn it_should_format_for_with_empty() {
+    let input = "@for (item of items; track item.id)\n  li {{ item.name }}\n@empty\n  li None\n";
+    assert_eq!(fmt(input), input);
+}
+
+#[test]
+fn it_should_format_switch_with_stacked_cases() {
+    let input = "@switch (status)\n  @case (active)\n    p A\n  @case (pending)\n  @case (review)\n    p B\n  @default\n    p C\n";
+    assert_eq!(fmt(input), input);
+}
+
+#[test]
+fn it_should_format_switch_with_default_never() {
+    let input = "@switch (s)\n  @case (a)\n    p A\n  @default never(s);\n";
+    assert_eq!(fmt(input), input);
+}
+
+#[test]
+fn it_should_format_defer_with_sub_blocks() {
+    let input =
+        "@defer (on viewport)\n  p main\n@placeholder (minimum 500ms)\n  p ph\n@error\n  p err\n";
+    assert_eq!(fmt(input), input);
+}
+
+#[test]
+fn it_should_format_defer_without_head() {
+    assert_eq!(fmt("@defer\n  p x\n"), "@defer\n  p x\n");
+}
+
+#[test]
+fn it_should_format_boundary_with_catch() {
+    let input = "@boundary\n  p main\n@catch (error)\n  p fallback\n";
+    assert_eq!(fmt(input), input);
+}
+
+#[test]
 fn it_should_format_implicit_div_with_class() {
     assert_eq!(fmt(".container\n"), ".container\n");
 }
