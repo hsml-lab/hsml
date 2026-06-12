@@ -32,6 +32,7 @@ fn node_start_line(node: &HsmlNode) -> Option<u32> {
     match node {
         HsmlNode::Tag(tag) => Some(tag.location.start.line),
         HsmlNode::Comment(comment) => Some(comment.location.start.line),
+        HsmlNode::Angular(angular) => Some(angular.location().start.line),
         _ => None,
     }
 }
@@ -68,6 +69,7 @@ fn node_end_line(node: &HsmlNode) -> Option<u32> {
             Some(last)
         }
         HsmlNode::Comment(comment) => Some(comment.location.end.line),
+        HsmlNode::Angular(angular) => Some(angular.location().end.line),
         _ => None,
     }
 }

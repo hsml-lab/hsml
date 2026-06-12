@@ -146,6 +146,42 @@ fn it_should_compile_boundary_without_catch() {
 }
 
 #[test]
+fn it_should_pretty_print_if_else() {
+    let (_, ast) = parse(Span::new("@if (a)\n  p A\n@else\n  p B\n")).unwrap();
+    let html = compile(
+        &ast,
+        &HsmlCompileOptions {
+            pretty: true,
+            indent_size: 2,
+        },
+    )
+    .unwrap();
+
+    assert_eq!(html, "@if (a) {\n  <p>A</p>\n} @else {\n  <p>B</p>\n}\n");
+}
+
+#[test]
+fn it_should_pretty_print_switch() {
+    let (_, ast) = parse(Span::new(
+        "@switch (s)\n  @case (a)\n    p A\n  @default\n    p D\n",
+    ))
+    .unwrap();
+    let html = compile(
+        &ast,
+        &HsmlCompileOptions {
+            pretty: true,
+            indent_size: 2,
+        },
+    )
+    .unwrap();
+
+    assert_eq!(
+        html,
+        "@switch (s) {\n  @case (a) {\n    <p>A</p>\n  }\n  @default {\n    <p>D</p>\n  }\n}\n"
+    );
+}
+
+#[test]
 fn it_should_compile_simple_tag() {
     let ast = RootNode {
         nodes: vec![HsmlNode::Tag(TagNode::without_location(

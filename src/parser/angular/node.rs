@@ -30,6 +30,21 @@ pub enum AngularNode {
     Boundary(BoundaryNode),
 }
 
+impl AngularNode {
+    /// The source location of this block, used by the formatter (blank-line
+    /// preservation) and diagnostics.
+    pub fn location(&self) -> &Location {
+        match self {
+            AngularNode::Let(node) => &node.location,
+            AngularNode::If(node) => &node.location,
+            AngularNode::For(node) => &node.location,
+            AngularNode::Switch(node) => &node.location,
+            AngularNode::Defer(node) => &node.location,
+            AngularNode::Boundary(node) => &node.location,
+        }
+    }
+}
+
 /// An Angular `@let` declaration: `@let name = expression;`.
 ///
 /// The expression is captured verbatim (HSML never evaluates it) from after the

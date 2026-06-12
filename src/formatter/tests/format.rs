@@ -87,6 +87,12 @@ fn it_should_format_boundary_with_catch() {
 }
 
 #[test]
+fn it_should_preserve_blank_lines_between_angular_blocks() {
+    let input = "@if (a)\n  p A\n\n@if (b)\n  p B\n";
+    assert_eq!(fmt(input), input);
+}
+
+#[test]
 fn it_should_format_implicit_div_with_class() {
     assert_eq!(fmt(".container\n"), ".container\n");
 }
