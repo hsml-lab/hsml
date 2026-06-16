@@ -1,0 +1,138 @@
+---
+source: tests/parse.rs
+expression: root_node
+---
+{
+  "nodes": [
+    {
+      "type": "tag",
+      "tag": "h1",
+      "location": "[location]",
+      "ids": [],
+      "classes": [
+        {
+          "name": "text-red",
+          "location": "[location]"
+        }
+      ],
+      "attributes": null,
+      "text": {
+        "text": "Vite CJS Faker Demo",
+        "isBlock": false
+      },
+      "children": null
+    },
+    {
+      "type": "tag",
+      "tag": "div",
+      "location": "[location]",
+      "ids": [],
+      "classes": [
+        {
+          "name": "card",
+          "location": "[location]"
+        }
+      ],
+      "attributes": null,
+      "text": null,
+      "children": [
+        {
+          "type": "tag",
+          "tag": "div",
+          "location": "[location]",
+          "ids": [],
+          "classes": [
+            {
+              "name": "card__image",
+              "location": "[location]"
+            }
+          ],
+          "attributes": null,
+          "text": null,
+          "children": [
+            {
+              "type": "tag",
+              "tag": "img",
+              "location": "[location]",
+              "ids": [],
+              "classes": null,
+              "attributes": [
+                {
+                  "type": "attribute",
+                  "key": ":src",
+                  "value": "natureImageUrl",
+                  "location": "[location]"
+                },
+                {
+                  "type": "attribute",
+                  "key": ":alt",
+                  "value": "'Background image for ' + fullName",
+                  "location": "[location]"
+                }
+              ],
+              "text": null,
+              "children": null
+            }
+          ]
+        },
+        {
+          "type": "tag",
+          "tag": "div",
+          "location": "[location]",
+          "ids": [],
+          "classes": [
+            {
+              "name": "card__profile",
+              "location": "[location]"
+            }
+          ],
+          "attributes": null,
+          "text": null,
+          "children": [
+            {
+              "type": "tag",
+              "tag": "img",
+              "location": "[location]",
+              "ids": [],
+              "classes": null,
+              "attributes": [
+                {
+                  "type": "attribute",
+                  "key": ":src",
+                  "value": "avatarUrl",
+                  "location": "[location]"
+                },
+                {
+                  "type": "attribute",
+                  "key": ":alt",
+                  "value": "'Avatar image of ' + fullName",
+                  "location": "[location]"
+                }
+              ],
+              "text": null,
+              "children": null
+            }
+          ]
+        },
+        {
+          "type": "tag",
+          "tag": "div",
+          "location": "[location]",
+          "ids": [],
+          "classes": [
+            {
+              "name": "card__body",
+              "location": "[location]"
+            }
+          ],
+          "attributes": null,
+          "text": {
+            "text": "{{ fullName }}",
+            "isBlock": false
+          },
+          "children": null
+        }
+      ]
+    }
+  ]
+}

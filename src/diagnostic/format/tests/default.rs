@@ -19,16 +19,7 @@ fn it_should_format_warning_with_source_context() {
     let source = "div#foo#bar";
     let output = DefaultFormatter.format(&[diag], Some(source));
 
-    assert_eq!(
-        output,
-        "\
-warning[W001]: Duplicate attribute 'id' is not allowed
- --> example.hsml:1:8
-  |
-1 | div#foo#bar
-  |        ^
-"
-    );
+    insta::assert_snapshot!(output);
 }
 
 #[test]
@@ -47,16 +38,7 @@ fn it_should_format_error_without_code() {
     let source = "123invalid";
     let output = DefaultFormatter.format(&[diag], Some(source));
 
-    assert_eq!(
-        output,
-        "\
-error: parse error
- --> <input>:1:1
-  |
-1 | 123invalid
-  | ^
-"
-    );
+    insta::assert_snapshot!(output);
 }
 
 #[test]
@@ -96,16 +78,7 @@ fn it_should_format_warning() {
     let source = "h1.text-red.text-red Hello";
     let output = DefaultFormatter.format(&[diag], Some(source));
 
-    assert_eq!(
-        output,
-        "\
-warning[W002]: Duplicate class 'text-red'
- --> test.hsml:1:12
-  |
-1 | h1.text-red.text-red Hello
-  |            ^
-"
-    );
+    insta::assert_snapshot!(output);
 }
 
 #[test]
@@ -151,14 +124,5 @@ fn it_should_underline_span_range() {
     let source = "h1.foo.foo Hello";
     let output = DefaultFormatter.format(&[diag], Some(source));
 
-    assert_eq!(
-        output,
-        "\
-warning[W002]: Duplicate class 'foo'
- --> test.hsml:1:7
-  |
-1 | h1.foo.foo Hello
-  |       ^^^^
-"
-    );
+    insta::assert_snapshot!(output);
 }

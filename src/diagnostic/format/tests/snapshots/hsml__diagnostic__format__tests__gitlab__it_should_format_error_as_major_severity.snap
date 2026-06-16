@@ -1,0 +1,18 @@
+---
+source: src/diagnostic/format/tests/gitlab.rs
+expression: parsed
+---
+[
+  {
+    "check_name": "hsml",
+    "description": "parse error",
+    "fingerprint": "f1051314d06cb78c",
+    "location": {
+      "lines": {
+        "begin": 1
+      },
+      "path": "test.hsml"
+    },
+    "severity": "major"
+  }
+]

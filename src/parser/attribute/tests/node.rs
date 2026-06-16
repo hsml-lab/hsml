@@ -1,7 +1,6 @@
 use crate::parser::{
     HsmlNode, HsmlProcessContext, Span,
     attribute::node::{AttributeNode, attribute_node, attribute_nodes},
-    comment::node::CommentNode,
 };
 
 #[test]
@@ -117,15 +116,8 @@ fn it_should_return_attribute_nodes_with_dev_comments() {
     )
     .unwrap();
 
-    assert_eq!(
-        attribute_nodes,
-        vec![
-            HsmlNode::Comment(CommentNode::new_without_location(" comment 1", true)),
-            HsmlNode::Attribute(AttributeNode::new_without_location("key", Some("value"))),
-            HsmlNode::Comment(CommentNode::new_without_location(" comment 2", true)),
-            HsmlNode::Attribute(AttributeNode::new_without_location(":key2", Some("value2"))),
-        ]
-    );
+    // Structure (the comment/attribute interleaving) is snapshotted; locations redacted.
+    insta::assert_json_snapshot!(attribute_nodes, { ".**.location" => "[location]" });
 
     assert_eq!(*rest.fragment(), "\n");
 }

@@ -21,15 +21,8 @@ fn it_should_format_warning_as_codeclimate_issue() {
 
     let output = GitlabFormatter.format(&[diag], None);
     let parsed: serde_json::Value = serde_json::from_str(&output).unwrap();
-    let arr = parsed.as_array().unwrap();
 
-    assert_eq!(arr.len(), 1);
-    assert_eq!(arr[0]["description"], "Duplicate class 'foo'");
-    assert_eq!(arr[0]["check_name"], "W002");
-    assert_eq!(arr[0]["severity"], "minor");
-    assert_eq!(arr[0]["location"]["path"], "example.hsml");
-    assert_eq!(arr[0]["location"]["lines"]["begin"], 1);
-    assert!(arr[0]["fingerprint"].is_string());
+    insta::assert_json_snapshot!(parsed);
 }
 
 #[test]
@@ -47,10 +40,8 @@ fn it_should_format_error_as_major_severity() {
 
     let output = GitlabFormatter.format(&[diag], None);
     let parsed: serde_json::Value = serde_json::from_str(&output).unwrap();
-    let arr = parsed.as_array().unwrap();
 
-    assert_eq!(arr[0]["severity"], "major");
-    assert_eq!(arr[0]["check_name"], "hsml");
+    insta::assert_json_snapshot!(parsed);
 }
 
 #[test]

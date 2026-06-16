@@ -1,0 +1,52 @@
+---
+source: tests/parse.rs
+expression: root_node
+---
+{
+  "nodes": [
+    {
+      "type": "tag",
+      "tag": "img",
+      "location": "[location]",
+      "ids": [],
+      "classes": [
+        {
+          "name": "rounded-full",
+          "location": "[location]"
+        },
+        {
+          "name": "mx-auto",
+          "location": "[location]"
+        }
+      ],
+      "attributes": [
+        {
+          "type": "attribute",
+          "key": "src",
+          "value": "/fancy-avatar.jpg",
+          "location": "[location]"
+        },
+        {
+          "type": "attribute",
+          "key": "alt",
+          "value": "A fancy avatar",
+          "location": "[location]"
+        },
+        {
+          "type": "attribute",
+          "key": "width",
+          "value": "384",
+          "location": "[location]"
+        },
+        {
+          "type": "attribute",
+          "key": "height",
+          "value": "512",
+          "location": "[location]"
+        }
+      ],
+      "text": null,
+      "children": null
+    }
+  ]
+}

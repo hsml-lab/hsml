@@ -1,8 +1,13 @@
-use hsml::parser::{
-    HsmlNode, RootNode, Span, attribute::node::AttributeNode, class::node::ClassNode,
-    comment::node::CommentNode, id::node::IdNode, parse::parse, tag::node::TagNode,
-    text::node::TextNode,
-};
+use hsml::parser::{Span, parse::parse};
+
+// AST structure is captured via JSON snapshots. The `.**.location` redaction
+// drops source locations so these tests stay focused on structure — location
+// correctness is asserted separately in the validator tests.
+macro_rules! assert_ast_snapshot {
+    ($ast:expr) => {
+        insta::assert_json_snapshot!($ast, { ".**.location" => "[location]" })
+    };
+}
 
 #[test]
 fn it_should_parse() {
@@ -17,93 +22,7 @@ fn it_should_parse() {
 
     let (rest, root_node) = parse(Span::new(input)).unwrap();
 
-    assert_eq!(
-        root_node,
-        RootNode {
-            nodes: vec![
-                HsmlNode::Tag(TagNode::without_location(
-                    "h1",
-                    vec![],
-                    Some(vec![ClassNode::new_without_location("text-red")]),
-                    None,
-                    Some(TextNode {
-                        text: String::from("Vite CJS Faker Demo"),
-                        is_block: false,
-                    }),
-                    None,
-                )),
-                HsmlNode::Tag(TagNode::without_location(
-                    "div",
-                    vec![],
-                    Some(vec![ClassNode::new_without_location("card")]),
-                    None,
-                    None,
-                    Some(vec![
-                        HsmlNode::Tag(TagNode::without_location(
-                            "div",
-                            vec![],
-                            Some(vec![ClassNode::new_without_location("card__image")]),
-                            None,
-                            None,
-                            Some(vec![HsmlNode::Tag(TagNode::without_location(
-                                "img",
-                                vec![],
-                                None,
-                                Some(vec![
-                                    HsmlNode::Attribute(AttributeNode::new_without_location(
-                                        ":src",
-                                        Some("natureImageUrl"),
-                                    )),
-                                    HsmlNode::Attribute(AttributeNode::new_without_location(
-                                        ":alt",
-                                        Some("'Background image for ' + fullName"),
-                                    )),
-                                ]),
-                                None,
-                                None,
-                            ))]),
-                        )),
-                        HsmlNode::Tag(TagNode::without_location(
-                            "div",
-                            vec![],
-                            Some(vec![ClassNode::new_without_location("card__profile")]),
-                            None,
-                            None,
-                            Some(vec![HsmlNode::Tag(TagNode::without_location(
-                                "img",
-                                vec![],
-                                None,
-                                Some(vec![
-                                    HsmlNode::Attribute(AttributeNode::new_without_location(
-                                        ":src",
-                                        Some("avatarUrl"),
-                                    )),
-                                    HsmlNode::Attribute(AttributeNode::new_without_location(
-                                        ":alt",
-                                        Some("'Avatar image of ' + fullName"),
-                                    )),
-                                ]),
-                                None,
-                                None,
-                            ))]),
-                        )),
-                        HsmlNode::Tag(TagNode::without_location(
-                            "div",
-                            vec![],
-                            Some(vec![ClassNode::new_without_location("card__body")]),
-                            None,
-                            Some(TextNode {
-                                text: String::from("{{ fullName }}"),
-                                is_block: false,
-                            }),
-                            None,
-                        ))
-                    ]),
-                )),
-            ],
-        }
-    );
-
+    assert_ast_snapshot!(root_node);
     assert_eq!(*rest.fragment(), "");
 }
 
@@ -127,83 +46,7 @@ div
 
     let (rest, root_node) = parse(Span::new(input)).unwrap();
 
-    assert_eq!(
-        root_node,
-        RootNode {
-            nodes: vec![
-                HsmlNode::Comment(CommentNode::new_without_location(
-                    " this is a root dev comment",
-                    true
-                )),
-                HsmlNode::Comment(CommentNode::new_without_location(
-                    " this is a root native comment (will get rendered)",
-                    false
-                )),
-                HsmlNode::Tag(TagNode::without_location(
-                    "div",
-                    vec![],
-                    None,
-                    None,
-                    None,
-                    Some(vec![
-                        HsmlNode::Comment(CommentNode::new_without_location(
-                            " this is a child comment",
-                            true
-                        )),
-                        HsmlNode::Tag(TagNode::without_location(
-                            "p",
-                            vec![],
-                            None,
-                            None,
-                            Some(TextNode {
-                                text: String::from("another tag"),
-                                is_block: false,
-                            }),
-                            None,
-                        )),
-                        HsmlNode::Comment(CommentNode::new_without_location(
-                            " this is a child comment that gets rendered",
-                            false
-                        )),
-                        HsmlNode::Tag(TagNode::without_location(
-                            "img",
-                            vec![],
-                            None,
-                            Some(vec![
-                                HsmlNode::Comment(CommentNode::new_without_location(
-                                    " supports attribute inline comments",
-                                    true
-                                )),
-                                HsmlNode::Attribute(AttributeNode::new_without_location(
-                                    "src",
-                                    Some("/fancy-avatar.jpg"),
-                                )),
-                                HsmlNode::Attribute(AttributeNode::new_without_location(
-                                    "alt",
-                                    Some("Fancy Avatar"),
-                                )),
-                                HsmlNode::Comment(CommentNode::new_without_location(
-                                    " the size of the image",
-                                    true
-                                )),
-                                HsmlNode::Attribute(AttributeNode::new_without_location(
-                                    "width",
-                                    Some("384"),
-                                )),
-                                HsmlNode::Attribute(AttributeNode::new_without_location(
-                                    "height",
-                                    Some("512"),
-                                )),
-                            ]),
-                            None,
-                            None,
-                        )),
-                    ])
-                ))
-            ]
-        }
-    );
-
+    assert_ast_snapshot!(root_node);
     assert_eq!(*rest.fragment(), "");
 }
 
@@ -219,36 +62,7 @@ fn it_should_parse_wrapped_attributes() {
 
     let (rest, root_node) = parse(Span::new(input)).unwrap();
 
-    assert_eq!(
-        root_node,
-        RootNode {
-            nodes: vec![HsmlNode::Tag(TagNode::without_location(
-                "img",
-                vec![],
-                Some(vec![
-                    ClassNode::new_without_location("rounded-full"),
-                    ClassNode::new_without_location("mx-auto"),
-                ]),
-                Some(vec![
-                    HsmlNode::Attribute(AttributeNode::new_without_location(
-                        "src",
-                        Some("/fancy-avatar.jpg"),
-                    )),
-                    HsmlNode::Attribute(AttributeNode::new_without_location(
-                        "alt",
-                        Some("A fancy avatar"),
-                    )),
-                    HsmlNode::Attribute(AttributeNode::new_without_location("width", Some("384"),)),
-                    HsmlNode::Attribute(
-                        AttributeNode::new_without_location("height", Some("512"),)
-                    ),
-                ]),
-                None,
-                None,
-            ))],
-        }
-    );
-
+    assert_ast_snapshot!(root_node);
     assert_eq!(*rest.fragment(), "");
 }
 
@@ -260,22 +74,6 @@ fn it_should_parse_tag_with_multiple_ids() {
 
     let (rest, root_node) = parse(Span::new(input)).unwrap();
 
-    assert_eq!(
-        root_node,
-        RootNode {
-            nodes: vec![HsmlNode::Tag(TagNode::without_location(
-                "div",
-                vec![
-                    IdNode::new_without_location("id1"),
-                    IdNode::new_without_location("id2"),
-                ],
-                None,
-                None,
-                None,
-                None,
-            ))],
-        }
-    );
-
+    assert_ast_snapshot!(root_node);
     assert_eq!(*rest.fragment(), "");
 }
