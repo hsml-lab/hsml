@@ -1,0 +1,9 @@
+---
+source: src/diagnostic/format/tests/default.rs
+expression: output
+---
+warning[W002]: Duplicate class 'text-red'
+ --> test.hsml:1:12
+  |
+1 | h1.text-red.text-red Hello
+  |            ^

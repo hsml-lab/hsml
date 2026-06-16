@@ -1,0 +1,25 @@
+---
+source: src/parser/tag/tests/node.rs
+expression: tag
+---
+{
+  "tag": "p",
+  "location": "[location]",
+  "ids": [],
+  "classes": [
+    {
+      "name": "text-lg",
+      "location": "[location]"
+    },
+    {
+      "name": "font-medium",
+      "location": "[location]"
+    }
+  ],
+  "attributes": null,
+  "text": {
+    "text": "\"Tailwind CSS is the only framework that I've seen scale\non large teams. It's easy to customize, adapts to any design,\nand the build size is tiny.\"",
+    "isBlock": true
+  },
+  "children": null
+}

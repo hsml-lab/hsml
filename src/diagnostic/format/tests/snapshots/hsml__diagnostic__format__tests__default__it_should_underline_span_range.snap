@@ -1,0 +1,9 @@
+---
+source: src/diagnostic/format/tests/default.rs
+expression: output
+---
+warning[W002]: Duplicate class 'foo'
+ --> test.hsml:1:7
+  |
+1 | h1.foo.foo Hello
+  |       ^^^^

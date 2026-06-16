@@ -1,10 +1,8 @@
 use crate::parser::{
     HsmlProcessContext, Span,
-    class::node::ClassNode,
     error::ErrorCode,
     id::node::IdNode,
     tag::node::{TagNode, tag_node},
-    text::node::TextNode,
 };
 
 #[test]
@@ -26,27 +24,8 @@ fn it_should_return_tag_node_with_piped_text() {
     )
     .unwrap();
 
-    assert_eq!(
-        tag,
-        TagNode::without_location(
-            "p",
-            vec![],
-            Some(vec![
-                ClassNode::new_without_location("text-lg"),
-                ClassNode::new_without_location("font-medium"),
-            ]),
-            None,
-            Some(TextNode {
-                text: String::from(
-                    r#""Tailwind CSS is the only framework that I've seen scale
-on large teams. It's easy to customize, adapts to any design,
-and the build size is tiny.""#
-                ),
-                is_block: true,
-            }),
-            None,
-        )
-    );
+    // Structure is snapshotted; source locations are redacted (asserted separately).
+    insta::assert_json_snapshot!(tag, { ".**.location" => "[location]" });
 
     assert_eq!(*rest.fragment(), "\n    figcaption.font-medium");
 }

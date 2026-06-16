@@ -1,0 +1,103 @@
+---
+source: tests/parse.rs
+expression: root_node
+---
+{
+  "nodes": [
+    {
+      "type": "comment",
+      "text": " this is a root dev comment",
+      "isDev": true,
+      "location": "[location]"
+    },
+    {
+      "type": "comment",
+      "text": " this is a root native comment (will get rendered)",
+      "isDev": false,
+      "location": "[location]"
+    },
+    {
+      "type": "tag",
+      "tag": "div",
+      "location": "[location]",
+      "ids": [],
+      "classes": null,
+      "attributes": null,
+      "text": null,
+      "children": [
+        {
+          "type": "comment",
+          "text": " this is a child comment",
+          "isDev": true,
+          "location": "[location]"
+        },
+        {
+          "type": "tag",
+          "tag": "p",
+          "location": "[location]",
+          "ids": [],
+          "classes": null,
+          "attributes": null,
+          "text": {
+            "text": "another tag",
+            "isBlock": false
+          },
+          "children": null
+        },
+        {
+          "type": "comment",
+          "text": " this is a child comment that gets rendered",
+          "isDev": false,
+          "location": "[location]"
+        },
+        {
+          "type": "tag",
+          "tag": "img",
+          "location": "[location]",
+          "ids": [],
+          "classes": null,
+          "attributes": [
+            {
+              "type": "comment",
+              "text": " supports attribute inline comments",
+              "isDev": true,
+              "location": "[location]"
+            },
+            {
+              "type": "attribute",
+              "key": "src",
+              "value": "/fancy-avatar.jpg",
+              "location": "[location]"
+            },
+            {
+              "type": "attribute",
+              "key": "alt",
+              "value": "Fancy Avatar",
+              "location": "[location]"
+            },
+            {
+              "type": "comment",
+              "text": " the size of the image",
+              "isDev": true,
+              "location": "[location]"
+            },
+            {
+              "type": "attribute",
+              "key": "width",
+              "value": "384",
+              "location": "[location]"
+            },
+            {
+              "type": "attribute",
+              "key": "height",
+              "value": "512",
+              "location": "[location]"
+            }
+          ],
+          "text": null,
+          "children": null
+        }
+      ]
+    }
+  ]
+}

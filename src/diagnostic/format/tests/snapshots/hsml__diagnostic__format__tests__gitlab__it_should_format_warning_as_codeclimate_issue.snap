@@ -1,0 +1,18 @@
+---
+source: src/diagnostic/format/tests/gitlab.rs
+expression: parsed
+---
+[
+  {
+    "check_name": "W002",
+    "description": "Duplicate class 'foo'",
+    "fingerprint": "3b3deaac0f93890d",
+    "location": {
+      "lines": {
+        "begin": 1
+      },
+      "path": "example.hsml"
+    },
+    "severity": "minor"
+  }
+]

@@ -1,0 +1,27 @@
+---
+source: tests/parse.rs
+expression: root_node
+---
+{
+  "nodes": [
+    {
+      "type": "tag",
+      "tag": "div",
+      "location": "[location]",
+      "ids": [
+        {
+          "id": "id1",
+          "location": "[location]"
+        },
+        {
+          "id": "id2",
+          "location": "[location]"
+        }
+      ],
+      "classes": null,
+      "attributes": null,
+      "text": null,
+      "children": null
+    }
+  ]
+}

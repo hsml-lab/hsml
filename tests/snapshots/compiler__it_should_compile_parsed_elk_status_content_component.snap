@@ -1,0 +1,8 @@
+---
+source: tests/compiler.rs
+expression: html_content
+---
+<div class="space-y-3" :class="{
+    'pt2 pb0.5 px3.5 bg-dm rounded-4 me--1': isDM,
+    'ms--3.5 mt--1 ms--1': isDM && context !== 'details',
+  }"><StatusBody v-if="(!isFiltered && isSensitiveNonSpoiler) || hideAllMedia" :status="status" :newer="newer" :with-action="!isDetails" :class="isDetails ? 'text-xl' : ''"></StatusBody><StatusSpoiler :enabled="hasSpoilerOrSensitiveMedia || isFiltered" :filter="isFiltered" :sensitive-non-spoiler="isSensitiveNonSpoiler || hideAllMedia" :is-d-m="isDM"><template v-if="spoilerTextPresent" #spoiler><p>{{ status.spoilerText }}</p></template><template v-else-if="filterPhrase" #spoiler><p>{{ `${$t('status.filter_hidden_phrase')}: ${filterPhrase}` }}</p></template><StatusBody v-if="!(isSensitiveNonSpoiler || hideAllMedia)" :status="status" :newer="newer" :with-action="!isDetails" :class="isDetails ? 'text-xl' : ''"></StatusBody><StatusTranslation :status="status"></StatusTranslation><StatusPoll v-if="status.poll" :status="status"></StatusPoll><StatusMedia v-if="status.mediaAttachments?.length" :status="status" :is-preview="isPreview"></StatusMedia><StatusPreviewCard v-if="status.card" :card="status.card" :small-picture-only="status.mediaAttachments?.length > 0"></StatusPreviewCard><StatusCard v-if="status.reblog" :status="status.reblog" border="~ rounded" :actions="false"></StatusCard><div v-if="isDM"></div></StatusSpoiler></div>

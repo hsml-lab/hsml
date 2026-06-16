@@ -1,0 +1,9 @@
+---
+source: src/diagnostic/format/tests/default.rs
+expression: output
+---
+warning[W001]: Duplicate attribute 'id' is not allowed
+ --> example.hsml:1:8
+  |
+1 | div#foo#bar
+  |        ^

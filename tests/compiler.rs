@@ -75,10 +75,7 @@ fn it_should_compile_parsed_content() {
 
     let html_content = compile(&ast, &HsmlCompileOptions::default()).unwrap();
 
-    assert_eq!(
-        html_content,
-        r#"<h1 class="text-red">Vite CJS Faker Demo</h1><div class="card"><div class="card__image"><img :src="natureImageUrl" :alt="'Background image for ' + fullName" /></div><div class="card__profile"><img :src="avatarUrl" :alt="'Avatar image of ' + fullName" /></div><div class="card__body">{{ fullName }}</div></div>"#
-    );
+    insta::assert_snapshot!(html_content);
     assert_eq!(*rest.fragment(), "");
 }
 
@@ -111,12 +108,7 @@ figure.md:flex.bg-slate-100.rounded-xl.p-8.md:p-0.dark:bg-slate-800/10
 
     let html_content = compile(&ast, &HsmlCompileOptions::default()).unwrap();
 
-    assert_eq!(
-        html_content,
-        r#"<!-- test comment on root layer --><figure class="md:flex bg-slate-100 rounded-xl p-8 md:p-0 dark:bg-slate-800/10"><!-- test comment --><img class="w-24 h-24 md:w-48 md:h-auto md:rounded-none rounded-full mx-auto" src="/fancy-avatar.jpg" alt="" width="384" height="512" /><div class="pt-6 md:p-8 text-center md:text-left space-y-4"><blockquote v-if="showBlockquote"><p class="text-lg font-medium">"Tailwind CSS is the only framework that I've seen scale
-on large teams. It's easy to customize, adapts to any design,
-and the build size is tiny."</p></blockquote><figcaption class="font-medium"><div class="text-sky-500 dark:text-sky-400">Sarah Dayan</div><div class="text-[#af05c9] dark:text-slate-500">Staff Engineer, Algolia</div></figcaption></div></figure>"#
-    );
+    insta::assert_snapshot!(html_content);
     assert_eq!(*rest.fragment(), "");
 }
 
@@ -160,13 +152,7 @@ fn it_should_compile_parsed_elk_status_content_component() {
 
     let html_content = compile(&ast, &HsmlCompileOptions::default()).unwrap();
 
-    assert_eq!(
-        html_content,
-        r#"<div class="space-y-3" :class="{
-    'pt2 pb0.5 px3.5 bg-dm rounded-4 me--1': isDM,
-    'ms--3.5 mt--1 ms--1': isDM && context !== 'details',
-  }"><StatusBody v-if="(!isFiltered && isSensitiveNonSpoiler) || hideAllMedia" :status="status" :newer="newer" :with-action="!isDetails" :class="isDetails ? 'text-xl' : ''"></StatusBody><StatusSpoiler :enabled="hasSpoilerOrSensitiveMedia || isFiltered" :filter="isFiltered" :sensitive-non-spoiler="isSensitiveNonSpoiler || hideAllMedia" :is-d-m="isDM"><template v-if="spoilerTextPresent" #spoiler><p>{{ status.spoilerText }}</p></template><template v-else-if="filterPhrase" #spoiler><p>{{ `${$t('status.filter_hidden_phrase')}: ${filterPhrase}` }}</p></template><StatusBody v-if="!(isSensitiveNonSpoiler || hideAllMedia)" :status="status" :newer="newer" :with-action="!isDetails" :class="isDetails ? 'text-xl' : ''"></StatusBody><StatusTranslation :status="status"></StatusTranslation><StatusPoll v-if="status.poll" :status="status"></StatusPoll><StatusMedia v-if="status.mediaAttachments?.length" :status="status" :is-preview="isPreview"></StatusMedia><StatusPreviewCard v-if="status.card" :card="status.card" :small-picture-only="status.mediaAttachments?.length > 0"></StatusPreviewCard><StatusCard v-if="status.reblog" :status="status.reblog" border="~ rounded" :actions="false"></StatusCard><div v-if="isDM"></div></StatusSpoiler></div>"#
-    );
+    insta::assert_snapshot!(html_content);
     assert_eq!(*rest.fragment(), "");
 }
 
@@ -559,10 +545,7 @@ fn it_should_compile_parsed_elk_main_content_component() {
 
     let html_content = compile(&ast, &HsmlCompileOptions::default()).unwrap();
 
-    assert_eq!(
-        html_content,
-        r#"<div ref="container" :class="containerClass"><div class="sticky top-0 z10 backdrop-blur native:lg:w-[calc(100vw-5rem)] native:xl:w-[calc(135%+(100vw-1200px)/2)]" pt="[env(safe-area-inset-top,0)]" bg="[rgba(var(--rgb-bg-base),0.7)]"><div class="flex justify-between px5 py2 native:xl:flex" :class="{ 'xl:hidden': $route.name !== 'tag' }" border="b base"><div class="flex gap-3 items-center py2 w-full" :overflow-hidden="!noOverflowHidden ? '' : false"><NuxtLink class="items-center btn-text p-0 xl:hidden" v-if="backOnSmallScreen || back" flex="~ gap1" :aria-label="$t('nav.back')" @click="$router.go(-1)"><div class="rtl-flip" i-ri:arrow-left-line></div></NuxtLink><div class="flex w-full native-mac:justify-center native-mac:text-center native-mac:sm:justify-start" :truncate="!noOverflowHidden ? '' : false" data-tauri-drag-region><slot name="title"></slot></div><div class="sm:hidde nh-7 w-1px"></div></div><div class="flex items-center flex-shrink-0 gap-x-2"><slot name="actions"></slot><PwaBadge class="lg:hidden"></PwaBadge><NavUser v-if="isHydrated"></NavUser><NavUserSkeleton v-else></NavUserSkeleton></div></div><slot name="header"><div hidden></div></slot></div><PwaInstallPrompt class="lg:hidden"></PwaInstallPrompt><div class="m-auto" :class="isHydrated && wideLayout ? 'xl:w-full sm:max-w-600px' : 'sm:max-w-600px md:shrink-0'"><div class="h-6" hidden :class="{ 'xl:block': $route.name !== 'tag' && !$slots.header }"></div><slot></slot></div></div>"#
-    );
+    insta::assert_snapshot!(html_content);
     assert_eq!(*rest.fragment(), "");
 }
 

@@ -1,0 +1,9 @@
+---
+source: src/diagnostic/format/tests/default.rs
+expression: output
+---
+error: parse error
+ --> <input>:1:1
+  |
+1 | 123invalid
+  | ^
