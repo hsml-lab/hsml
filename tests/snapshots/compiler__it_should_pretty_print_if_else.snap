@@ -1,0 +1,9 @@
+---
+source: tests/compiler.rs
+expression: html
+---
+@if (a) {
+  <p>A</p>
+} @else {
+  <p>B</p>
+}

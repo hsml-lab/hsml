@@ -172,7 +172,7 @@ fn it_should_pretty_print_if_else() {
     )
     .unwrap();
 
-    assert_eq!(html, "@if (a) {\n  <p>A</p>\n} @else {\n  <p>B</p>\n}\n");
+    insta::assert_snapshot!(html);
 }
 
 #[test]
@@ -190,10 +190,7 @@ fn it_should_pretty_print_switch() {
     )
     .unwrap();
 
-    assert_eq!(
-        html,
-        "@switch (s) {\n  @case (a) {\n    <p>A</p>\n  }\n  @default {\n    <p>D</p>\n  }\n}\n"
-    );
+    insta::assert_snapshot!(html);
 }
 
 fn compile_pretty(source: &str) -> String {
@@ -215,34 +212,28 @@ fn it_should_pretty_print_let() {
 
 #[test]
 fn it_should_pretty_print_for_empty() {
-    assert_eq!(
-        compile_pretty("@for (x of xs; track x)\n  p A\n@empty\n  p B\n"),
-        "@for (x of xs; track x) {\n  <p>A</p>\n} @empty {\n  <p>B</p>\n}\n"
-    );
+    insta::assert_snapshot!(compile_pretty(
+        "@for (x of xs; track x)\n  p A\n@empty\n  p B\n"
+    ));
 }
 
 #[test]
 fn it_should_pretty_print_defer() {
-    assert_eq!(
-        compile_pretty("@defer (on viewport)\n  p A\n@placeholder\n  p B\n"),
-        "@defer (on viewport) {\n  <p>A</p>\n} @placeholder {\n  <p>B</p>\n}\n"
-    );
+    insta::assert_snapshot!(compile_pretty(
+        "@defer (on viewport)\n  p A\n@placeholder\n  p B\n"
+    ));
 }
 
 #[test]
 fn it_should_pretty_print_boundary() {
-    assert_eq!(
-        compile_pretty("@boundary\n  p A\n@catch (error)\n  p B\n"),
-        "@boundary {\n  <p>A</p>\n} @catch (error) {\n  <p>B</p>\n}\n"
-    );
+    insta::assert_snapshot!(compile_pretty("@boundary\n  p A\n@catch (error)\n  p B\n"));
 }
 
 #[test]
 fn it_should_pretty_print_switch_with_default_never() {
-    assert_eq!(
-        compile_pretty("@switch (s)\n  @case (a)\n    p A\n  @default never(s);\n"),
-        "@switch (s) {\n  @case (a) {\n    <p>A</p>\n  }\n  @default never(s);\n}\n"
-    );
+    insta::assert_snapshot!(compile_pretty(
+        "@switch (s)\n  @case (a)\n    p A\n  @default never(s);\n"
+    ));
 }
 
 #[test]
