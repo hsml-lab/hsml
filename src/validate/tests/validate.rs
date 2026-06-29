@@ -78,7 +78,7 @@ fn dup_class_count(source: &str) -> usize {
     let (_, ast) = parse(Span::new(source)).unwrap();
     validate(&ast, source)
         .iter()
-        .filter(|d| d.code.as_deref() == Some("W002"))
+        .filter(|d| d.code.as_deref() == Some(ErrorCode::DuplicateClass.code()))
         .count()
 }
 
