@@ -137,7 +137,7 @@ fn lsp_did_open_publishes_diagnostics_for_invalid_file() {
 
     send(
         lsp.stdin(),
-        r#"{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///test.hsml","languageId":"hsml","version":1,"text":"@@@invalid\n"}}}"#,
+        r#"{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///test.hsml","languageId":"hsml","version":1,"text":"%%%invalid\n"}}}"#,
     );
 
     let msg = read_until(&mut lsp, "publishDiagnostics");
@@ -171,7 +171,7 @@ fn lsp_did_change_updates_diagnostics() {
     // Open with invalid content
     send(
         lsp.stdin(),
-        r#"{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///test.hsml","languageId":"hsml","version":1,"text":"@@@invalid\n"}}}"#,
+        r#"{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///test.hsml","languageId":"hsml","version":1,"text":"%%%invalid\n"}}}"#,
     );
     let msg = read_until(&mut lsp, "publishDiagnostics");
     assert!(!msg.contains("\"diagnostics\":[]"));
@@ -194,7 +194,7 @@ fn lsp_did_close_clears_diagnostics() {
 
     send(
         lsp.stdin(),
-        r#"{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///test.hsml","languageId":"hsml","version":1,"text":"@@@invalid\n"}}}"#,
+        r#"{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///test.hsml","languageId":"hsml","version":1,"text":"%%%invalid\n"}}}"#,
     );
     let _ = read_until(&mut lsp, "publishDiagnostics");
 
@@ -232,7 +232,7 @@ fn lsp_hover_returns_diagnostic_info_at_error_position() {
     // Open file with parse error at line 1, column 1
     send(
         lsp.stdin(),
-        r#"{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///hover.hsml","languageId":"hsml","version":1,"text":"@@@invalid\n"}}}"#,
+        r#"{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///hover.hsml","languageId":"hsml","version":1,"text":"%%%invalid\n"}}}"#,
     );
     let _ = read_until(&mut lsp, "publishDiagnostics");
 
@@ -427,7 +427,7 @@ fn lsp_formatting_returns_null_for_invalid_file() {
     // Open file with parse error
     send(
         lsp.stdin(),
-        r#"{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///bad.hsml","languageId":"hsml","version":1,"text":"@@@invalid\n"}}}"#,
+        r#"{"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":"file:///bad.hsml","languageId":"hsml","version":1,"text":"%%%invalid\n"}}}"#,
     );
     let _ = read_until(&mut lsp, "publishDiagnostics");
 

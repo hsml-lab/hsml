@@ -45,6 +45,93 @@ fn it_should_not_warn_on_unique_classes() {
 }
 
 #[test]
+fn it_should_warn_on_duplicate_class_inside_an_angular_block() {
+    let source = "@if (show)\n  h1.text-red.text-red Hello\n";
+    let (_, ast) = parse(Span::new(source)).unwrap();
+
+    let diagnostics = validate(&ast, source);
+
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(
+        diagnostics[0].code,
+        Some(ErrorCode::DuplicateClass.code().to_string())
+    );
+}
+
+#[test]
+fn it_should_warn_on_void_element_content_inside_a_switch_case() {
+    let source = "@switch (state)\n  @case (a)\n    img Hello\n";
+    let (_, ast) = parse(Span::new(source)).unwrap();
+
+    let diagnostics = validate(&ast, source);
+
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(
+        diagnostics[0].code,
+        Some(ErrorCode::VoidElementContent.code().to_string())
+    );
+}
+
+/// Count W002 (duplicate class) diagnostics — used to assert that the validator
+/// recurses into every body of an Angular block.
+fn dup_class_count(source: &str) -> usize {
+    let (_, ast) = parse(Span::new(source)).unwrap();
+    validate(&ast, source)
+        .iter()
+        .filter(|d| d.code.as_deref() == Some(ErrorCode::DuplicateClass.code()))
+        .count()
+}
+
+#[test]
+fn it_should_visit_a_let_node_without_warnings() {
+    let source = "@let total = items.length;\n";
+    let (_, ast) = parse(Span::new(source)).unwrap();
+
+    assert!(validate(&ast, source).is_empty());
+}
+
+#[test]
+fn it_should_validate_all_if_branches() {
+    // then-branch, every @else if branch, and @else branch.
+    assert_eq!(
+        dup_class_count("@if (a)\n  .x.x\n@else if (b)\n  .y.y\n@else\n  .z.z\n"),
+        3
+    );
+}
+
+#[test]
+fn it_should_validate_for_body_and_empty() {
+    assert_eq!(
+        dup_class_count("@for (i of xs; track i)\n  .a.a\n@empty\n  .b.b\n"),
+        2
+    );
+}
+
+#[test]
+fn it_should_validate_switch_case_and_default() {
+    assert_eq!(
+        dup_class_count("@switch (s)\n  @case (a)\n    .c.c\n  @default\n    .d.d\n"),
+        2
+    );
+}
+
+#[test]
+fn it_should_validate_all_defer_sub_blocks() {
+    assert_eq!(
+        dup_class_count("@defer\n  .a.a\n@placeholder\n  .b.b\n@loading\n  .c.c\n@error\n  .d.d\n"),
+        4
+    );
+}
+
+#[test]
+fn it_should_validate_boundary_body_and_catch() {
+    assert_eq!(
+        dup_class_count("@boundary\n  .a.a\n@catch (error)\n  .b.b\n"),
+        2
+    );
+}
+
+#[test]
 fn it_should_warn_on_duplicate_class_in_child() {
     let source = "div\n  h1.foo.foo Hello\n";
     let (_, ast) = parse(Span::new(source)).unwrap();

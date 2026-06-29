@@ -1,0 +1,9 @@
+---
+source: tests/compiler.rs
+expression: "compile_pretty(\"@for (x of xs; track x)\\n  p A\\n@empty\\n  p B\\n\")"
+---
+@for (x of xs; track x) {
+  <p>A</p>
+} @empty {
+  <p>B</p>
+}

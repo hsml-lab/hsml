@@ -5,11 +5,14 @@ use nom_locate::LocatedSpan;
 pub type Span<'a> = LocatedSpan<&'a str>;
 
 use self::{
-    attribute::node::AttributeNode, class::node::ClassNode, comment::node::CommentNode,
-    doctype::node::DoctypeNode, id::node::IdNode, tag::node::TagNode, text::node::TextNode,
+    angular::node::AngularNode, attribute::node::AttributeNode, class::node::ClassNode,
+    comment::node::CommentNode, doctype::node::DoctypeNode, id::node::IdNode, tag::node::TagNode,
+    text::node::TextNode,
 };
 
+pub mod angular;
 pub mod attribute;
+pub mod children;
 pub mod class;
 pub mod comment;
 pub mod doctype;
@@ -42,6 +45,7 @@ pub enum HsmlNode {
     Class(ClassNode),
     Attribute(AttributeNode),
     Text(TextNode),
+    Angular(AngularNode),
 }
 
 /// Mutable state carried through the parsing process.

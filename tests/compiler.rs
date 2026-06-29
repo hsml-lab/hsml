@@ -19,6 +19,224 @@ fn it_should_compile_empty_ast() {
 }
 
 #[test]
+fn it_should_compile_let_declaration() {
+    let html = compile_content_core("@let name = user.name;\n").unwrap();
+
+    assert_eq!(html, "@let name = user.name;");
+}
+
+#[test]
+fn it_should_compile_let_declaration_as_a_child() {
+    let html = compile_content_core(".box\n  @let n = 5;\n  h1 {{ n }}\n").unwrap();
+
+    assert_eq!(
+        html,
+        r#"<div class="box">@let n = 5;<h1>{{ n }}</h1></div>"#
+    );
+}
+
+#[test]
+fn it_should_compile_if_else_chain() {
+    let html = compile_content_core(
+        ".list\n  @if (a)\n    p A\n  @else if (b)\n    p B\n  @else\n    p C\n",
+    )
+    .unwrap();
+
+    assert_eq!(
+        html,
+        r#"<div class="list">@if (a) {<p>A</p>} @else if (b) {<p>B</p>} @else {<p>C</p>}</div>"#
+    );
+}
+
+#[test]
+fn it_should_compile_if_with_empty_body() {
+    let html = compile_content_core("@if (hidden) {}\n").unwrap();
+
+    assert_eq!(html, "@if (hidden) {}");
+}
+
+#[test]
+fn it_should_keep_consecutive_if_blocks_separate() {
+    let html = compile_content_core("@if (a)\n  p A\n@if (b)\n  p B\n").unwrap();
+
+    assert_eq!(html, "@if (a) {<p>A</p>}@if (b) {<p>B</p>}");
+}
+
+#[test]
+fn it_should_compile_for_with_empty() {
+    let html = compile_content_core(
+        "ul\n  @for (item of items; track item.id)\n    li {{ item.name }}\n  @empty\n    li None\n",
+    )
+    .unwrap();
+
+    assert_eq!(
+        html,
+        r#"<ul>@for (item of items; track item.id) {<li>{{ item.name }}</li>} @empty {<li>None</li>}</ul>"#
+    );
+}
+
+#[test]
+fn it_should_compile_for_without_empty() {
+    let html = compile_content_core("@for (x of xs; track x)\n  p {{ x }}\n").unwrap();
+
+    assert_eq!(html, "@for (x of xs; track x) {<p>{{ x }}</p>}");
+}
+
+#[test]
+fn it_should_compile_switch_with_stacked_empty_and_default() {
+    let html = compile_content_core(
+        "@switch (status)\n  @case (\"active\")\n    p Active\n  @case (\"pending\")\n  @case (\"review\")\n    p Waiting\n  @case (\"hidden\") {}\n  @default\n    p Unknown\n",
+    )
+    .unwrap();
+
+    assert_eq!(
+        html,
+        r#"@switch (status) { @case ("active") {<p>Active</p>} @case ("pending") @case ("review") {<p>Waiting</p>} @case ("hidden") {} @default {<p>Unknown</p>}}"#
+    );
+}
+
+#[test]
+fn it_should_compile_switch_with_default_never() {
+    let html =
+        compile_content_core("@switch (s)\n  @case (a)\n    p A\n  @default never(s);\n").unwrap();
+
+    assert_eq!(
+        html,
+        "@switch (s) { @case (a) {<p>A</p>} @default never(s);}"
+    );
+}
+
+#[test]
+fn it_should_compile_defer_with_sub_blocks() {
+    let html = compile_content_core(
+        "@defer (on viewport)\n  p main\n@placeholder (minimum 500ms)\n  p ph\n@error\n  p err\n",
+    )
+    .unwrap();
+
+    assert_eq!(
+        html,
+        "@defer (on viewport) {<p>main</p>} @placeholder (minimum 500ms) {<p>ph</p>} @error {<p>err</p>}"
+    );
+}
+
+#[test]
+fn it_should_compile_defer_without_head() {
+    let html = compile_content_core("@defer\n  p x\n").unwrap();
+
+    assert_eq!(html, "@defer {<p>x</p>}");
+}
+
+#[test]
+fn it_should_compile_boundary_with_catch() {
+    let html =
+        compile_content_core("@boundary\n  app-scene\n@catch (error)\n  p {{ error.message }}\n")
+            .unwrap();
+
+    assert_eq!(
+        html,
+        "@boundary {<app-scene></app-scene>} @catch (error) {<p>{{ error.message }}</p>}"
+    );
+}
+
+#[test]
+fn it_should_compile_boundary_without_catch() {
+    let html = compile_content_core("@boundary\n  app-x\n").unwrap();
+
+    assert_eq!(html, "@boundary {<app-x></app-x>}");
+}
+
+#[test]
+fn it_should_compile_switch_with_bare_default_never() {
+    let html =
+        compile_content_core("@switch (s)\n  @case (a)\n    p A\n  @default never;\n").unwrap();
+
+    assert_eq!(html, "@switch (s) { @case (a) {<p>A</p>} @default never;}");
+}
+
+#[test]
+fn it_should_compile_defer_with_loading() {
+    let html = compile_content_core("@defer\n  p x\n@loading (after 100ms)\n  p ld\n").unwrap();
+
+    assert_eq!(html, "@defer {<p>x</p>} @loading (after 100ms) {<p>ld</p>}");
+}
+
+#[test]
+fn it_should_pretty_print_if_else() {
+    let (_, ast) = parse(Span::new("@if (a)\n  p A\n@else\n  p B\n")).unwrap();
+    let html = compile(
+        &ast,
+        &HsmlCompileOptions {
+            pretty: true,
+            indent_size: 2,
+        },
+    )
+    .unwrap();
+
+    insta::assert_snapshot!(html);
+}
+
+#[test]
+fn it_should_pretty_print_switch() {
+    let (_, ast) = parse(Span::new(
+        "@switch (s)\n  @case (a)\n    p A\n  @default\n    p D\n",
+    ))
+    .unwrap();
+    let html = compile(
+        &ast,
+        &HsmlCompileOptions {
+            pretty: true,
+            indent_size: 2,
+        },
+    )
+    .unwrap();
+
+    insta::assert_snapshot!(html);
+}
+
+fn compile_pretty(source: &str) -> String {
+    let (_, ast) = parse(Span::new(source)).unwrap();
+    compile(
+        &ast,
+        &HsmlCompileOptions {
+            pretty: true,
+            indent_size: 2,
+        },
+    )
+    .unwrap()
+}
+
+#[test]
+fn it_should_pretty_print_let() {
+    assert_eq!(compile_pretty("@let x = 5;\n"), "@let x = 5;\n");
+}
+
+#[test]
+fn it_should_pretty_print_for_empty() {
+    insta::assert_snapshot!(compile_pretty(
+        "@for (x of xs; track x)\n  p A\n@empty\n  p B\n"
+    ));
+}
+
+#[test]
+fn it_should_pretty_print_defer() {
+    insta::assert_snapshot!(compile_pretty(
+        "@defer (on viewport)\n  p A\n@placeholder\n  p B\n"
+    ));
+}
+
+#[test]
+fn it_should_pretty_print_boundary() {
+    insta::assert_snapshot!(compile_pretty("@boundary\n  p A\n@catch (error)\n  p B\n"));
+}
+
+#[test]
+fn it_should_pretty_print_switch_with_default_never() {
+    insta::assert_snapshot!(compile_pretty(
+        "@switch (s)\n  @case (a)\n    p A\n  @default never(s);\n"
+    ));
+}
+
+#[test]
 fn it_should_compile_simple_tag() {
     let ast = RootNode {
         nodes: vec![HsmlNode::Tag(TagNode::without_location(
@@ -375,7 +593,7 @@ fn compile_content_diagnostics_should_return_warnings_for_duplicate_class() {
 
 #[test]
 fn compile_content_diagnostics_should_return_diagnostics_for_invalid_input() {
-    let result = compile_content_diagnostics("@@@invalid");
+    let result = compile_content_diagnostics("%%%invalid");
     assert!(result.is_err());
     let diagnostics = result.unwrap_err();
     assert_eq!(diagnostics.len(), 1);
@@ -412,7 +630,7 @@ fn compile_content_should_return_error_for_invalid_input() {
 
 #[test]
 fn compile_content_should_return_error_for_special_characters() {
-    let result = compile_content_core("@@@");
+    let result = compile_content_core("%%%");
     assert!(result.is_err());
     assert!(result.unwrap_err().contains("HSML parse error"));
 }
@@ -580,7 +798,7 @@ fn compile_output_serializes_warnings_to_json() {
 
 #[test]
 fn compile_diagnostics_serialize_errors_to_json() {
-    let diagnostics = compile_content_diagnostics("@@@invalid").unwrap_err();
+    let diagnostics = compile_content_diagnostics("%%%invalid").unwrap_err();
     let json = serde_json::to_value(&diagnostics).unwrap();
     let arr = json.as_array().unwrap();
 
@@ -619,7 +837,7 @@ fn check_content_returns_empty_for_valid_input() {
 
 #[test]
 fn check_content_returns_error_for_invalid_input() {
-    let diagnostics = check_content("@@@invalid");
+    let diagnostics = check_content("%%%invalid");
     assert_eq!(diagnostics.len(), 1);
     assert_eq!(diagnostics[0].severity, hsml::diagnostic::Severity::Error);
 }
@@ -665,7 +883,7 @@ fn format_content_respects_indent_size() {
 #[test]
 fn format_content_returns_error_for_invalid_input() {
     let opts = hsml::formatter::FormatOptions::default();
-    let result = format_content_core("@@@invalid", &opts);
+    let result = format_content_core("%%%invalid", &opts);
     assert!(result.is_err());
     assert!(result.unwrap_err().contains("HSML parse error"));
 }

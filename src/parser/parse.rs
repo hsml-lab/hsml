@@ -2,6 +2,7 @@ use nom::bytes::complete::take_till;
 
 use super::{
     HsmlNode, HsmlProcessContext, HsmlResult, RootNode, Span,
+    angular::node::angular_node,
     comment::node::{comment_dev_node, comment_native_node},
     doctype::node::doctype_node,
     error::HsmlError,
@@ -54,6 +55,17 @@ pub fn parse(input: Span<'_>) -> HsmlResult<'_, RootNode> {
             nodes.push(HsmlNode::Comment(node));
             input = rest;
             continue;
+        }
+
+        if input.starts_with('@') {
+            match angular_node(input, &mut context) {
+                Ok((rest, node)) => {
+                    nodes.push(HsmlNode::Angular(node));
+                    input = rest;
+                    continue;
+                }
+                Err(e) => return Err(e),
+            }
         }
 
         match tag_node(input, &mut context) {

@@ -1,0 +1,12 @@
+---
+source: tests/compiler.rs
+expression: html
+---
+@switch (s) {
+  @case (a) {
+    <p>A</p>
+  }
+  @default {
+    <p>D</p>
+  }
+}

@@ -1,0 +1,9 @@
+---
+source: tests/compiler.rs
+expression: "compile_pretty(\"@boundary\\n  p A\\n@catch (error)\\n  p B\\n\")"
+---
+@boundary {
+  <p>A</p>
+} @catch (error) {
+  <p>B</p>
+}

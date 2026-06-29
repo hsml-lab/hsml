@@ -1,11 +1,10 @@
-use nom::bytes::complete::{take_till, take_till1};
 use serde::Serialize;
 
 use crate::common::{Location, Position};
 use crate::parser::{
     HsmlNode, HsmlProcessContext, HsmlResult, Span, attribute,
+    children::parse_children,
     class::node::{ClassNode, class_node},
-    comment::node::{comment_dev_node, comment_native_node},
     id::{self, node::IdNode},
     tag::process::process_tag,
     text::{self, node::TextNode},
@@ -147,96 +146,10 @@ pub fn tag_node<'a>(input: Span<'a>, context: &mut HsmlProcessContext) -> HsmlRe
         }
 
         if first_char == Some("\n") || first_two_chars == Some("\r\n") {
-            // we hit a newline and the tag ended but could have child tag nodes
-
-            // consume the newline
-            let (mut rest, _) = take_till1(|c| c != '\r' && c != '\n')(input)?;
-
-            // skip whitespace-only lines (blank lines between tags)
-            loop {
-                let (after_ws, ws) =
-                    take_till(|c: char| c == '\n' || c == '\r' || !c.is_whitespace())(rest)?;
-
-                // EOF after whitespace — nothing more to parse
-                if !ws.fragment().is_empty() && after_ws.fragment().is_empty() {
-                    break;
-                }
-
-                // If we consumed only whitespace and hit a newline, this is a blank line — skip it
-                if !ws.fragment().is_empty()
-                    && (after_ws.starts_with('\n') || after_ws.starts_with("\r\n"))
-                {
-                    let (after_nl, _) = take_till1(|c| c != '\r' && c != '\n')(after_ws)?;
-                    rest = after_nl;
-                    continue;
-                }
-                break;
-            }
-
-            // If we've reached EOF (possibly with trailing whitespace), stop
-            if rest.fragment().trim().is_empty() {
-                break;
-            }
-
-            // check if the next char is a tab or whitespace
-            // if yes, check for indentation level
-            // if no, we have no child tag nodes and can break the loop
-
-            let (remaining, indentation) = take_till(|c: char| !c.is_whitespace())(rest)?;
-
-            let indentation_str = *indentation.fragment();
-
-            if !indentation_str.is_empty() {
-                // Mixed tabs and spaces are detected post-parse by the validator (W003).
-
-                // persist the indentation level so we can restore it later
-                let nested_tag_level = context.nested_tag_level;
-                let indent_string = context.indent_string.clone();
-
-                // check that we are at the correct indentation level, otherwise break out of the loop
-                if !indentation_str.starts_with(&context.indent_string)
-                    || indentation_str.len() <= context.indent_string.len()
-                {
-                    // dbg!("break out of loop");
-                    break;
-                }
-
-                context.nested_tag_level += 1;
-                context.indent_string = indentation_str.to_string();
-
-                // we are at the correct indentation level, so we can continue parsing the child tag nodes
-
-                // there could be a comment (dev or native) node
-                if let Ok((rest, node)) = comment_native_node(remaining) {
-                    child_nodes.push(HsmlNode::Comment(node));
-                    input = rest;
-                } else if let Ok((rest, node)) = comment_dev_node(remaining) {
-                    child_nodes.push(HsmlNode::Comment(node));
-                    input = rest;
-                }
-                // or we have now a child tag node
-                else {
-                    match tag_node(remaining, context) {
-                        Ok((rest, node)) => {
-                            child_nodes.push(HsmlNode::Tag(node));
-                            input = rest;
-                        }
-                        Err(err) => {
-                            context.nested_tag_level = nested_tag_level;
-                            context.indent_string = indent_string;
-                            return Err(err);
-                        }
-                    }
-                }
-
-                // restore the nested_tag_level level
-                context.nested_tag_level = nested_tag_level;
-                context.indent_string = indent_string;
-
-                continue;
-            }
-
-            // we have no child tag nodes
+            // The tag header ended; gather any deeper-indented children.
+            let (rest, children) = parse_children(input, context)?;
+            child_nodes = children;
+            input = rest;
             break;
         }
 

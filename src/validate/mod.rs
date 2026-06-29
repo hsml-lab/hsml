@@ -2,6 +2,7 @@ use std::collections::HashSet;
 
 use crate::common::{Location, Position, is_void_element};
 use crate::diagnostic::{Diagnostic, Severity};
+use crate::parser::angular::node::{AngularNode, DefaultBranch};
 use crate::parser::attribute::node::AttributeNode;
 use crate::parser::error::ErrorCode;
 use crate::parser::tag::node::TagNode;
@@ -68,8 +69,65 @@ fn valid_location(location: &Location) -> Option<Location> {
 }
 
 fn validate_node(node: &HsmlNode, diagnostics: &mut Vec<Diagnostic>) {
-    if let HsmlNode::Tag(tag) = node {
-        validate_tag(tag, diagnostics);
+    match node {
+        HsmlNode::Tag(tag) => validate_tag(tag, diagnostics),
+        HsmlNode::Angular(angular) => validate_angular(angular, diagnostics),
+        _ => {}
+    }
+}
+
+fn validate_nodes(nodes: &[HsmlNode], diagnostics: &mut Vec<Diagnostic>) {
+    for node in nodes {
+        validate_node(node, diagnostics);
+    }
+}
+
+/// Recurse into the bodies of an Angular `@`-block so tags nested in control
+/// flow are validated just like top-level tags.
+fn validate_angular(node: &AngularNode, diagnostics: &mut Vec<Diagnostic>) {
+    match node {
+        AngularNode::Let(_) => {}
+        AngularNode::If(if_node) => {
+            validate_nodes(&if_node.then_branch, diagnostics);
+            for branch in &if_node.else_if_branches {
+                validate_nodes(&branch.body, diagnostics);
+            }
+            if let Some(else_branch) = &if_node.else_branch {
+                validate_nodes(else_branch, diagnostics);
+            }
+        }
+        AngularNode::For(for_node) => {
+            validate_nodes(&for_node.body, diagnostics);
+            if let Some(empty_branch) = &for_node.empty_branch {
+                validate_nodes(empty_branch, diagnostics);
+            }
+        }
+        AngularNode::Switch(switch_node) => {
+            for case in &switch_node.cases {
+                validate_nodes(&case.body, diagnostics);
+            }
+            if let Some(DefaultBranch::Block(body)) = &switch_node.default {
+                validate_nodes(body, diagnostics);
+            }
+        }
+        AngularNode::Defer(defer_node) => {
+            validate_nodes(&defer_node.body, diagnostics);
+            if let Some(placeholder) = &defer_node.placeholder {
+                validate_nodes(&placeholder.body, diagnostics);
+            }
+            if let Some(loading) = &defer_node.loading {
+                validate_nodes(&loading.body, diagnostics);
+            }
+            if let Some(error_body) = &defer_node.error {
+                validate_nodes(error_body, diagnostics);
+            }
+        }
+        AngularNode::Boundary(boundary_node) => {
+            validate_nodes(&boundary_node.body, diagnostics);
+            if let Some(catch) = &boundary_node.catch {
+                validate_nodes(&catch.body, diagnostics);
+            }
+        }
     }
 }
 

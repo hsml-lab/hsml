@@ -1,0 +1,10 @@
+---
+source: tests/compiler.rs
+expression: "compile_pretty(\"@switch (s)\\n  @case (a)\\n    p A\\n  @default never(s);\\n\")"
+---
+@switch (s) {
+  @case (a) {
+    <p>A</p>
+  }
+  @default never(s);
+}

@@ -1,0 +1,9 @@
+---
+source: tests/compiler.rs
+expression: "compile_pretty(\"@defer (on viewport)\\n  p A\\n@placeholder\\n  p B\\n\")"
+---
+@defer (on viewport) {
+  <p>A</p>
+} @placeholder {
+  <p>B</p>
+}
